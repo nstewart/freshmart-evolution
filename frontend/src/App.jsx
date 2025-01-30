@@ -510,7 +510,7 @@ function App() {
           <Paper p="md" withBorder>
             <Text size="lg" weight={500} mb="md">Data Product Price Comparison</Text>
             <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px' }}>
-              Each data product is composed by joining multiple tables. These are made available to consumers ranging from web services to inventory systems.
+              Each data product is composed by joining data from multiple sources, these could be separate tables or separate databases entirely. Data products are made available to consumers ranging from web services to inventory systems.
             </Text>
             <Group position="apart">
               {scenarios.postgres && (
@@ -600,9 +600,9 @@ function App() {
               <thead>
                 <tr style={{ borderBottom: '1px solid #eee' }}>
                   <th style={{ textAlign: 'left', padding: '8px' }}>Source</th>
-                  <th style={{ textAlign: 'right', padding: '8px' }}>Query Max</th>
-                  <th style={{ textAlign: 'right', padding: '8px' }}>Query Avg</th>
-                  <th style={{ textAlign: 'right', padding: '8px' }}>Query P99</th>
+                  <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency Max</th>
+                  <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency Avg</th>
+                  <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency P99</th>
                   {showTTCA && (
                     <>
                       <th style={{ textAlign: 'right', padding: '8px' }}>RT Max</th>
