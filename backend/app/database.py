@@ -257,8 +257,15 @@ async def init_pools():
     
     async with pool_init_lock:
         logger.debug("Starting pool initialization...")
-        if pg_pool is None:
+        if pg_pool is None or pg_pool._closing:
             try:
+                if pg_pool and pg_pool._closing:
+                    try:
+                        await pg_pool.close()
+                    except Exception:
+                        pass
+                    pg_pool = None
+                    
                 # Log connection parameters (excluding sensitive info)
                 db_host = os.getenv('DB_HOST', 'localhost')
                 db_name = os.getenv('DB_NAME', 'postgres')
@@ -322,8 +329,15 @@ async def init_pools():
                     pg_pool = None
                 raise Exception(f"PostgreSQL pool creation failed: {str(e)}") from e
 
-        if mz_pool is None:
+        if mz_pool is None or mz_pool._closing:
             try:
+                if mz_pool and mz_pool._closing:
+                    try:
+                        await mz_pool.close()
+                    except Exception:
+                        pass
+                    mz_pool = None
+                    
                 mz_host = os.getenv('MZ_HOST', 'localhost')
                 mz_port = int(os.getenv('MZ_PORT', '6875'))
                 mz_user = os.getenv('MZ_USER', 'materialize')
@@ -431,35 +445,78 @@ async def get_postgres_connection():
     return conn
 
 async def get_materialize_connection():
-    """Get a connection from the Materialize pool with proper error handling"""
+    """Get a connection from the Materialize pool with proper error handling and retries"""
     global mz_pool
-    if mz_pool is None:
-        await init_pools()
-    try:
-        # Use a 5-minute timeout for connection acquisition
-        conn = await asyncio.wait_for(mz_pool.acquire(), timeout=300.0)
-        # Set 5-minute timeouts for commands
-        await conn.execute("SET statement_timeout TO '300s'")
-        await conn.execute(f"SET TRANSACTION_ISOLATION TO '{current_isolation_level}'")
-        return conn
-    except asyncio.TimeoutError:
-        logger.error("Timeout getting Materialize connection")
-        raise
-    except Exception as e:
-        logger.error(f"Error getting Materialize connection: {e}")
-        raise
+    max_retries = 3
+    retry_delay = 1.0  # Start with 1 second delay
+    
+    for attempt in range(max_retries):
+        try:
+            if mz_pool is None or (mz_pool is not None and mz_pool._closing):
+                logger.debug(f"Materialize pool is {mz_pool and 'closing' or 'None'}, reinitializing...")
+                if mz_pool is not None and mz_pool._closing:
+                    try:
+                        await mz_pool.close()
+                    except Exception:
+                        pass
+                    mz_pool = None
+                await init_pools()
+                
+            if mz_pool is None:
+                raise Exception("Failed to initialize Materialize pool")
+                
+            # Use a 5-minute timeout for connection acquisition
+            conn = await asyncio.wait_for(mz_pool.acquire(), timeout=300.0)
+            
+            # Set timeouts and isolation level
+            await conn.execute("SET statement_timeout TO '300s'")
+            await conn.execute(f"SET TRANSACTION_ISOLATION TO '{current_isolation_level}'")
+            
+            # Test the connection
+            await conn.execute("SELECT 1")
+            
+            return conn
+        except (asyncpg.exceptions.ConnectionDoesNotExistError, 
+                asyncio.TimeoutError, 
+                asyncpg.exceptions.InterfaceError) as e:
+            logger.warning(f"Connection error (attempt {attempt + 1}/{max_retries}): {str(e)}")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+                # Force pool reinitialization on next attempt
+                if mz_pool is not None:
+                    try:
+                        await mz_pool.close()
+                    except Exception:
+                        pass
+                mz_pool = None
+            else:
+                raise
+        except Exception as e:
+            logger.error(f"Error getting Materialize connection: {str(e)}")
+            raise
 
 async def release_connection(conn, is_materialize=False):
-    """Release a connection back to the appropriate pool with timeout"""
+    """Release a connection back to the appropriate pool with improved error handling"""
+    if conn is None:
+        return
+        
     try:
         if is_materialize:
-            if mz_pool is not None:
+            if (mz_pool is not None and 
+                not getattr(mz_pool, '_closing', True) and 
+                hasattr(conn, '_closed') and 
+                not conn._closed):
                 await asyncio.wait_for(mz_pool.release(conn), timeout=5.0)
         else:
-            if pg_pool is not None:
+            if pg_pool is not None and not getattr(pg_pool, '_closing', True):
                 await asyncio.wait_for(pg_pool.release(conn), timeout=5.0)
     except asyncio.TimeoutError:
         logger.error(f"Timeout releasing {'Materialize' if is_materialize else 'PostgreSQL'} connection")
+    except asyncpg.exceptions.ConnectionDoesNotExistError:
+        logger.warning(f"{'Materialize' if is_materialize else 'PostgreSQL'} connection already closed")
+    except asyncpg.exceptions.InterfaceError as e:
+        logger.warning(f"Pool interface error while releasing connection: {str(e)}")
     except Exception as e:
         logger.error(f"Error releasing {'Materialize' if is_materialize else 'PostgreSQL'} connection: {str(e)}")
 
@@ -1000,24 +1057,57 @@ async def configure_refresh_interval(interval: int):
         "message": f"Refresh interval updated from {old_interval}s to {interval}s"
     }
 
-async def check_materialize_index_exists() -> bool:
-    """Check if the Materialize index exists"""
-    if mz_pool is None:
-        return False
-    try:
-        conn = await get_materialize_connection()
+async def check_materialize_index_exists():
+    """Check if the Materialize index exists with proper error handling and retries"""
+    global mz_pool
+    max_retries = 3
+    retry_delay = 1.0  # Start with 1 second delay
+    
+    for attempt in range(max_retries):
+        conn = None
         try:
-            index_exists = await conn.fetchval("""
+            # Initialize pools if needed
+            if mz_pool is None:
+                await init_pools()
+                if mz_pool is None:
+                    logger.warning("Failed to initialize Materialize pool")
+                    return False
+            
+            # Check if pool is closing and reinitialize if needed
+            if getattr(mz_pool, '_closing', False):
+                logger.debug("Materialize pool is closing, reinitializing...")
+                try:
+                    await mz_pool.close()
+                except Exception:
+                    pass
+                mz_pool = None
+                await init_pools()
+                if mz_pool is None:
+                    logger.warning("Failed to reinitialize Materialize pool")
+                    return False
+            
+            conn = await get_materialize_connection()
+            result = await conn.fetchval("""
                 SELECT TRUE 
                 FROM mz_catalog.mz_indexes
                 WHERE name = 'dynamic_pricing_product_id_idx'
             """)
-            return index_exists or False
+            return result or False
+        except asyncpg.exceptions.ConnectionDoesNotExistError:
+            logger.warning(f"Connection lost during index check (attempt {attempt + 1}/{max_retries})")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            continue
+        except Exception as e:
+            logger.error(f"Error checking Materialize index: {str(e)}")
+            return False
         finally:
-            await release_connection(conn, is_materialize=True)
-    except Exception as e:
-        logger.error(f"Error checking Materialize index: {str(e)}")
-        return False
+            if conn:
+                try:
+                    await release_connection(conn, is_materialize=True)
+                except Exception as e:
+                    logger.error(f"Error releasing connection during index check: {str(e)}")
 
 async def continuous_query_load():
     """Continuously send queries to all sources with balanced concurrency"""
