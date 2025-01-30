@@ -17,7 +17,7 @@ load_dotenv()
 # Global variables
 latest_heartbeat = {"insert_time": None, "id": None, "ts": None}
 current_isolation_level = "serializable"  # Track the desired isolation level
-refresh_interval = 60  # Default refresh interval in seconds
+refresh_interval = 30  # Default refresh interval in seconds
 
 # Connection pools
 pg_pool = None

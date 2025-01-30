@@ -74,7 +74,6 @@ function App() {
   const [isPromotionLoading, setIsPromotionLoading] = useState(false);
   const [isolationLevel, setIsolationLevel] = useState('');
   const [isIsolationLoading, setIsIsolationLoading] = useState(false);
-  const [refreshInterval, setRefreshInterval] = useState(60);
   const [isRefreshConfigLoading, setIsRefreshConfigLoading] = useState(false);
   const [databaseSize, setDatabaseSize] = useState(null);
   const [showTTCA, setShowTTCA] = useState(false);
@@ -436,25 +435,6 @@ function App() {
                 : `Switch to ${isolationLevel === 'serializable' ? 'Strict Serializable' : 'Serializable'}`
               }
             </Button>
-            <Group spacing="xs" align="center">
-              <Text size="sm">Refresh Interval:</Text>
-              <Slider
-                value={refreshInterval}
-                onChange={updateRefreshInterval}
-                min={30}
-                max={120}
-                step={30}
-                style={{ width: '300px' }}
-                disabled={isRefreshConfigLoading}
-                marks={[
-                  { value: 30, label: '30s' },
-                  { value: 60, label: '1m' },
-                  { value: 90, label: '1m 30s' },
-                  { value: 120, label: '2m' },
-                ]}
-                label={(value) => value >= 60 ? `${Math.floor(value/60)}m ${value%60}s` : `${value}s`}
-              />
-            </Group>
           </Group>
 
           <Group spacing="md">
