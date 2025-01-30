@@ -674,6 +674,7 @@ function App() {
                   stroke="#8884d8"
                   dot={false}
                   isAnimationActive={false}
+                  connectNulls={true}
                 />
               )}
               {scenarios.materializeView && (
@@ -684,6 +685,7 @@ function App() {
                   stroke="#82ca9d"
                   dot={false}
                   isAnimationActive={false}
+                  connectNulls={true}
                 />
               )}
               {scenarios.materialize && (
@@ -694,6 +696,7 @@ function App() {
                   stroke="#ff7300"
                   dot={false}
                   isAnimationActive={false}
+                  connectNulls={true}
                 />
               )}
             </LineChart>
@@ -748,6 +751,7 @@ function App() {
                   stroke="#82ca9d"
                   dot={false}
                   isAnimationActive={false}
+                  connectNulls={true}
                 />
               )}
               {scenarios.materialize && (
@@ -758,6 +762,7 @@ function App() {
                   stroke="#ff7300"
                   dot={false}
                   isAnimationActive={false}
+                  connectNulls={true}
                 />
               )}
             </LineChart>
@@ -791,6 +796,7 @@ function App() {
                     stroke="#8884d8"
                     dot={false}
                     isAnimationActive={false}
+                    connectNulls={true}
                   />
                 )}
                 {scenarios.materializeView && (
@@ -801,6 +807,7 @@ function App() {
                     stroke="#82ca9d"
                     dot={false}
                     isAnimationActive={false}
+                    connectNulls={true}
                   />
                 )}
                 {scenarios.materialize && (
@@ -811,6 +818,7 @@ function App() {
                     stroke="#ff7300"
                     dot={false}
                     isAnimationActive={false}
+                    connectNulls={true}
                   />
                 )}
               </LineChart>
