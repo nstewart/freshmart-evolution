@@ -15,8 +15,10 @@ const flashAnimation = {
   }
 };
 
-function PriceDisplay({ price, prevPrice, weight = 700, size = "xl" }) {
+function PriceDisplay({ price, prevPrice, reactionTime, weight = 700, size = "xl" }) {
   const priceRef = useRef(null);
+  const lastReactionTimeRef = useRef(reactionTime);
+  const lastUpdateTimeRef = useRef(Date.now());
 
   useEffect(() => {
     if (price !== prevPrice && priceRef.current) {
@@ -27,19 +29,47 @@ function PriceDisplay({ price, prevPrice, weight = 700, size = "xl" }) {
     }
   }, [price, prevPrice]);
 
+  useEffect(() => {
+    if (reactionTime !== null && reactionTime !== undefined) {
+      lastReactionTimeRef.current = reactionTime;
+      lastUpdateTimeRef.current = Date.now();
+    }
+  }, [reactionTime]);
+
+  // Calculate the extrapolated reaction time
+  const getExtrapolatedReactionTime = () => {
+    if (reactionTime !== null && reactionTime !== undefined) {
+      return reactionTime;
+    }
+    if (lastReactionTimeRef.current === null || lastReactionTimeRef.current === undefined) {
+      return null;
+    }
+    const timeSinceLastUpdate = (Date.now() - lastUpdateTimeRef.current);
+    return lastReactionTimeRef.current + timeSinceLastUpdate;
+  };
+
+  const displayReactionTime = getExtrapolatedReactionTime();
+
   return (
-    <Text 
-      ref={priceRef}
-      size={size} 
-      weight={weight} 
-      color="blue"
-      style={{ 
-        animation: 'none',
-        '@keyframes flash': flashAnimation['@keyframes flash']
-      }}
-    >
-      ${price?.toFixed(2) || 'N/A'}
-    </Text>
+    <Stack spacing={4} align="center">
+      <Text 
+        ref={priceRef}
+        size={size} 
+        weight={weight} 
+        color="blue"
+        style={{ 
+          animation: 'none',
+          '@keyframes flash': flashAnimation['@keyframes flash']
+        }}
+      >
+        ${price?.toFixed(2) || 'N/A'}
+      </Text>
+      {displayReactionTime !== null && (
+        <Text size="xs" color="dimmed">
+          as of {(displayReactionTime / 1000).toFixed(1)} seconds ago
+        </Text>
+      )}
+    </Stack>
   );
 }
 
@@ -478,7 +508,10 @@ function App() {
           </Paper>
 
           <Paper p="md" withBorder>
-            <Text size="lg" weight={500} mb="md">Price Comparison</Text>
+            <Text size="lg" weight={500} mb="md">Data Product Price Comparison</Text>
+            <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px' }}>
+              Each data product is composed by joining multiple tables. These are made available to consumers ranging from web services to inventory systems.
+            </Text>
             <Group position="apart">
               {scenarios.postgres && (
                 <Paper shadow="sm" p={0} withBorder style={{ width: '30%' }}>
@@ -495,6 +528,7 @@ function App() {
                         <PriceDisplay 
                           price={currentMetric.view_price}
                           prevPrice={prevPrices.current.view}
+                          reactionTime={currentMetric.view_end_to_end_latency}
                         />
                       </Group>
                     </div>
@@ -519,6 +553,7 @@ function App() {
                         <PriceDisplay 
                           price={currentMetric.materialized_view_price}
                           prevPrice={prevPrices.current.materialized_view}
+                          reactionTime={currentMetric.materialized_view_end_to_end_latency}
                         />
                       </Group>
                     </div>
@@ -543,6 +578,7 @@ function App() {
                         <PriceDisplay 
                           price={currentMetric.materialize_price}
                           prevPrice={prevPrices.current.materialize}
+                          reactionTime={currentMetric.materialize_end_to_end_latency}
                         />
                       </Group>
                     </div>
