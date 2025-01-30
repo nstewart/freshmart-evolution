@@ -644,9 +644,9 @@ async def measure_query_time(query: str, params: Tuple, pool, is_materialize: bo
             
             cutoff_time = current_time - WINDOW_SIZE
             while stats["timestamps"] and stats["timestamps"][0] < cutoff_time:
-                stats["counts"].pop(0)
-                stats["timestamps"].pop(0)
-                stats["latencies"].pop(0)
+                if stats["counts"]: stats["counts"].pop(0)
+                if stats["timestamps"]: stats["timestamps"].pop(0)
+                if stats["latencies"]: stats["latencies"].pop(0)
             
             if len(stats["latencies"]) > 100:
                 stats["latencies"].pop(0)
