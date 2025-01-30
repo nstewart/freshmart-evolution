@@ -158,30 +158,33 @@ function App() {
         setMetrics(prev => {
           const filtered = prev.filter(m => (now - m.timestamp) <= HISTORY_WINDOW_MS);
           
+          // Get the last metric to access previous prices
+          const lastMetric = filtered[filtered.length - 1] || {};
+          
           const newMetric = {
             timestamp,
             isolation_level: data.isolation_level,
-            // View data
+            // View data - retain previous price if new one is null
             view_latency: data.view_latency,
             view_end_to_end_latency: data.view_end_to_end_latency,
-            view_price: data.view_price,
+            view_price: data.view_price !== null ? data.view_price : lastMetric.view_price,
             view_qps: data.view_qps,
             view_stats: data.view_stats,
             view_end_to_end_stats: data.view_end_to_end_stats,
-            // Materialized view data
+            // Materialized view data - retain previous price if new one is null
             materialized_view_latency: data.materialized_view_latency,
             materialized_view_end_to_end_latency: data.materialized_view_end_to_end_latency,
-            materialized_view_price: data.materialized_view_price,
+            materialized_view_price: data.materialized_view_price !== null ? data.materialized_view_price : lastMetric.materialized_view_price,
             materialized_view_qps: data.materialized_view_qps,
             materialized_view_freshness: data.materialized_view_freshness,
             materialized_view_refresh_duration: data.materialized_view_refresh_duration,
             materialized_view_stats: data.materialized_view_stats,
             materialized_view_end_to_end_stats: data.materialized_view_end_to_end_stats,
             materialized_view_refresh_stats: data.materialized_view_refresh_stats,
-            // Materialize data
+            // Materialize data - retain previous price if new one is null
             materialize_latency: data.materialize_latency,
             materialize_end_to_end_latency: data.materialize_end_to_end_latency,
-            materialize_price: data.materialize_price,
+            materialize_price: data.materialize_price !== null ? data.materialize_price : lastMetric.materialize_price,
             materialize_qps: data.materialize_qps,
             materialize_freshness: data.materialize_freshness,
             materialize_stats: data.materialize_stats,
