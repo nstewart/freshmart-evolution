@@ -428,7 +428,7 @@ function App() {
       <Container size="lg" py="xl" style={{ position: 'relative' }}>
         <Stack spacing="xs" align="center" mb="xl">
           <Text size="xl" weight={700} style={{ fontSize: '2.5rem' }}>Freshmart</Text>
-          <Text size="lg" color="dimmed">Dynamic pricing scenario</Text>
+          <Text size="lg" color="dimmed">Live Data Products</Text>
           <Text size="md" color="dimmed" align="center" mt="md" style={{ maxWidth: '800px' }}>
             This demo shows the journey the team at Freshmart takes to deliver correct, dynamic prices to their customers while they are still engaging with their site.
           </Text>
