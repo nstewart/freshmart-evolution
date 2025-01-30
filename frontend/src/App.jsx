@@ -682,7 +682,7 @@ function App() {
               <YAxis />
               <Tooltip
                 labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                formatter={(value) => `${(value * 1000).toFixed(2)}ms`}
+                formatter={(value) => `${value?.toFixed(2)}ms`}
               />
               <Legend />
               {scenarios.postgres && (
