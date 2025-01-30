@@ -605,9 +605,9 @@ function App() {
                   <th style={{ textAlign: 'right', padding: '8px' }}>Query P99</th>
                   {showTTCA && (
                     <>
-                      <th style={{ textAlign: 'right', padding: '8px' }}>RA Max</th>
-                      <th style={{ textAlign: 'right', padding: '8px' }}>RA Avg</th>
-                      <th style={{ textAlign: 'right', padding: '8px' }}>RA P99</th>
+                      <th style={{ textAlign: 'right', padding: '8px' }}>RT Max</th>
+                      <th style={{ textAlign: 'right', padding: '8px' }}>RT Avg</th>
+                      <th style={{ textAlign: 'right', padding: '8px' }}>RT P99</th>
                     </>
                   )}
                   <th style={{ textAlign: 'right', padding: '8px' }}>QPS</th>
