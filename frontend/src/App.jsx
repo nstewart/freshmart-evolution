@@ -475,14 +475,6 @@ function App() {
         )}
         <Stack spacing="md">
           <Group>
-            <Button 
-              onClick={togglePromotion} 
-              variant="outline" 
-              color="blue"
-              disabled={isPromotionLoading}
-            >
-              {isPromotionLoading ? "Toggling Promotion..." : "Toggle Promotion"}
-            </Button>
             <Button
               onClick={toggleIsolation}
               variant="outline"
@@ -565,7 +557,17 @@ function App() {
     Products ───┐                      ├──► Dynamic Pricing View
          │      ├──► Inventory Status ─┘
          │      │
-   Promotions ──┴──► Promotion Effect ─┘`}</pre>
+   Promotions ──┴──► Promotion Effect ─┘
+   
+`} 
+   <span 
+     onClick={togglePromotion} 
+     style={{ color: 'blue', cursor: 'pointer', textDecoration: 'underline' }}
+   >
+     (Toggle)
+   </span>
+
+</pre>
                   </Accordion.Panel>
                 </Accordion.Item>
               </Accordion>
