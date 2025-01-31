@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stack, Badge, LoadingOverlay, Slider, Image } from '@mantine/core';
+import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stack, Badge, LoadingOverlay, Slider, Image, Accordion } from '@mantine/core';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const HISTORY_WINDOW_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -12,6 +12,35 @@ const flashAnimation = {
     '0%': { backgroundColor: 'transparent' },
     '25%': { backgroundColor: '#fffbcc' },
     '100%': { backgroundColor: 'transparent' }
+  }
+};
+
+// Add styles for the entity relationship graph
+const graphStyles = {
+  node: {
+    base: {
+      padding: '8px 16px',
+      borderRadius: '4px',
+      border: '1px solid #dee2e6',
+      backgroundColor: 'white',
+      display: 'inline-block',
+      fontSize: '14px',
+      fontWeight: 500,
+      margin: '4px',
+      position: 'relative',
+      minWidth: '140px'
+    },
+    products: { borderColor: '#228be6', color: '#228be6' },
+    sales: { borderColor: '#40c057', color: '#40c057' },
+    promotions: { borderColor: '#fd7e14', color: '#fd7e14' },
+    inventory: { borderColor: '#7950f2', color: '#7950f2' },
+    categories: { borderColor: '#be4bdb', color: '#be4bdb' },
+    view: { borderColor: '#1c7ed6', color: '#1c7ed6', borderWidth: '2px' }
+  },
+  line: {
+    position: 'absolute',
+    backgroundColor: '#dee2e6',
+    zIndex: 0
   }
 };
 
@@ -512,6 +541,39 @@ function App() {
             <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px' }}>
               Each data product is composed by joining data from multiple sources, these could be separate tables or separate databases entirely. Data products are made available to consumers ranging from web services to inventory systems.
             </Text>
+            <Paper p="md" mb="lg" style={{ backgroundColor: '#f8f9fa' }}>
+              <Accordion defaultValue={null}>
+                <Accordion.Item value="dataflow">
+                  <Accordion.Control>Data Flow</Accordion.Control>
+                  <Accordion.Panel>
+                    <pre style={{ 
+                      fontFamily: 'monospace',
+                      fontSize: '14px',
+                      lineHeight: '1.2',
+                      whiteSpace: 'pre',
+                      overflow: 'auto',
+                      padding: '20px'
+                    }}>
+{`Source Tables                Intermediate CTEs                    Final Views
+──────────────                ────────────────                    ───────────
+
+   Categories ──┐
+                ├──► Popularity Score ──┐
+      Sales ────┘                      │
+         │                             │
+         ├────► Recent Prices ─────────┤
+         │                             │
+         └────► High Demand ──────────┤
+                                      ├──► Dynamic Pricing CTE ──► Dynamic Pricing View
+    Products ───┐                     │
+         │      │                     │
+         │      ├─► Inventory Status ─┘
+         │      │
+   Promotions ──┴─► Promotion Effect ─┘`}</pre>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
+            </Paper>
             <Group position="apart">
               {scenarios.postgres && (
                 <Paper shadow="sm" p={0} withBorder style={{ width: '30%' }}>
@@ -738,7 +800,7 @@ function App() {
                     <div>Cache Rehydration Time Stats:</div>
                     <Text size="sm">
                       Max: {stats.mvRefresh.max.toFixed(2)}ms | 
-                      Avg: {stats.mvRefresh.avg.toFixed(2)}ms | 
+                      Avg: {stats.mvRefresh.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}ms | 
                       P99: {stats.mvRefresh.p99.toFixed(2)}ms
                     </Text>
                   </Group>
