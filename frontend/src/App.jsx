@@ -544,7 +544,7 @@ function App() {
             <Paper p="md" mb="lg" style={{ backgroundColor: '#f8f9fa' }}>
               <Accordion defaultValue={null}>
                 <Accordion.Item value="dataflow">
-                  <Accordion.Control>Data Flow</Accordion.Control>
+                  <Accordion.Control>Data Lineage</Accordion.Control>
                   <Accordion.Panel>
                     <pre style={{ 
                       fontFamily: 'monospace',
@@ -554,22 +554,18 @@ function App() {
                       overflow: 'auto',
                       padding: '20px'
                     }}>
-{`Source Tables                Intermediate CTEs                    Final Views
-──────────────                ────────────────                    ───────────
-
+{`
    Categories ──┐
-                ├──► Popularity Score ──┐
-      Sales ────┘                      │
-         │                             │
-         ├────► Recent Prices ─────────┤
-         │                             │
-         └────► High Demand ──────────┤
-                                      ├──► Dynamic Pricing CTE ──► Dynamic Pricing View
-    Products ───┐                     │
-         │      │                     │
-         │      ├─► Inventory Status ─┘
+                └──► Popularity Score ──┐
+      Sales ────┐                       │
+         │      └──► Recent Prices ─────┤
+         │                              │
+         └────► High Demand ────────────┤
+                                        │
+    Products ───┐                      ├──► Dynamic Pricing View
+         │      ├──► Inventory Status ─┘
          │      │
-   Promotions ──┴─► Promotion Effect ─┘`}</pre>
+   Promotions ──┴──► Promotion Effect ─┘`}</pre>
                   </Accordion.Panel>
                 </Accordion.Item>
               </Accordion>
