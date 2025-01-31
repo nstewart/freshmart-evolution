@@ -534,10 +534,10 @@ function App() {
          │                              │
          └────► High Demand ────────────┤
                                         │
-    Products ───┐                      ├──► Dynamic Pricing View
-         │      ├──► Inventory Status ─┘
-         │      │
-   Promotions ──┴──► Promotion Effect ─┘
+    Products ───┐                       ├──► Dynamic Pricing View
+                ├──► Inventory Status  ─┘
+                │                       │
+   Promotions ──┴──► Promotion Effect  ─┘
    
 `} 
    <span 
@@ -559,12 +559,12 @@ function App() {
                   <Stack spacing={0}>
                     <div style={{ padding: '1rem' }}>
                       <Image
-                        src="https://m.media-amazon.com/images/I/81XeVWWyUUL.jpg"
+                        src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
                         height={200}
                         fit="contain"
                         alt="Product"
                       />
-                      <Text weight={500} align="center" size="sm" mt="md">Sony Alpha A6400 Mirrorless Camera with 16-50mm Lens</Text>
+                      <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
                       <Group position="center" mt="md">
                         <PriceDisplay 
                           price={currentMetric.view_price}
@@ -584,12 +584,12 @@ function App() {
                   <Stack spacing={0}>
                     <div style={{ padding: '1rem' }}>
                       <Image
-                        src="https://m.media-amazon.com/images/I/81XeVWWyUUL.jpg"
+                        src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
                         height={200}
                         fit="contain"
                         alt="Product"
                       />
-                      <Text weight={500} align="center" size="sm" mt="md">Sony Alpha A6400 Mirrorless Camera with 16-50mm Lens</Text>
+                      <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
                       <Group position="center" mt="md" spacing="xs">
                         <PriceDisplay 
                           price={currentMetric.materialized_view_price}
@@ -609,12 +609,12 @@ function App() {
                   <Stack spacing={0}>
                     <div style={{ padding: '1rem' }}>
                       <Image
-                        src="https://m.media-amazon.com/images/I/81XeVWWyUUL.jpg"
+                        src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
                         height={200}
                         fit="contain"
                         alt="Product"
                       />
-                      <Text weight={500} align="center" size="sm" mt="md">Sony Alpha A6400 Mirrorless Camera with 16-50mm Lens</Text>
+                      <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
                       <Group position="center" mt="md" spacing="xs">
                         <PriceDisplay 
                           price={currentMetric.materialize_price}
