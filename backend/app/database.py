@@ -189,22 +189,25 @@ class MaterializeConnection(asyncpg.Connection):
         self._cleanup_lock = asyncio.Lock()
 
     def _cleanup(self):
-        # Minimal cleanup for Materialize connections - synchronous version
+        # Skip cleanup if already closed
         if self._closed:
             return
 
         try:
-            # Create a new event loop for cleanup if needed
             loop = asyncio.get_event_loop()
             
             async def safe_cleanup():
+                if self._closed:
+                    return
+                    
                 async with self._cleanup_lock:
                     if not self._closed:
                         try:
-                            await self.execute("ROLLBACK")
-                        except Exception:
-                            # Ignore errors during cleanup
-                            pass
+                            # Only try to execute ROLLBACK if we have a valid protocol
+                            if hasattr(self, '_protocol') and self._protocol is not None:
+                                await self.execute("ROLLBACK")
+                        except Exception as e:
+                            logger.debug(f"Ignoring error during cleanup: {str(e)}")
                         finally:
                             self._closed = True
 
@@ -227,13 +230,15 @@ class MaterializeConnection(asyncpg.Connection):
             async with self._cleanup_lock:
                 if not self._closed:
                     try:
-                        await self.execute("ROLLBACK")
-                    except Exception:
-                        # Ignore errors during cleanup
-                        pass
+                        # Only try to execute ROLLBACK if we have a valid protocol
+                        if hasattr(self, '_protocol') and self._protocol is not None:
+                            await self.execute("ROLLBACK")
+                    except Exception as e:
+                        logger.debug(f"Ignoring error during close: {str(e)}")
                     finally:
                         self._closed = True
-                        await super().close(timeout=timeout)
+                        # Call parent close without timeout to avoid additional cleanup
+                        await super().close(timeout=None)
         except Exception as e:
             logger.error(f"Error during Materialize connection close: {str(e)}")
             self._closed = True
@@ -247,9 +252,8 @@ class MaterializeConnection(asyncpg.Connection):
         pass
 
     async def reset(self, *, timeout=None):
-        # Simplified reset that only sets the isolation level
-        if not self._closed:
-            await self.execute(f"SET TRANSACTION_ISOLATION TO '{current_isolation_level}'")
+        # Skip reset for Materialize connections
+        pass
 
 async def init_pools():
     """Initialize connection pools with proper limits and error handling"""
@@ -261,9 +265,9 @@ async def init_pools():
             try:
                 if pg_pool and pg_pool._closing:
                     try:
-                        await pg_pool.close()
-                    except Exception:
-                        pass
+                        await asyncio.wait_for(pg_pool.close(), timeout=5.0)
+                    except Exception as e:
+                        logger.warning(f"Error closing existing PostgreSQL pool: {e}")
                     pg_pool = None
                     
                 # Log connection parameters (excluding sensitive info)
@@ -274,19 +278,24 @@ async def init_pools():
                 
                 # First try a quick connection to test connectivity
                 logger.debug("Testing initial PostgreSQL connectivity...")
-                test_conn = await asyncio.wait_for(
-                    asyncpg.connect(
-                        user=db_user,
-                        password=os.getenv('DB_PASSWORD', 'postgres'),
-                        database=db_name,
-                        host=db_host,
-                        command_timeout=5.0
-                    ),
-                    timeout=5.0
-                )
-                await test_conn.close()
-                logger.debug("Initial PostgreSQL connectivity test successful")
-                
+                test_conn = None
+                try:
+                    test_conn = await asyncio.wait_for(
+                        asyncpg.connect(
+                            user=db_user,
+                            password=os.getenv('DB_PASSWORD', 'postgres'),
+                            database=db_name,
+                            host=db_host,
+                            command_timeout=5.0
+                        ),
+                        timeout=5.0
+                    )
+                    await test_conn.execute('SELECT 1')
+                    logger.debug("Initial PostgreSQL connectivity test successful")
+                finally:
+                    if test_conn:
+                        await test_conn.close()
+
                 logger.debug("Creating PostgreSQL pool...")
                 # Create the pool with a shorter timeout
                 pg_pool = await asyncio.wait_for(
@@ -319,13 +328,19 @@ async def init_pools():
             except asyncio.TimeoutError as e:
                 logger.error("Timeout while creating PostgreSQL pool", exc_info=True)
                 if pg_pool:
-                    await pg_pool.close()
+                    try:
+                        await asyncio.wait_for(pg_pool.close(), timeout=5.0)
+                    except Exception:
+                        pass
                     pg_pool = None
                 raise Exception(f"PostgreSQL connection timed out: {str(e)}") from e
             except Exception as e:
                 logger.error(f"Failed to create PostgreSQL pool: {str(e)}", exc_info=True)
                 if pg_pool:
-                    await pg_pool.close()
+                    try:
+                        await asyncio.wait_for(pg_pool.close(), timeout=5.0)
+                    except Exception:
+                        pass
                     pg_pool = None
                 raise Exception(f"PostgreSQL pool creation failed: {str(e)}") from e
 
@@ -333,9 +348,9 @@ async def init_pools():
             try:
                 if mz_pool and mz_pool._closing:
                     try:
-                        await mz_pool.close()
-                    except Exception:
-                        pass
+                        await asyncio.wait_for(mz_pool.close(), timeout=5.0)
+                    except Exception as e:
+                        logger.warning(f"Error closing existing Materialize pool: {e}")
                     mz_pool = None
                     
                 mz_host = os.getenv('MZ_HOST', 'localhost')
@@ -347,20 +362,25 @@ async def init_pools():
                 
                 # First try a quick connection to test connectivity
                 logger.debug("Testing initial Materialize connectivity...")
-                test_conn = await asyncio.wait_for(
-                    asyncpg.connect(
-                        user=mz_user,
-                        password=os.getenv('MZ_PASSWORD', 'materialize'),
-                        database=mz_database,
-                        host=mz_host,
-                        port=mz_port,
-                        command_timeout=5.0,
-                        connection_class=MaterializeConnection
-                    ),
-                    timeout=5.0
-                )
-                await test_conn.close()
-                logger.debug("Initial Materialize connectivity test successful")
+                test_conn = None
+                try:
+                    test_conn = await asyncio.wait_for(
+                        asyncpg.connect(
+                            user=mz_user,
+                            password=os.getenv('MZ_PASSWORD', 'materialize'),
+                            database=mz_database,
+                            host=mz_host,
+                            port=mz_port,
+                            command_timeout=5.0,
+                            connection_class=MaterializeConnection
+                        ),
+                        timeout=5.0
+                    )
+                    await test_conn.execute('SELECT 1')
+                    logger.debug("Initial Materialize connectivity test successful")
+                finally:
+                    if test_conn:
+                        await test_conn.close()
                 
                 logger.debug("Creating Materialize pool...")
                 mz_pool = await asyncio.wait_for(
@@ -392,18 +412,24 @@ async def init_pools():
                 await asyncio.wait_for(test_mz_pool(), timeout=5.0)
                 logger.debug("Materialize pool test successful")
                 
-            except (asyncio.TimeoutError, ConnectionRefusedError) as e:
-                logger.error(f"Connection error with Materialize: {str(e)}", exc_info=True)
+            except asyncio.TimeoutError as e:
+                logger.error("Timeout while creating Materialize pool", exc_info=True)
                 if mz_pool:
-                    await mz_pool.close()
+                    try:
+                        await asyncio.wait_for(mz_pool.close(), timeout=5.0)
+                    except Exception:
+                        pass
                     mz_pool = None
-                logger.warning("Continuing without Materialize pool")
+                raise Exception(f"Materialize connection timed out: {str(e)}") from e
             except Exception as e:
                 logger.error(f"Failed to create Materialize pool: {str(e)}", exc_info=True)
                 if mz_pool:
-                    await mz_pool.close()
+                    try:
+                        await asyncio.wait_for(mz_pool.close(), timeout=5.0)
+                    except Exception:
+                        pass
                     mz_pool = None
-                logger.warning("Continuing without Materialize pool")
+                raise Exception(f"Materialize pool creation failed: {str(e)}") from e
         
         logger.debug("Pool initialization completed")
 
