@@ -474,26 +474,6 @@ function App() {
           </Paper>
         )}
         <Stack spacing="md">
-          <Group>
-            <Button
-              onClick={toggleIsolation}
-              variant="outline"
-              color="violet"
-              disabled={isIsolationLoading}
-            >
-              {isIsolationLoading
-                ? "Changing Isolation Level..."
-                : `Switch to ${isolationLevel === 'serializable' ? 'Strict Serializable' : 'Serializable'}`
-              }
-            </Button>
-          </Group>
-
-          <Group spacing="md">
-            <div>View Index: <Badge color={indexExists ? "green" : "red"}>{indexExists ? "Enabled" : "Disabled"}</Badge></div>
-            <div>Isolation Level: <Badge color="violet" variant="light">{isolationLevel ? isolationLevel.replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'}</Badge></div>
-            <div>Database Size: <Badge color="blue" variant="light">{databaseSize ? `${databaseSize.toFixed(2)} GB` : 'Unknown'}</Badge></div>
-          </Group>
-
           <Paper p="md" withBorder>
             <Text size="lg" weight={500} mb="md">Scenario Selection</Text>
             <Group>
@@ -568,6 +548,7 @@ function App() {
    </span>
 
 </pre>
+                    <div>Database Size: <Badge color="blue" variant="light">{databaseSize ? `${databaseSize.toFixed(2)} GB` : 'Unknown'}</Badge></div>
                   </Accordion.Panel>
                 </Accordion.Item>
               </Accordion>
@@ -904,6 +885,27 @@ function App() {
             </Paper>
           )}
         </Stack>
+        <Accordion defaultValue={null} mt="md">
+          <Accordion.Item value="advanced">
+            <Accordion.Control>Advanced</Accordion.Control>
+            <Accordion.Panel>
+              <Group>
+                <Button
+                  onClick={toggleIsolation}
+                  variant="outline"
+                  color="violet"
+                  disabled={isIsolationLoading}
+                >
+                  {isIsolationLoading
+                    ? "Changing Isolation Level..."
+                    : `Switch to ${isolationLevel === 'serializable' ? 'Strict Serializable' : 'Serializable'}`
+                  }
+                </Button>
+                <div>Isolation Level: <Badge color="violet" variant="light">{isolationLevel ? isolationLevel.replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'}</Badge></div>
+              </Group>
+            </Accordion.Panel>
+          </Accordion.Item>
+        </Accordion>
       </Container>
     </MantineProvider>
   );
