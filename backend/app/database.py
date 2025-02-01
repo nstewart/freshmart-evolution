@@ -1194,8 +1194,8 @@ async def continuous_query_load():
         """Get concurrency limits based on index status"""
         has_index = await check_materialize_index_exists()
         return {
-            'view': 5,     # PostgreSQL View - moderate concurrency
-            'materialized_view': 5,      # Changed from 'mv' - Materialized View
+            'view': 2,     # PostgreSQL View - moderate concurrency
+            'materialized_view': 2,      # Changed from 'mv' - Materialized View
             'materialize': 5 if has_index else 1  # Materialize - high concurrency with index
         }
     

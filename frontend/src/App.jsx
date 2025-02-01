@@ -762,71 +762,73 @@ function App() {
             </LineChart>
           </Paper>
 
-          <Paper p="md" withBorder>
-            <Group position="apart" mb="md">
-              <Text size="lg" weight={500}>Replication and Refresh Status</Text>
-              <Group>
-                {scenarios.materialize && (
-                  <Group>
-                    <div>Current Replication Lag:</div>
-                    <Badge color={lagStatus.color} size="lg" variant="filled">
-                      {currentMetric.materialize_freshness?.toFixed(3)}s ({lagStatus.label})
-                    </Badge>
-                  </Group>
-                )}
-                {scenarios.materializeView && (
-                  <Group>
-                    <div>Cache Rehydration Time Stats:</div>
-                    <Text size="sm">
-                      Max: {stats.mvRefresh.max.toFixed(2)}ms | 
-                      Avg: {stats.mvRefresh.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}ms | 
-                      P99: {stats.mvRefresh.p99.toFixed(2)}ms
-                    </Text>
-                  </Group>
-                )}
+          {(scenarios.materializeView || scenarios.materialize) && (
+            <Paper p="md" withBorder>
+              <Group position="apart" mb="md">
+                <Text size="lg" weight={500}>Replication and Refresh Status</Text>
+                <Group>
+                  {scenarios.materialize && (
+                    <Group>
+                      <div>Current Replication Lag:</div>
+                      <Badge color={lagStatus.color} size="lg" variant="filled">
+                        {currentMetric.materialize_freshness?.toFixed(3)}s ({lagStatus.label})
+                      </Badge>
+                    </Group>
+                  )}
+                  {scenarios.materializeView && (
+                    <Group>
+                      <div>Cache Rehydration Time Stats:</div>
+                      <Text size="sm">
+                        Max: {stats.mvRefresh.max.toFixed(2)}ms | 
+                        Avg: {stats.mvRefresh.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}ms | 
+                        P99: {stats.mvRefresh.p99.toFixed(2)}ms
+                      </Text>
+                    </Group>
+                  )}
+                </Group>
               </Group>
-            </Group>
-            <LineChart width={800} height={200} data={metrics}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="timestamp"
-                type="number"
-                domain={['dataMin', 'dataMax']}
-                tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                scale="time"
-                interval="preserveStartEnd"
-                minTickGap={50}
-              />
-              <YAxis />
-              <Tooltip
-                labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                formatter={(value) => `${value?.toFixed(3) || 'N/A'}s`}
-              />
-              <Legend />
-              {scenarios.materializeView && (
-                <Line
-                  type="monotone"
-                  dataKey="materialized_view_freshness"
-                  name="Cached Table Refresh Age"
-                  stroke="#82ca9d"
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={true}
+              <LineChart width={800} height={200} data={metrics}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="timestamp"
+                  type="number"
+                  domain={['dataMin', 'dataMax']}
+                  tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                  scale="time"
+                  interval="preserveStartEnd"
+                  minTickGap={50}
                 />
-              )}
-              {scenarios.materialize && (
-                <Line
-                  type="monotone"
-                  dataKey="materialize_freshness"
-                  name="Materialize Replication Lag"
-                  stroke="#ff7300"
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={true}
+                <YAxis />
+                <Tooltip
+                  labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                  formatter={(value) => `${value?.toFixed(3) || 'N/A'}s`}
                 />
-              )}
-            </LineChart>
-          </Paper>
+                <Legend />
+                {scenarios.materializeView && (
+                  <Line
+                    type="monotone"
+                    dataKey="materialized_view_freshness"
+                    name="Cached Table Refresh Age"
+                    stroke="#82ca9d"
+                    dot={false}
+                    isAnimationActive={false}
+                    connectNulls={true}
+                  />
+                )}
+                {scenarios.materialize && (
+                  <Line
+                    type="monotone"
+                    dataKey="materialize_freshness"
+                    name="Materialize Replication Lag"
+                    stroke="#ff7300"
+                    dot={false}
+                    isAnimationActive={false}
+                    connectNulls={true}
+                  />
+                )}
+              </LineChart>
+            </Paper>
+          )}
 
           {showTTCA && (
             <Paper p="md" withBorder>
