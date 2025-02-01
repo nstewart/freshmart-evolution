@@ -92,6 +92,3 @@ FROM dynamic_pricing dp;
 CREATE INDEX ON dynamic_pricing (product_id);
 
 CREATE INDEX ON heartbeats (id DESC);
-
-SELECT * FROM dynamic_pricing WHERE product_id = 1;
-

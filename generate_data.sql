@@ -1,6 +1,10 @@
+-- Reset the product ID sequence
+ALTER SEQUENCE products_product_id_seq RESTART WITH 1;
+
 -- Add more products (1K products)
-INSERT INTO products (product_name, base_price, category_id, supplier_id, available)
+INSERT INTO products (product_id, product_name, base_price, category_id, supplier_id, available)
 SELECT 
+    i,  -- explicitly set product_id
     'Product ' || i || ' ' || (
         CASE (i % 5) 
             WHEN 0 THEN 'Premium'
