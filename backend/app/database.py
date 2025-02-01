@@ -18,6 +18,7 @@ load_dotenv()
 latest_heartbeat = {"insert_time": None, "id": None, "ts": None}
 current_isolation_level = "serializable"  # Track the desired isolation level
 refresh_interval = 30  # Default refresh interval in seconds
+mz_schema = os.getenv('MZ_SCHEMA', 'public')  # Get schema from env with default
 
 # Connection pools
 pg_pool = None
@@ -835,12 +836,12 @@ async def get_query_metrics(product_id: int) -> Dict:
                     
                     # Use 5-minute timeout for the query
                     mz_heartbeat = await asyncio.wait_for(
-                        mz_conn.fetchrow("""
+                        mz_conn.fetchrow(f'''
                             SELECT id, ts
-                            FROM nate_freshmart.heartbeats
-                            ORDER BY id DESC
+                            FROM {mz_schema}.heartbeats
+                            ORDER BY ts DESC
                             LIMIT 1
-                        """),
+                        '''),
                         timeout=300.0  # 5 minute timeout
                     )
                     logger.debug(f"Materialize heartbeat result: {mz_heartbeat}")
@@ -978,37 +979,19 @@ async def toggle_promotion(product_id: int):
         await release_connection(conn)
 
 async def toggle_view_index() -> Dict:
-    conn = await get_materialize_connection()
     try:
-        print("Checking if index exists...")
-        # Check if index exists using the correct Materialize system catalog
-        index_exists = await conn.fetchval("""
-            SELECT TRUE 
-            FROM mz_catalog.mz_indexes
-            WHERE name = 'dynamic_pricing_product_id_idx'
-        """)
-        print(f"Index exists: {index_exists}")
-        
+        conn = await get_materialize_connection()
         try:
-            if index_exists:
-                print("Attempting to drop index...")
-                await conn.execute("DROP INDEX nate_freshmart.dynamic_pricing_product_id_idx")
-                status = "removed"
-                print("Index dropped successfully")
+            # Check if index exists
+            if await check_materialize_index_exists():
+                await conn.execute(f"DROP INDEX {mz_schema}.dynamic_pricing_product_id_idx")
+                return {"message": "Index dropped successfully", "index_exists": False}
             else:
-                print("Attempting to create index...")
-                await conn.execute("CREATE INDEX dynamic_pricing_product_id_idx ON nate_freshmart.dynamic_pricing (product_id)")
-                status = "created"
-                print("Index created successfully")
-                
-            return {
-                "status": "success",
-                "action": status,
-                "index_exists": not index_exists  # Return the new state
-            }
+                await conn.execute(f"CREATE INDEX dynamic_pricing_product_id_idx ON {mz_schema}.dynamic_pricing (product_id)")
+                return {"message": "Index created successfully", "index_exists": True}
         except Exception as e:
             print(f"Error toggling index: {str(e)}")
-            raise Exception(f"Failed to {status} index: {str(e)}")
+            raise Exception(f"Failed to toggle index: {str(e)}")
     except Exception as e:
         print(f"Outer error in toggle_view_index: {str(e)}")
         raise
@@ -1148,19 +1131,19 @@ async def continuous_query_load():
     
     # Define queries with explicit column selection
     QUERIES = {
-        'view': """
+        'view': f"""
             SELECT product_id, adjusted_price, last_update_time
             FROM dynamic_pricing 
             WHERE product_id = $1
         """,
-        'materialized_view': """
+        'materialized_view': f"""
             SELECT product_id, adjusted_price, last_update_time
             FROM mv_dynamic_pricing 
             WHERE product_id = $1
         """,
-        'materialize': """
+        'materialize': f"""
             SELECT product_id, adjusted_price, last_update_time
-            FROM nate_freshmart.dynamic_pricing 
+            FROM {mz_schema}.dynamic_pricing 
             WHERE product_id = $1
         """
     }
@@ -1272,7 +1255,7 @@ async def update_freshness_metrics():
             
             # Update MV freshness
             try:
-                mv_stats = await pg_pool.fetchrow("""
+                mv_stats = await pg_pool.fetchrow(f"""
                     SELECT 
                         last_refresh,
                         refresh_duration,
@@ -1303,17 +1286,17 @@ async def update_freshness_metrics():
             # Update Materialize freshness
             if mz_pool is not None:
                 try:
-                    pg_heartbeat = await pg_pool.fetchrow("""
-                        SELECT id, ts, NOW() as current_ts
-                        FROM heartbeats
-                        ORDER BY id DESC
+                    pg_heartbeat = await pg_pool.fetchrow(f"""
+                        SELECT id, ts
+                        FROM {mz_schema}.heartbeats
+                        ORDER BY ts DESC
                         LIMIT 1
                     """)
                     
-                    mz_heartbeat = await mz_pool.fetchrow("""
+                    mz_heartbeat = await mz_pool.fetchrow(f"""
                         SELECT id, ts
-                        FROM nate_freshmart.heartbeats
-                        ORDER BY id DESC
+                        FROM {mz_schema}.heartbeats
+                        ORDER BY ts DESC
                         LIMIT 1
                     """)
                     

@@ -86,8 +86,10 @@ dynamic_pricing AS (
 
 SELECT 
     dp.product_id,
-    dp.base_price * dp.popularity_adjustment * dp.promotion_discount * dp.stock_adjustment * dp.demand_multiplier * dp.additional_discount AS adjusted_price
-FROM dynamic_pricing dp;
+    dp.base_price * dp.popularity_adjustment * dp.promotion_discount * dp.stock_adjustment * dp.demand_multiplier * dp.additional_discount AS adjusted_price,
+    p.last_update_time
+FROM dynamic_pricing dp
+JOIN products p ON dp.product_id = p.product_id;
 
 CREATE INDEX ON dynamic_pricing (product_id);
 
