@@ -1,7 +1,7 @@
 -- Reset the product ID sequence
 ALTER SEQUENCE products_product_id_seq RESTART WITH 1;
 
--- Add more products (1K products)
+-- Add more products (100K products)
 INSERT INTO products (product_id, product_name, base_price, category_id, supplier_id, available)
 SELECT 
     i,  -- explicitly set product_id
@@ -18,22 +18,22 @@ SELECT
     1 + (i % 10),  -- 10 categories
     1 + (i % 5),   -- 5 suppliers
     random() < 0.8  -- 80% chance of being available
-FROM generate_series(1, 1000) i
+FROM generate_series(1, 100000) i
 ON CONFLICT DO NOTHING;
 
 -- Create a temporary table with valid product IDs
 CREATE TEMP TABLE valid_product_ids AS
 SELECT product_id FROM products;
 
--- Add sales history in batches (100K sales records)
+-- Add sales history in batches (10M sales records)
 DO $$
 DECLARE
-    batch_size INT := 10000;  -- 10K records per batch
-    total_records INT := 100000;  -- 100K total records
+    batch_size INT := 100000;  -- 100K records per batch
+    total_records INT := 10000000;  -- 10M total records
     batch INT;
 BEGIN
-    FOR batch IN 1..10 LOOP
-        RAISE NOTICE 'Inserting sales batch % of 10...', batch;
+    FOR batch IN 1..100 LOOP
+        RAISE NOTICE 'Inserting sales batch % of 100...', batch;
         INSERT INTO sales (product_id, sale_date, price, sale_price)
         SELECT 
             product_id,
@@ -50,11 +50,11 @@ BEGIN
     END LOOP;
 END $$;
 
--- Add promotions (5K promotions)
+-- Add promotions (500K promotions)
 DO $$
 DECLARE
-    batch_size INT := 1000;  -- 1K records per batch
-    total_records INT := 5000;  -- 5K total records
+    batch_size INT := 100000;  -- 100K records per batch
+    total_records INT := 500000;  -- 500K total records
     batch INT;
 BEGIN
     FOR batch IN 1..5 LOOP
@@ -77,11 +77,11 @@ BEGIN
     END LOOP;
 END $$;
 
--- Add inventory records (10K inventory records)
+-- Add inventory records (1M inventory records)
 DO $$
 DECLARE
-    batch_size INT := 2000;  -- 2K records per batch
-    total_records INT := 10000;  -- 10K total records
+    batch_size INT := 200000;  -- 200K records per batch
+    total_records INT := 1000000;  -- 1M total records
     batch INT;
 BEGIN
     FOR batch IN 1..5 LOOP
