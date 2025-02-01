@@ -8,6 +8,7 @@ import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import datetime
+import subprocess
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -1194,7 +1195,7 @@ async def continuous_query_load():
         """Get concurrency limits based on index status"""
         has_index = await check_materialize_index_exists()
         return {
-            'view': 2,     # PostgreSQL View - moderate concurrency
+            'view': 1,     # PostgreSQL View - moderate concurrency
             'materialized_view': 2,      # Changed from 'mv' - Materialized View
             'materialize': 5 if has_index else 1  # Materialize - high concurrency with index
         }
@@ -1419,3 +1420,33 @@ async def startup_event():
         raise
     
     logger.info("=== Application Startup Completed Successfully ===")
+
+async def get_postgres_cpu_stats():
+    """Get CPU usage stats for the PostgreSQL container"""
+    try:
+        # Get stats from docker container
+        result = subprocess.run(
+            ['docker', 'stats', 'my_postgres', '--no-stream', '--format', '{{.CPUPerc}}'],
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode != 0:
+            logger.error(f"Error getting Docker stats: {result.stderr}")
+            return None
+            
+        # Parse the CPU percentage (removes the % sign and converts to float)
+        cpu_str = result.stdout.strip().rstrip('%')
+        if not cpu_str:
+            logger.error("Empty CPU percentage string")
+            return None
+            
+        try:
+            cpu_usage = float(cpu_str)
+            return cpu_usage
+        except ValueError as e:
+            logger.error(f"Error converting CPU string '{cpu_str}' to float: {str(e)}")
+            return None
+    except Exception as e:
+        logger.error(f"Error getting PostgreSQL CPU stats: {str(e)}")
+        return None

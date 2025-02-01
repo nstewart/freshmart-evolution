@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 from . import database
 import logging
+import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -124,6 +125,37 @@ async def get_database_size():
         raise HTTPException(
             status_code=500,
             detail="Failed to get database size"
+        )
+
+@app.get("/postgres-cpu")
+async def get_postgres_cpu():
+    """Endpoint to get PostgreSQL CPU usage"""
+    try:
+        cpu_usage = await database.get_postgres_cpu_stats()
+        if cpu_usage is None:
+            raise HTTPException(status_code=500, detail="Failed to get CPU stats")
+            
+        return {
+            "timestamp": int(time.time() * 1000),
+            "cpu_usage": cpu_usage
+        }
+    except Exception as e:
+        logger.error(f"Error in CPU stats endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/current-refresh-interval")
+async def get_current_refresh_interval():
+    """Get the current refresh interval for the materialized view"""
+    try:
+        return {
+            "status": "success",
+            "refresh_interval": database.refresh_interval
+        }
+    except Exception as e:
+        logger.error(f"Error getting refresh interval: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get refresh interval"
         )
 
 if __name__ == "__main__":
