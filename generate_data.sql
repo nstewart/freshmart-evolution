@@ -1,4 +1,4 @@
--- Add more products (100K products)
+-- Add more products (1K products)
 INSERT INTO products (product_name, base_price, category_id, supplier_id, available)
 SELECT 
     'Product ' || i || ' ' || (
@@ -14,18 +14,18 @@ SELECT
     1 + (i % 10),  -- 10 categories
     1 + (i % 5),   -- 5 suppliers
     random() < 0.8  -- 80% chance of being available
-FROM generate_series(1, 100000) i
+FROM generate_series(1, 1000) i
 ON CONFLICT DO NOTHING;
 
 -- Create a temporary table with valid product IDs
 CREATE TEMP TABLE valid_product_ids AS
 SELECT product_id FROM products;
 
--- Add sales history in batches (10M sales records)
+-- Add sales history in batches (100K sales records)
 DO $$
 DECLARE
-    batch_size INT := 1000000;  -- 1M records per batch
-    total_records INT := 10000000;  -- 10M total records
+    batch_size INT := 10000;  -- 10K records per batch
+    total_records INT := 100000;  -- 100K total records
     batch INT;
 BEGIN
     FOR batch IN 1..10 LOOP
@@ -46,19 +46,21 @@ BEGIN
     END LOOP;
 END $$;
 
--- Add promotions (500K promotions)
+-- Add promotions (5K promotions)
 DO $$
 DECLARE
-    batch_size INT := 100000;  -- 100K records per batch
-    total_records INT := 500000;  -- 500K total records
+    batch_size INT := 1000;  -- 1K records per batch
+    total_records INT := 5000;  -- 5K total records
     batch INT;
 BEGIN
     FOR batch IN 1..5 LOOP
         RAISE NOTICE 'Inserting promotions batch % of 5...', batch;
-        INSERT INTO promotions (product_id, promotion_discount, active, updated_at)
+        INSERT INTO promotions (product_id, promotion_discount, start_date, end_date, active, updated_at)
         SELECT 
             product_id,
             (random() * 50)::numeric(10,2),
+            NOW() - (random() * 30 * interval '1 day'),
+            NOW() + (random() * 30 * interval '1 day'),
             random() < 0.3,
             NOW() - (random() * 30 * interval '1 day')
         FROM (
@@ -71,20 +73,21 @@ BEGIN
     END LOOP;
 END $$;
 
--- Add inventory records (1M inventory records)
+-- Add inventory records (10K inventory records)
 DO $$
 DECLARE
-    batch_size INT := 200000;  -- 200K records per batch
-    total_records INT := 1000000;  -- 1M total records
+    batch_size INT := 2000;  -- 2K records per batch
+    total_records INT := 10000;  -- 10K total records
     batch INT;
 BEGIN
     FOR batch IN 1..5 LOOP
         RAISE NOTICE 'Inserting inventory batch % of 5...', batch;
-        INSERT INTO inventory (product_id, warehouse_id, stock)
+        INSERT INTO inventory (product_id, warehouse_id, stock, restock_date)
         SELECT 
             product_id,
             1 + (row_number() over ())::int % 5 + 1,
-            (random() * 1000)::int
+            (random() * 1000)::int,
+            NOW() - (random() * 30 * interval '1 day')
         FROM (
             SELECT product_id 
             FROM valid_product_ids 

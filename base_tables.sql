@@ -269,4 +269,4 @@ ALTER TABLE sales REPLICA IDENTITY FULL;
 ALTER TABLE suppliers REPLICA IDENTITY FULL;
 ALTER TABLE heartbeats REPLICA IDENTITY FULL;
 
-CREATE PUBLICATION mz_source FOR TABLE categories, inventory, materialized_view_refresh_log, products, promotions, sales, suppliers;
+CREATE PUBLICATION mz_source FOR TABLE categories, inventory, materialized_view_refresh_log, products, promotions, sales, suppliers, heartbeats;

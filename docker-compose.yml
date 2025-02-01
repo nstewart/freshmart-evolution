@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:latest
+    container_name: my_postgres
+    environment:
+      POSTGRES_PASSWORD: mysecret
+    ports:
+      - "127.0.0.1:5432:5432"
+    command: ["postgres", "-c", "wal_level=logical"]
+
+  materialize:
+    image: materialize/materialized:latest
+    container_name: my_materialize
+    depends_on:
+      - postgres
+    ports:
+      - "127.0.0.1:6874:6874"
+      - "127.0.0.1:6875:6875"
+      - "127.0.0.1:6876:6876"
+    # Optional: add extra arguments if needed, e.g.:
+    # command: ["--no-telemetry"]
