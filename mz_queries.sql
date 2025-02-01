@@ -1,3 +1,16 @@
+CREATE SECRET pgpass AS 'mysecret';
+​​CREATE CONNECTION pg_connection TO POSTGRES (
+   HOST 'host.docker.internal',
+   PORT 5432,
+   USER 'postgres',
+   PASSWORD SECRET pgpass,
+   DATABASE 'freshmart'
+);
+CREATE SOURCE freshmart
+FROM POSTGRES CONNECTION pg_connection (PUBLICATION 'mz_source')
+FOR ALL TABLES;
+
+
 CREATE VIEW dynamic_pricing AS
 WITH recent_prices AS (
     SELECT grp.product_id, AVG(price) AS avg_price

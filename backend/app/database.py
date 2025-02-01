@@ -17,7 +17,7 @@ load_dotenv()
 # Global variables
 latest_heartbeat = {"insert_time": None, "id": None, "ts": None}
 current_isolation_level = "serializable"  # Track the desired isolation level
-refresh_interval = 30  # Default refresh interval in seconds
+refresh_interval = 60  # Default refresh interval changed from 30 to 60 seconds
 mz_schema = os.getenv('MZ_SCHEMA', 'public')  # Get schema from env with default
 
 # Connection pools
@@ -287,9 +287,9 @@ async def init_pools():
                             password=os.getenv('DB_PASSWORD', 'postgres'),
                             database=db_name,
                             host=db_host,
-                            command_timeout=5.0
+                            command_timeout=30.0
                         ),
-                        timeout=5.0
+                        timeout=30.0
                     )
                     await test_conn.execute('SELECT 1')
                     logger.debug("Initial PostgreSQL connectivity test successful")
@@ -307,14 +307,14 @@ async def init_pools():
                         host=db_host,
                         min_size=2,  # Start with fewer connections
                         max_size=20,
-                        command_timeout=5.0,  # Shorter timeout for commands
+                        command_timeout=120.0,  # Increased from 30.0 to 120.0
                         server_settings={
                             'application_name': 'freshmart_pg',
-                            'statement_timeout': '5s',
-                            'idle_in_transaction_session_timeout': '5s'
+                            'statement_timeout': '120s',  # Increased from 30s to 120s
+                            'idle_in_transaction_session_timeout': '120s'  # Increased from 30s to 120s
                         }
                     ),
-                    timeout=10.0  # Overall timeout for pool creation
+                    timeout=120.0  # Increased from 30.0 to 120.0
                 )
                 logger.debug("PostgreSQL pool object created")
                 
@@ -391,17 +391,17 @@ async def init_pools():
                         database=mz_database,
                         host=mz_host,
                         port=mz_port,
-                        min_size=2,  # Start with fewer connections
-                        max_size=20,  # Reduced from 50 to prevent connection exhaustion
-                        command_timeout=10.0,  # Increased from 5.0
+                        min_size=2,
+                        max_size=20,
+                        command_timeout=120.0,  # Increased from 30.0 to 120.0
                         connection_class=MaterializeConnection,
                         server_settings={
                             'application_name': 'freshmart_mz',
-                            'statement_timeout': '10s',  # Increased from 5s
-                            'idle_in_transaction_session_timeout': '10s'  # Added timeout
+                            'statement_timeout': '120s',  # Increased from 30s to 120s
+                            'idle_in_transaction_session_timeout': '120s'  # Increased from 30s to 120s
                         }
                     ),
-                    timeout=20.0  # Increased from 10.0
+                    timeout=120.0  # Increased from 30.0 to 120.0
                 )
                 logger.debug("Materialize pool object created")
                 
@@ -496,7 +496,7 @@ async def get_materialize_connection():
             conn = await asyncio.wait_for(mz_pool.acquire(), timeout=300.0)
             
             # Set timeouts and isolation level
-            await conn.execute("SET statement_timeout TO '300s'")
+            await conn.execute("SET statement_timeout TO '120s'")
             await conn.execute(f"SET TRANSACTION_ISOLATION TO '{current_isolation_level}'")
             
             # Test the connection
@@ -697,7 +697,7 @@ async def measure_query_time(query: str, params: Tuple, pool, is_materialize: bo
     start_time = time.time()
     try:
         conn = await get_connection(pool, is_materialize)
-        timeout = 180.0
+        timeout = 120.0  # Increased from 30.0 to 120.0
         result = await conn.fetchrow(query, *params, timeout=timeout)
         duration = time.time() - start_time
         

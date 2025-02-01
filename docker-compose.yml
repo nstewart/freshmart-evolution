@@ -1,22 +1,59 @@
 version: '3.8'
+
 services:
   postgres:
     image: postgres:latest
     container_name: my_postgres
     environment:
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mysecret
+      POSTGRES_DB: postgres
     ports:
       - "127.0.0.1:5432:5432"
-    command: ["postgres", "-c", "wal_level=logical"]
+    command: 
+      - "postgres"
+      - "-c"
+      - "shared_buffers=2GB"
+      - "-c"
+      - "work_mem=256MB"
+      - "-c"
+      - "maintenance_work_mem=512MB"
+      - "-c"
+      - "effective_cache_size=6GB"
+      - "-c"
+      - "synchronous_commit=off"
+      - "-c"
+      - "checkpoint_timeout=1h"
+      - "-c"
+      - "max_wal_size=10GB"
+      - "-c"
+      - "wal_level=logical"
+      - "-c"
+      - "statement_timeout=0"  # Disable statement timeout at instance level
+      - "-c"
+      - "idle_in_transaction_session_timeout=0"  # Disable idle timeout
+    volumes:
+      - ./data:/data
+      - postgres_data:/var/lib/postgresql/data
+    shm_size: 1gb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   materialize:
     image: materialize/materialized:latest
     container_name: my_materialize
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
       - "127.0.0.1:6874:6874"
       - "127.0.0.1:6875:6875"
       - "127.0.0.1:6876:6876"
-    # Optional: add extra arguments if needed, e.g.:
-    # command: ["--no-telemetry"]
+
+volumes:
+  postgres_data:
+    driver: local
+
