@@ -1,22 +1,78 @@
-version: '3.8'
 services:
   postgres:
     image: postgres:latest
-    container_name: my_postgres
     environment:
       POSTGRES_PASSWORD: mysecret
     ports:
-      - "127.0.0.1:5432:5432"
+      - "5432:5432"
+    volumes:
+      - ./base_tables.sql:/docker-entrypoint-initdb.d/0001-base_tables.sql
+      - ./generate_data.sql:/docker-entrypoint-initdb.d/0002-generate_data.sql
     command: ["postgres", "-c", "wal_level=logical"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      # Data generation takes a while.
+      start_period: 120s
 
   materialize:
     image: materialize/materialized:latest
-    container_name: my_materialize
     depends_on:
       - postgres
     ports:
-      - "127.0.0.1:6874:6874"
-      - "127.0.0.1:6875:6875"
-      - "127.0.0.1:6876:6876"
+      - "6874:6874"
+      - "6875:6875"
+      - "6876:6876"
+    healthcheck:
+      test: ["CMD-SHELL", "curl http://localhost:6878/api/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     # Optional: add extra arguments if needed, e.g.:
     # command: ["--no-telemetry"]
+
+  materialize_init:
+    image: postgres:latest
+    volumes:
+      - ./mz_queries.sql:/usr/src/mz_queries.sql
+    depends_on:
+      postgres:
+        condition: service_healthy
+      materialize:
+        condition: service_healthy
+    command: "psql postgres://materialize@materialize:6875/materialize -f /usr/src/mz_queries.sql -v ON_ERROR_STOP=1"
+
+  backend:
+    build: backend
+    environment:
+      - DB_HOST=postgres
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=mysecret
+      - MZ_HOST=materialize
+      - MZ_PORT=6875
+      - MZ_USER=materialize
+      - MZ_PASSWORD=materialize
+      - MZ_NAME=materialize
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/usr/src/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      materialize_init:
+        condition: service_completed_successfully
+
+  frontend:
+    build: frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/usr/src/app
+    depends_on:
+      backend:
+        condition: service_started
