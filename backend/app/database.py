@@ -5,8 +5,7 @@ from typing import Dict, List, Tuple
 import asyncpg
 from dotenv import load_dotenv
 import logging
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import HTTPException
 import datetime
 import subprocess
 
@@ -112,17 +111,6 @@ pool_init_lock = asyncio.Lock()
 
 # Lock for stats updates
 stats_lock = asyncio.Lock()
-
-app = FastAPI()
-
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Frontend URL
-    allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
-)
 
 # Add CPU stats cache
 latest_cpu_stats = {
@@ -1011,7 +999,7 @@ async def toggle_promotion(product_id: int):
     finally:
         await release_connection(conn)
 
-async def toggle_view_index() -> Dict:
+async def toggle_view_index():
     try:
         conn = await get_materialize_connection()
         try:
@@ -1031,7 +1019,7 @@ async def toggle_view_index() -> Dict:
     finally:
         await release_connection(conn, is_materialize=True)
 
-async def get_view_index_status() -> bool:
+async def get_view_index_status():
     conn = await get_materialize_connection()
     try:
         index_exists = await conn.fetchval("""
@@ -1043,7 +1031,7 @@ async def get_view_index_status() -> bool:
     finally:
         await release_connection(conn, is_materialize=True)
 
-async def get_isolation_level() -> str:
+async def get_isolation_level():
     conn = await get_materialize_connection()
     try:
         level = await conn.fetchval("SHOW transaction_isolation")
@@ -1051,7 +1039,7 @@ async def get_isolation_level() -> str:
     finally:
         await release_connection(conn, is_materialize=True)
 
-async def toggle_isolation_level() -> Dict:
+async def toggle_isolation_level():
     global current_isolation_level
     conn = await get_materialize_connection()
     try:
@@ -1066,38 +1054,6 @@ async def toggle_isolation_level() -> Dict:
         }
     finally:
         await release_connection(conn, is_materialize=True)
-
-# Add a route to get the current refresh interval
-@app.get("/current-refresh-interval")
-async def get_current_refresh_interval():
-    """Get the current refresh interval for the materialized view"""
-    return {
-        "status": "success",
-        "refresh_interval": refresh_interval
-    }
-
-# Add a route to configure the refresh interval
-@app.post("/configure-refresh-interval/{interval}")
-async def configure_refresh_interval(interval: int):
-    """Configure the refresh interval for the materialized view"""
-    global refresh_interval
-    
-    # Input validation
-    if interval < 1:
-        logger.error(f"Invalid refresh interval requested: {interval}s (must be >= 1)")
-        raise HTTPException(status_code=400, detail="Interval must be at least 1 second")
-    
-    # Update the interval
-    old_interval = refresh_interval
-    refresh_interval = interval
-    
-    logger.info(f"Updated materialized view refresh interval from {old_interval}s to {interval}s")
-    return {
-        "status": "success",
-        "old_interval": old_interval,
-        "new_interval": interval,
-        "message": f"Refresh interval updated from {old_interval}s to {interval}s"
-    }
 
 async def check_materialize_index_exists():
     """Check if the Materialize index exists with proper error handling and retries"""
@@ -1487,119 +1443,13 @@ async def get_cpu_stats():
     
     return response
 
-# Update the CPU stats endpoint
-@app.get("/api/cpu-stats")
-async def get_containers_cpu_stats():
-    """Get CPU usage stats for both PostgreSQL and Materialize"""
-    logger.debug("CPU stats endpoint called")
-    stats = await get_cpu_stats()
-    logger.debug(f"Returning CPU stats: {stats}")
-    return stats
-
-# Update startup event to start the freshness metrics update task
-@app.on_event("startup")
-async def startup_event():
-    """Initialize the application state"""
-    global refresh_interval, pg_pool, mz_pool
-    logger.info("=== Starting Application Initialization ===")
-    refresh_interval = 30  # Default to 30 seconds
-    
-    # Initialize pools first
-    try:
-        logger.info("Step 1: Initializing database pools...")
-        logger.info("1.1: About to call init_pools()")
-        await init_pools()
-        if pg_pool:
-            logger.info("1.2: PostgreSQL pool initialized successfully")
-        if mz_pool:
-            logger.info("1.3: Materialize pool initialized successfully")
-        logger.info("Step 1: Database pools initialization completed")
-    except Exception as e:
-        logger.error(f"Failed to initialize pools: {str(e)}", exc_info=True)
-        # Continue even if Materialize pool fails
-        if pg_pool is None:
-            logger.error("PostgreSQL pool initialization failed - application cannot start")
-            raise
-    
-    # Force initial materialized view refresh
-    logger.info("Step 2: Performing initial materialized view refresh...")
-    try:
-        await refresh_materialized_view()
-        logger.info("Step 2: Initial materialized view refresh completed")
-    except Exception as e:
-        logger.error(f"Failed to perform initial materialized view refresh: {str(e)}", exc_info=True)
-        # Continue even if initial refresh fails
-    
-    # Start background tasks
-    logger.info("Step 3: Starting background tasks...")
-    background_tasks = []
-    
-    try:
-        logger.info("3.1: Starting heartbeat task")
-        heartbeat_task = asyncio.create_task(create_heartbeat(), name="heartbeat")
-        background_tasks.append(heartbeat_task)
-        logger.info("3.2: Heartbeat task created")
-        
-        logger.info("3.3: Starting materialized view refresh task")
-        mv_refresh_task = asyncio.create_task(auto_refresh_materialized_view(), name="mv_refresh")
-        background_tasks.append(mv_refresh_task)
-        logger.info("3.4: Materialized view refresh task created")
-        
-        logger.info("3.5: Starting continuous query load task")
-        query_load_task = asyncio.create_task(continuous_query_load(), name="query_load")
-        background_tasks.append(query_load_task)
-        logger.info("3.6: Continuous query load task created")
-        
-        logger.info("3.7: Starting freshness metrics task")
-        freshness_task = asyncio.create_task(update_freshness_metrics(), name="freshness_metrics")
-        background_tasks.append(freshness_task)
-        logger.info("3.8: Freshness metrics task created")
-
-        logger.info("3.9: Starting CPU stats collection task")
-        cpu_stats_task = asyncio.create_task(collect_cpu_stats(), name="cpu_stats")
-        background_tasks.append(cpu_stats_task)
-        logger.info("3.10: CPU stats collection task created")
-        
-        # Add explicit check for CPU stats task
-        await asyncio.sleep(1)  # Wait a moment for task to start
-        if not cpu_stats_task.done():
-            logger.info("CPU stats collection task is running")
-            # Force an initial CPU stats collection
-            stats = query_stats["cpu"]
-            logger.info(f"Initial CPU stats: {stats}")
-        else:
-            logger.error("CPU stats collection task failed to start")
-    except Exception as e:
-        logger.error(f"Error creating background tasks: {str(e)}", exc_info=True)
-        raise
-    
-    # Wait a short time to ensure tasks have started
-    logger.info("Step 4: Waiting for tasks to initialize...")
-    try:
-        await asyncio.sleep(1)
-        logger.info("Step 4: Initial wait completed")
-    except Exception as e:
-        logger.error(f"Error during initialization wait: {str(e)}", exc_info=True)
-        raise
-    
-    # Check if tasks are running
-    logger.info("Step 5: Checking task status...")
-    try:
-        for task in background_tasks:
-            task_name = task.get_name()
-            logger.info(f"5.1: Checking status of {task_name}")
-            
-            if task.done():
-                try:
-                    exc = task.exception()
-                    logger.error(f"5.2: Task {task_name} failed during startup: {exc}")
-                    raise exc
-                except asyncio.InvalidStateError:
-                    logger.warning(f"5.3: Task {task_name} completed unexpectedly during startup")
-            else:
-                logger.info(f"5.4: Task {task_name} is running")
-    except Exception as e:
-        logger.error(f"Error checking task status: {str(e)}", exc_info=True)
-        raise
-    
-    logger.info("=== Application Startup Completed Successfully ===")
+async def get_traffic_state():
+    """Get the current state of traffic toggles for all sources"""
+    logger.debug("Getting traffic state")
+    state = {
+        "view": traffic_enabled["view"],
+        "materialized_view": traffic_enabled["materialized_view"],
+        "materialize": traffic_enabled["materialize"]
+    }
+    logger.debug(f"Current traffic state: {state}")
+    return state

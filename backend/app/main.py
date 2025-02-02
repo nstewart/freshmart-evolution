@@ -116,12 +116,11 @@ async def get_view_index_status():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/database-size")
-async def get_database_size():
+async def get_database_size_endpoint():
+    """Get the current database size in GB"""
     try:
-        logger.debug("Received request for database size")
         size = await database.get_database_size()
-        logger.debug(f"Database size query returned: {size:.2f} GB")
-        return {"size_gb": round(size, 2)}
+        return {"size_gb": size}
     except Exception as e:
         logger.error(f"Error getting database size: {str(e)}")
         raise HTTPException(
@@ -144,42 +143,78 @@ async def get_current_refresh_interval():
             detail="Failed to get refresh interval"
         )
 
-@app.get("/api/cpu-stats")
-async def get_cpu_stats():
-    """Get CPU usage stats for both PostgreSQL and Materialize"""
+# Add traffic-related endpoints
+@app.get("/api/traffic-state")
+async def get_traffic_state():
+    """Get the current state of traffic toggles for all sources"""
     try:
-        logger.debug("CPU stats endpoint called")
+        logger.debug("Getting traffic state")
+        state = await database.get_traffic_state()
+        logger.debug(f"Current traffic state: {state}")
+        return state
+    except Exception as e:
+        logger.error(f"Error getting traffic state: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/toggle-traffic/{source}")
+async def toggle_traffic_endpoint(source: str):
+    """Toggle traffic for a specific source"""
+    try:
+        logger.debug(f"Toggling traffic for source: {source}")
+        result = await database.toggle_traffic(source)
+        logger.debug(f"Toggle result: {result}")
+        return result
+    except ValueError as e:
+        logger.error(f"Invalid source for traffic toggle: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error toggling traffic: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/cpu-stats")
+async def get_containers_cpu_stats():
+    """Get CPU usage stats for PostgreSQL and Materialize"""
+    try:
+        logger.debug("Getting CPU stats")
         stats = await database.get_cpu_stats()
-        logger.debug(f"Raw CPU stats: {stats}")
+        logger.debug(f"CPU stats: {stats}")
         return stats
     except Exception as e:
         logger.error(f"Error getting CPU stats: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/toggle-traffic/{source}")
-async def toggle_traffic(source: str):
-    """Toggle traffic for a specific source"""
+@app.get("/api/database-size")
+async def get_database_size_endpoint():
+    """Get the current database size in GB"""
     try:
-        # Map frontend source names to backend names
-        source_map = {
-            "postgres": "view",
-            "materializeView": "materialized_view",
-            "materialize": "materialize"
-        }
-        
-        if source not in source_map:
-            raise HTTPException(status_code=400, detail="Invalid source")
-            
-        backend_source = source_map[source]
-        current_state = await database.toggle_traffic(backend_source)
-        
+        size = await database.get_database_size()
+        return {"size_gb": size}
+    except Exception as e:
+        logger.error(f"Error getting database size: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/current-refresh-interval")
+async def get_current_refresh_interval():
+    """Get the current refresh interval for the materialized view"""
+    try:
         return {
             "status": "success",
-            "source": source,
-            "traffic_enabled": current_state
+            "refresh_interval": database.refresh_interval
         }
     except Exception as e:
-        logger.error(f"Error toggling traffic for {source}: {str(e)}")
+        logger.error(f"Error getting refresh interval: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/configure-refresh-interval/{interval}")
+async def configure_refresh_interval(interval: int):
+    """Configure the refresh interval for the materialized view"""
+    try:
+        await database.configure_refresh_interval(interval)
+        return {"status": "success", "message": f"Refresh interval set to {interval} seconds"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error configuring refresh interval: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

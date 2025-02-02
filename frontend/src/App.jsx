@@ -462,17 +462,73 @@ function App() {
     fetchRefreshInterval();
   }, []);  // Empty dependency array means this runs once on mount
 
-  // Add toggle handlers
-  const handleTrafficToggle = (source) => {
-    setTrafficEnabled(prev => ({
-      ...prev,
-      [source]: !prev[source]
-    }));
-    // Call backend to update traffic state
-    fetch(`http://localhost:8000/toggle-traffic/${source}`, {
-      method: 'POST'
-    }).catch(err => console.error('Error toggling traffic:', err));
+  // Update handleTrafficToggle to use the new endpoint
+  const handleTrafficToggle = async (source) => {
+    try {
+      // Map frontend source names to backend source names
+      const sourceMapping = {
+        'postgres': 'view',
+        'materializeView': 'materialized_view',
+        'materialize': 'materialize'
+      };
+
+      const backendSource = sourceMapping[source];
+      if (!backendSource) {
+        console.error(`Invalid source name: ${source}`);
+        return;
+      }
+
+      const response = await axios.post(`${API_URL}/api/toggle-traffic/${backendSource}`);
+      
+      // After toggle, fetch the current state to ensure we're in sync
+      const stateResponse = await axios.get(`${API_URL}/api/traffic-state`);
+      setTrafficEnabled({
+        postgres: stateResponse.data.view,
+        materializeView: stateResponse.data.materialized_view,
+        materialize: stateResponse.data.materialize
+      });
+    } catch (err) {
+      console.error('Error toggling traffic:', err);
+      setError(`Failed to toggle ${source} traffic: ${err.message}`);
+      
+      // On error, refresh the state to ensure we're in sync
+      try {
+        const stateResponse = await axios.get(`${API_URL}/api/traffic-state`);
+        setTrafficEnabled({
+          postgres: stateResponse.data.view,
+          materializeView: stateResponse.data.materialized_view,
+          materialize: stateResponse.data.materialize
+        });
+      } catch (stateErr) {
+        console.error('Error fetching traffic state after toggle error:', stateErr);
+      }
+    }
   };
+
+  // Add useEffect to fetch initial traffic state and set up periodic refresh
+  useEffect(() => {
+    const fetchTrafficState = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/api/traffic-state`);
+        setTrafficEnabled({
+          postgres: response.data.view,
+          materializeView: response.data.materialized_view,
+          materialize: response.data.materialize
+        });
+      } catch (err) {
+        console.error('Error fetching traffic state:', err);
+      }
+    };
+
+    // Fetch initial state
+    fetchTrafficState();
+
+    // Set up periodic refresh every 2 seconds
+    const interval = setInterval(fetchTrafficState, 2000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
+  }, []);  // Empty dependency array means this runs once on mount
 
   if (error) {
     console.error('Rendering error state:', error);
