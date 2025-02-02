@@ -87,7 +87,18 @@ The application maintains separate connection pools for:
     └── package.json        # Node.js dependencies
 ```
 
-## Setup
+## Automatic Setup
+
+You can use Docker Compose to automatically build and run the application:
+
+```bash
+docker compose up
+```
+
+Once all services are started, jump down to the [Usage Guide](#usage-guide)
+section to see the instructions for using the application.
+
+## Manual Setup
 
 ### Prerequisites
 
@@ -99,6 +110,15 @@ The application maintains separate connection pools for:
 2. Materialize instance with:
    - Connection to PostgreSQL configured
    - Required materialized views created
+
+If you don't want to install and run PostgreSQL and Materialize directly, you can use Docker Compose to run just Materialize and PostgreSQL:
+
+```
+docker compose up postgres materialize_init
+```
+
+Then you can run the backend and frontend directly on the host machine by
+following the instructions in the next sections.
 
 ### Environment Configuration
 

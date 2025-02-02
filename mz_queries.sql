@@ -1,17 +1,19 @@
-CREATE SECRET pgpass AS 'mysecret';
-​​CREATE CONNECTION pg_connection TO POSTGRES (
-   HOST 'host.docker.internal',
-   PORT 5432,
-   USER 'postgres',
-   PASSWORD SECRET pgpass,
-   DATABASE 'freshmart'
+CREATE SECRET IF NOT EXISTS pg_pass AS 'mysecret';
+
+CREATE CONNECTION IF NOT EXISTS pg_conn TO POSTGRES (
+    HOST 'postgres',
+    PORT 5432,
+    USER 'postgres',
+    DATABASE 'postgres',
+    PASSWORD SECRET pg_pass
 );
-CREATE SOURCE freshmart
-FROM POSTGRES CONNECTION pg_connection (PUBLICATION 'mz_source')
-FOR ALL TABLES;
 
+CREATE SOURCE IF NOT EXISTS pg_src FROM POSTGRES CONNECTION pg_conn (
+    PUBLICATION mz_source
+) FOR ALL TABLES;
 
-CREATE VIEW dynamic_pricing AS
+CREATE VIEW IF NOT EXISTS dynamic_pricing AS
+
 WITH recent_prices AS (
     SELECT grp.product_id, AVG(price) AS avg_price
     FROM (SELECT DISTINCT product_id FROM sales) grp, 
@@ -104,6 +106,6 @@ SELECT
 FROM dynamic_pricing dp
 JOIN products p ON dp.product_id = p.product_id;
 
-CREATE INDEX ON dynamic_pricing (product_id);
+CREATE INDEX IF NOT EXISTS dynamic_pricing_idx ON dynamic_pricing (product_id);
 
-CREATE INDEX ON heartbeats (id DESC);
+CREATE INDEX IF NOT EXISTS heartbeats_idx ON heartbeats (id DESC);
