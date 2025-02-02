@@ -144,23 +144,14 @@ async def get_current_refresh_interval():
             detail="Failed to get refresh interval"
         )
 
-@app.get("/api/cpu")
+@app.get("/api/cpu-stats")
 async def get_cpu_stats():
-    """Get CPU usage stats for PostgreSQL"""
+    """Get CPU usage stats for both PostgreSQL and Materialize"""
     try:
         logger.debug("CPU stats endpoint called")
-        stats = await database.get_postgres_cpu_stats()
+        stats = await database.get_cpu_stats()
         logger.debug(f"Raw CPU stats: {stats}")
-        
-        if stats is None or stats.get("cpu_usage") is None:
-            logger.warning("CPU stats not available")
-            raise HTTPException(status_code=503, detail="CPU stats not available")
-            
-        return {
-            "timestamp": stats["timestamp"],
-            "cpu_usage": stats["cpu_usage"],
-            "stats": stats["stats"]
-        }
+        return stats
     except Exception as e:
         logger.error(f"Error getting CPU stats: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

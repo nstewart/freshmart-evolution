@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stack, Badge, LoadingOverlay, Slider, Image, Accordion } from '@mantine/core';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import PostgresCPUChart from './components/PostgresCPUChart.jsx';
+import ContainersCPUChart from './components/ContainersCPUChart.jsx';
 
 const HISTORY_WINDOW_MS = 2 * 60 * 1000; // 2 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
@@ -953,7 +953,7 @@ function App() {
             </Accordion.Panel>
           </Accordion.Item>
         </Accordion>
-        <PostgresCPUChart />
+        <ContainersCPUChart />
       </Container>
     </MantineProvider>
   );

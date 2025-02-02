@@ -1366,100 +1366,135 @@ async def update_freshness_metrics():
             await asyncio.sleep(1)
 
 async def collect_cpu_stats():
-    """Background task to collect CPU stats every 5 seconds"""
+    """Background task to collect CPU stats every 5 seconds for both PostgreSQL and Materialize"""
     logger.info("Starting CPU stats collection task")
+    
+    # Initialize CPU stats for both containers
+    query_stats["postgres_cpu"] = {
+        "measurements": [],
+        "timestamps": [],
+        "current_stats": {
+            "usage": 0.0,
+            "last_updated": 0.0
+        }
+    }
+    
+    query_stats["materialize_cpu"] = {
+        "measurements": [],
+        "timestamps": [],
+        "current_stats": {
+            "usage": 0.0,
+            "last_updated": 0.0
+        }
+    }
+    
     while True:
         try:
-            # Get stats from docker container
-            logger.debug("Collecting CPU stats from Docker...")
-            result = subprocess.run(
-                ['docker', 'stats', 'my_postgres', '--no-stream', '--format', '{{.CPUPerc}}'],
-                capture_output=True,
-                text=True
-            )
+            current_time = time.time()
             
-            if result.returncode != 0:
-                logger.error(f"Error getting Docker stats: {result.stderr}")
-            else:
-                # Parse the CPU percentage
-                cpu_str = result.stdout.strip().rstrip('%')
-                logger.debug(f"Raw CPU stats from Docker: {cpu_str}")
-                if cpu_str:
-                    try:
-                        cpu_usage = float(cpu_str)
-                        current_time = time.time()
-                        
-                        async with stats_lock:
-                            stats = query_stats["cpu"]
-                            
-                            # Add new measurement
-                            stats["measurements"].append(cpu_usage)
-                            stats["timestamps"].append(current_time)
-                            
-                            # Keep only last 100 measurements
-                            if len(stats["measurements"]) > 100:
-                                stats["measurements"].pop(0)
-                                stats["timestamps"].pop(0)
-                            
-                            # Update current stats
-                            stats["current_stats"].update({
-                                "usage": cpu_usage,
-                                "last_updated": current_time
-                            })
-                            logger.debug(f"Updated CPU stats: usage={cpu_usage}%, measurements={len(stats['measurements'])}")
-                            
-                    except ValueError as e:
-                        logger.error(f"Error converting CPU string '{cpu_str}' to float: {str(e)}")
+            # Get stats from both containers
+            containers = {
+                "postgres_cpu": "my_postgres",
+                "materialize_cpu": "my_materialize"
+            }
+            
+            for stats_key, container_name in containers.items():
+                logger.debug(f"Collecting CPU stats from {container_name}...")
+                result = subprocess.run(
+                    ['docker', 'stats', container_name, '--no-stream', '--format', '{{.CPUPerc}}'],
+                    capture_output=True,
+                    text=True
+                )
+                
+                if result.returncode != 0:
+                    logger.error(f"Error getting Docker stats for {container_name}: {result.stderr}")
                 else:
-                    logger.error("Empty CPU percentage string")
+                    # Parse the CPU percentage
+                    cpu_str = result.stdout.strip().rstrip('%')
+                    logger.debug(f"Raw CPU stats from {container_name}: {cpu_str}")
+                    if cpu_str:
+                        try:
+                            cpu_usage = float(cpu_str)
+                            
+                            async with stats_lock:
+                                stats = query_stats[stats_key]
+                                
+                                # Add new measurement
+                                stats["measurements"].append(cpu_usage)
+                                stats["timestamps"].append(current_time)
+                                
+                                # Keep only last 100 measurements
+                                if len(stats["measurements"]) > 100:
+                                    stats["measurements"].pop(0)
+                                    stats["timestamps"].pop(0)
+                                
+                                # Update current stats
+                                stats["current_stats"].update({
+                                    "usage": cpu_usage,
+                                    "last_updated": current_time
+                                })
+                                logger.debug(f"Updated {stats_key} stats: usage={cpu_usage}%, measurements={len(stats['measurements'])}")
+                                
+                        except ValueError as e:
+                            logger.error(f"Error converting CPU string '{cpu_str}' to float for {container_name}: {str(e)}")
+                    else:
+                        logger.error(f"Empty CPU percentage string for {container_name}")
         except Exception as e:
             logger.error(f"Error collecting CPU stats: {str(e)}")
         
         # Wait 5 seconds before next collection
         await asyncio.sleep(5)
 
-async def get_postgres_cpu_stats():
-    """Get CPU usage stats including historical data and statistics"""
-    current_time = time.time()
-    stats = query_stats["cpu"]
-    
-    # Check if data is fresh (within last 10 seconds)
-    is_fresh = current_time - stats["current_stats"]["last_updated"] <= 10.0
-    
-    if not is_fresh:
-        return {
-            "timestamp": int(current_time * 1000),
-            "cpu_usage": None,
-            "stats": None
-        }
-    
-    # Calculate statistics from measurements
-    cpu_stats = None
-    if stats["measurements"]:
-        cpu_stats = {
-            "max": max(stats["measurements"]),
-            "average": sum(stats["measurements"]) / len(stats["measurements"]),
-            "p99": sorted(stats["measurements"])[int(len(stats["measurements"]) * 0.99)] if len(stats["measurements"]) >= 100 else max(stats["measurements"])
-        }
-    
-    return {
-        "timestamp": int(current_time * 1000),
-        "cpu_usage": stats["current_stats"]["usage"],
-        "stats": cpu_stats
-    }
-
-# Add the CPU stats endpoint
-@app.get("/postgres-cpu")
 async def get_cpu_stats():
-    """Get PostgreSQL CPU usage stats"""
-    logger.debug("CPU stats endpoint called")
-    stats = await get_postgres_cpu_stats()
-    logger.debug(f"Returning CPU stats: {stats}")
-    return {
-        "timestamp": int(time.time() * 1000),
-        "cpu_usage": stats["cpu_usage"] if stats else None,
-        "stats": stats["stats"] if stats else None
+    """Get CPU usage stats for both PostgreSQL and Materialize"""
+    current_time = time.time()
+    response = {
+        "timestamp": int(current_time * 1000)
     }
+    
+    for container_type in ["postgres_cpu", "materialize_cpu"]:
+        stats = query_stats.get(container_type)
+        if not stats:
+            response[container_type] = {
+                "cpu_usage": None,
+                "stats": None
+            }
+            continue
+            
+        # Check if data is fresh (within last 10 seconds)
+        is_fresh = current_time - stats["current_stats"]["last_updated"] <= 10.0
+        
+        if not is_fresh:
+            response[container_type] = {
+                "cpu_usage": None,
+                "stats": None
+            }
+            continue
+        
+        # Calculate statistics from measurements
+        cpu_stats = None
+        if stats["measurements"]:
+            cpu_stats = {
+                "max": max(stats["measurements"]),
+                "average": sum(stats["measurements"]) / len(stats["measurements"]),
+                "p99": sorted(stats["measurements"])[int(len(stats["measurements"]) * 0.99)] if len(stats["measurements"]) >= 100 else max(stats["measurements"])
+            }
+        
+        response[container_type] = {
+            "cpu_usage": stats["current_stats"]["usage"],
+            "stats": cpu_stats
+        }
+    
+    return response
+
+# Update the CPU stats endpoint
+@app.get("/api/cpu-stats")
+async def get_containers_cpu_stats():
+    """Get CPU usage stats for both PostgreSQL and Materialize"""
+    logger.debug("CPU stats endpoint called")
+    stats = await get_cpu_stats()
+    logger.debug(f"Returning CPU stats: {stats}")
+    return stats
 
 # Update startup event to start the freshness metrics update task
 @app.on_event("startup")
