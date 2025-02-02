@@ -676,55 +676,82 @@ function App() {
           </Paper>
 
           <Paper p="xl" withBorder style={{ backgroundColor: 'white' }}>
-            <Stack spacing="md">
-              <Text size="lg" weight={600} style={{ color: '#1a1a1a' }}>Select a Scenario</Text>
-              <Select
-                value={currentScenario}
-                onChange={handleScenarioChange}
-                data={[
-                  { value: 'direct', label: 'Direct View Queries' },
-                  { value: 'batch', label: 'Add Batch Computation' },
-                  { value: 'materialize', label: 'Add Materialize' },
-                  { value: 'cqrs', label: 'Full Query Offload (CQRS)' }
-                ]}
-                style={{ maxWidth: '400px' }}
-                required
-                clearable={false}
-              />
+            <Stack spacing="xl">
+              <Text size="xl" weight={700} style={{ 
+                color: '#1a1a1a',
+                letterSpacing: '-0.02em',
+                borderBottom: '1px solid #eee',
+                paddingBottom: '1rem'
+              }}>
+                Freshmart
+              </Text>
+              
+              <Grid>
+                <Grid.Col span={7}>
+                  <Text size="sm" style={{ 
+                    color: '#1a1a1a',
+                    lineHeight: 1.7,
+                    marginRight: '2rem'
+                  }}>
+                    Freshmart is an online retailer selling produce and other grocery items nationwide. 
+                    Freshmart offers dynamic pricing to its customers. The price of any given item will 
+                    fluctuate based on available inventory, snap promotions, popularity, and a host of 
+                    other factors. As data volumes and query complexity increased, their "inventory" data 
+                    product now can't meet their web and microservice SLAs.
+                  </Text>
+                </Grid.Col>
+                
+                <Grid.Col span={5}>
+                  <Stack spacing="md">
+                    <Text size="lg" weight={600} style={{ color: '#1a1a1a' }}>Select a Scenario</Text>
+                    <Select
+                      value={currentScenario}
+                      onChange={handleScenarioChange}
+                      data={[
+                        { value: 'direct', label: 'Direct View Queries' },
+                        { value: 'batch', label: 'Add Batch Computation' },
+                        { value: 'materialize', label: 'Add Materialize' },
+                        { value: 'cqrs', label: 'Full Query Offload (CQRS)' }
+                      ]}
+                      style={{ maxWidth: '400px' }}
+                      required
+                      clearable={false}
+                    />
+                  </Stack>
+                </Grid.Col>
+              </Grid>
             </Stack>
           </Paper>
 
           <Paper p="xl" className="hover-card">
-            <Text size="lg" weight={600} mb="md" style={{ color: '#1a1a1a' }}>Data Product Price Comparison</Text>
-            <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
-              Each data product is composed by joining data from multiple sources, these could be separate tables or separate databases entirely. Data products are made available to consumers ranging from web services to inventory systems.
-            </Text>
-            
-            <Paper p="lg" mb="lg" style={{ backgroundColor: '#f8fafc' }}>
-              <Accordion styles={{
-                control: {
-                  borderBottom: 'none'
-                },
-                item: {
-                  borderBottom: 'none'
-                }
-              }}>
-                <Accordion.Item value="dataflow">
-                  <Accordion.Control>
-                    <Text weight={500}>Data Lineage</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <pre style={{ 
-                      fontFamily: 'Inter, monospace',
-                      fontSize: '14px',
-                      lineHeight: '1.5',
-                      whiteSpace: 'pre',
-                      overflow: 'auto',
-                      padding: '20px',
-                      backgroundColor: '#ffffff',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(0, 0, 0, 0.05)'
-                    }}>
+            <Accordion styles={{
+              control: {
+                borderBottom: 'none'
+              },
+              item: {
+                borderBottom: 'none'
+              }
+            }}>
+              <Accordion.Item value="dataLineage">
+                <Accordion.Control>
+                  <Text size="lg" weight={600} style={{ color: '#1a1a1a' }}>Data Lineage</Text>
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
+                    The inventory item data product combines data from multiple sources to calculate dynamic prices. Here's how the data flows through the system:
+                  </Text>
+                  
+                  <pre style={{ 
+                    fontFamily: 'Inter, monospace',
+                    fontSize: '14px',
+                    lineHeight: '1.5',
+                    whiteSpace: 'pre',
+                    overflow: 'auto',
+                    padding: '20px',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(0, 0, 0, 0.05)'
+                  }}>
 {`
    Categories ──┐
                 └──► Popularity Score ──┐
@@ -739,19 +766,24 @@ function App() {
    Promotions ──┴──► Promotion Effect  ─┘
    
 `} 
-   <span 
-     onClick={togglePromotion} 
-     style={{ color: 'blue', cursor: 'pointer', textDecoration: 'underline' }}
-   >
-     (Toggle)
-   </span>
+                    <span 
+                      onClick={togglePromotion} 
+                      style={{ color: 'blue', cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      (Toggle)
+                    </span>
+                  </pre>
+                </Accordion.Panel>
+              </Accordion.Item>
+            </Accordion>
+          </Paper>
 
-</pre>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              </Accordion>
-            </Paper>
-
+          <Paper p="xl" className="hover-card">
+            <Text size="lg" weight={600} mb="md" style={{ color: '#1a1a1a' }}>Data Product Price Comparison</Text>
+            <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
+              Each data product is composed by joining data from multiple sources, these could be separate tables or separate databases entirely. Data products are made available to consumers ranging from web services to inventory systems.
+            </Text>
+            
             <Group position="apart" grow>
               {scenarios.postgres && (
                 <Paper p={0} className="hover-card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
