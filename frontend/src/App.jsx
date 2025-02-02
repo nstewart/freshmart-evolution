@@ -701,7 +701,7 @@ function App() {
          │                              │
          └────► High Demand ────────────┤
                                         │
-    Products ───┐                       ├──► Dynamic Pricing View
+    Products ───┐                       ├──► Inventory Item
                 ├──► Inventory Status  ─┘
                 │                       │
    Promotions ──┴──► Promotion Effect  ─┘
@@ -794,254 +794,274 @@ function App() {
           </Paper>
 
           <Paper p="md" withBorder>
-            <LoadingOverlay visible={isPromotionLoading} opacity={0.5} />
-            <Group position="apart" mb="md">
-              <Text size="lg" weight={500}>Query Statistics</Text>
-            </Group>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #eee' }}>
-                  <th style={{ textAlign: 'left', padding: '8px' }}>Source</th>
-                  <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency Max</th>
-                  <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency Avg</th>
-                  <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency P99</th>
-                  <th style={{ textAlign: 'right', padding: '8px' }}>QPS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {scenarios.postgres && (
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '8px' }}>PostgreSQL View</td>
-                    <td style={{ textAlign: 'right', padding: '8px' }}>{stats.view.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td style={{ textAlign: 'right', padding: '8px' }}>{stats.view.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td style={{ textAlign: 'right', padding: '8px' }}>{stats.view.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td style={{ textAlign: 'right', padding: '8px' }}>{currentMetric.view_qps?.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) || '0.0'}</td>
-                  </tr>
-                )}
-                {scenarios.materializeView && (
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '8px' }}>Cached Table</td>
-                    <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td style={{ textAlign: 'right', padding: '8px' }}>{currentMetric.materialized_view_qps?.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) || '0.0'}</td>
-                  </tr>
-                )}
-                {scenarios.materialize && (
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '8px' }}>Materialize</td>
-                    <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materialize.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materialize.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materialize.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td style={{ textAlign: 'right', padding: '8px' }}>{currentMetric.materialize_qps?.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) || '0.0'}</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            <Accordion defaultValue={[]} multiple>
+              <Accordion.Item value="stats">
+                <Accordion.Control>
+                  <Text size="lg" weight={500}>Query Statistics</Text>
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <LoadingOverlay visible={isPromotionLoading} opacity={0.5} />
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #eee' }}>
+                        <th style={{ textAlign: 'left', padding: '8px' }}>Source</th>
+                        <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency Max</th>
+                        <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency Avg</th>
+                        <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency P99</th>
+                        <th style={{ textAlign: 'right', padding: '8px' }}>QPS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {scenarios.postgres && (
+                        <tr style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={{ padding: '8px' }}>PostgreSQL View</td>
+                          <td style={{ textAlign: 'right', padding: '8px' }}>{stats.view.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                          <td style={{ textAlign: 'right', padding: '8px' }}>{stats.view.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                          <td style={{ textAlign: 'right', padding: '8px' }}>{stats.view.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                          <td style={{ textAlign: 'right', padding: '8px' }}>{currentMetric.view_qps?.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) || '0.0'}</td>
+                        </tr>
+                      )}
+                      {scenarios.materializeView && (
+                        <tr style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={{ padding: '8px' }}>Cached Table</td>
+                          <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                          <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                          <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                          <td style={{ textAlign: 'right', padding: '8px' }}>{currentMetric.materialized_view_qps?.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) || '0.0'}</td>
+                        </tr>
+                      )}
+                      {scenarios.materialize && (
+                        <tr style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={{ padding: '8px' }}>Materialize</td>
+                          <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materialize.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                          <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materialize.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                          <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materialize.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                          <td style={{ textAlign: 'right', padding: '8px' }}>{currentMetric.materialize_qps?.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) || '0.0'}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </Accordion.Panel>
+              </Accordion.Item>
+
+              <Accordion.Item value="latency">
+                <Accordion.Control>
+                  <Text size="lg" weight={500}>Query Latency</Text>
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <div style={{ width: '100%', height: '200px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={metrics}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="timestamp"
+                          type="number"
+                          domain={['dataMin', 'dataMax']}
+                          tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                          scale="time"
+                          interval="preserveStartEnd"
+                          minTickGap={50}
+                        />
+                        <YAxis />
+                        <Tooltip
+                          labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                          formatter={(value) => `${value?.toFixed(2)}ms`}
+                        />
+                        <Legend />
+                        {scenarios.postgres && (
+                          <Line
+                            type="monotone"
+                            dataKey="view_latency"
+                            name="PostgreSQL View Latency"
+                            stroke="#8884d8"
+                            dot={false}
+                            isAnimationActive={false}
+                            connectNulls={true}
+                          />
+                        )}
+                        {scenarios.materializeView && (
+                          <Line
+                            type="monotone"
+                            dataKey="materialized_view_latency"
+                            name="Cached Table Latency"
+                            stroke="#82ca9d"
+                            dot={false}
+                            isAnimationActive={false}
+                            connectNulls={true}
+                          />
+                        )}
+                        {scenarios.materialize && (
+                          <Line
+                            type="monotone"
+                            dataKey="materialize_latency"
+                            name="Materialize Latency"
+                            stroke="#ff7300"
+                            dot={false}
+                            isAnimationActive={false}
+                            connectNulls={true}
+                          />
+                        )}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Accordion.Panel>
+              </Accordion.Item>
+
+              {(scenarios.materializeView || scenarios.materialize) && (
+                <Accordion.Item value="replication">
+                  <Accordion.Control>
+                    <Text size="lg" weight={500}>Replication and Refresh Status</Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <div style={{ width: '100%', height: '200px' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={metrics}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="timestamp"
+                            type="number"
+                            domain={['dataMin', 'dataMax']}
+                            tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                            scale="time"
+                            interval="preserveStartEnd"
+                            minTickGap={50}
+                          />
+                          <YAxis />
+                          <Tooltip
+                            labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                            formatter={(value) => `${value?.toFixed(3) || 'N/A'}s`}
+                          />
+                          <Legend />
+                          {scenarios.materializeView && (
+                            <Line
+                              type="monotone"
+                              dataKey="materialized_view_freshness"
+                              name="Cached Table Refresh Age"
+                              stroke="#82ca9d"
+                              dot={false}
+                              isAnimationActive={false}
+                              connectNulls={true}
+                            />
+                          )}
+                          {scenarios.materialize && (
+                            <Line
+                              type="monotone"
+                              dataKey="materialize_freshness"
+                              name="Materialize Replication Lag"
+                              stroke="#ff7300"
+                              dot={false}
+                              isAnimationActive={false}
+                              connectNulls={true}
+                            />
+                          )}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              )}
+
+              <Accordion.Item value="reaction">
+                <Accordion.Control>
+                  <Text size="lg" weight={500}>Reaction Time</Text>
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <div style={{ width: '100%', height: '200px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={metrics}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="timestamp"
+                          type="number"
+                          domain={['dataMin', 'dataMax']}
+                          tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                          scale="time"
+                          interval="preserveStartEnd"
+                          minTickGap={50}
+                        />
+                        <YAxis />
+                        <Tooltip
+                          labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                          formatter={(value) => `${value?.toFixed(2) || 'N/A'}ms`}
+                        />
+                        <Legend />
+                        {scenarios.postgres && (
+                          <Line
+                            type="monotone"
+                            dataKey="view_end_to_end_latency"
+                            name="PostgreSQL View Reaction Time"
+                            stroke="#8884d8"
+                            dot={false}
+                            isAnimationActive={false}
+                            connectNulls={true}
+                          />
+                        )}
+                        {scenarios.materializeView && (
+                          <Line
+                            type="monotone"
+                            dataKey="materialized_view_end_to_end_latency"
+                            name="Cached Table Reaction Time"
+                            stroke="#82ca9d"
+                            dot={false}
+                            isAnimationActive={false}
+                            connectNulls={true}
+                          />
+                        )}
+                        {scenarios.materialize && (
+                          <Line
+                            type="monotone"
+                            dataKey="materialize_end_to_end_latency"
+                            name="Materialize Reaction Time"
+                            stroke="#ff7300"
+                            dot={false}
+                            isAnimationActive={false}
+                            connectNulls={true}
+                          />
+                        )}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Accordion.Panel>
+              </Accordion.Item>
+
+              <Accordion.Item value="compute">
+                <Accordion.Control>
+                  <Text size="lg" weight={500}>Compute Usage</Text>
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <ContainersCPUChart scenarios={scenarios} />
+                </Accordion.Panel>
+              </Accordion.Item>
+            </Accordion>
           </Paper>
 
-          <Paper p="md" withBorder>
-            <Text size="lg" weight={500} mb="md">Query Latency</Text>
-            <div style={{ width: '100%', height: '200px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={metrics}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="timestamp"
-                    type="number"
-                    domain={['dataMin', 'dataMax']}
-                    tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                    scale="time"
-                    interval="preserveStartEnd"
-                    minTickGap={50}
-                  />
-                  <YAxis />
-                  <Tooltip
-                    labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                    formatter={(value) => `${value?.toFixed(2)}ms`}
-                  />
-                  <Legend />
-                  {scenarios.postgres && (
-                    <Line
-                      type="monotone"
-                      dataKey="view_latency"
-                      name="PostgreSQL View Latency"
-                      stroke="#8884d8"
-                      dot={false}
-                      isAnimationActive={false}
-                      connectNulls={true}
-                    />
-                  )}
-                  {scenarios.materializeView && (
-                    <Line
-                      type="monotone"
-                      dataKey="materialized_view_latency"
-                      name="Cached Table Latency"
-                      stroke="#82ca9d"
-                      dot={false}
-                      isAnimationActive={false}
-                      connectNulls={true}
-                    />
-                  )}
-                  {scenarios.materialize && (
-                    <Line
-                      type="monotone"
-                      dataKey="materialize_latency"
-                      name="Materialize Latency"
-                      stroke="#ff7300"
-                      dot={false}
-                      isAnimationActive={false}
-                      connectNulls={true}
-                    />
-                  )}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </Paper>
-
-          {(scenarios.materializeView || scenarios.materialize) && (
-            <Paper p="md" withBorder>
-              <Group position="apart" mb="md">
-                <Text size="lg" weight={500}>Replication and Refresh Status</Text>
-              </Group>
-              <div style={{ width: '100%', height: '200px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={metrics}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="timestamp"
-                      type="number"
-                      domain={['dataMin', 'dataMax']}
-                      tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                      scale="time"
-                      interval="preserveStartEnd"
-                      minTickGap={50}
-                    />
-                    <YAxis />
-                    <Tooltip
-                      labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                      formatter={(value) => `${value?.toFixed(3) || 'N/A'}s`}
-                    />
-                    <Legend />
-                    {scenarios.materializeView && (
-                      <Line
-                        type="monotone"
-                        dataKey="materialized_view_freshness"
-                        name="Cached Table Refresh Age"
-                        stroke="#82ca9d"
-                        dot={false}
-                        isAnimationActive={false}
-                        connectNulls={true}
-                      />
-                    )}
-                    {scenarios.materialize && (
-                      <Line
-                        type="monotone"
-                        dataKey="materialize_freshness"
-                        name="Materialize Replication Lag"
-                        stroke="#ff7300"
-                        dot={false}
-                        isAnimationActive={false}
-                        connectNulls={true}
-                      />
-                    )}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </Paper>
-          )}
-
-          <Paper p="md" withBorder>
-            <Text size="lg" weight={500} mb="md">Reaction Time</Text>
-            <div style={{ width: '100%', height: '200px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={metrics}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="timestamp"
-                    type="number"
-                    domain={['dataMin', 'dataMax']}
-                    tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                    scale="time"
-                    interval="preserveStartEnd"
-                    minTickGap={50}
-                  />
-                  <YAxis />
-                  <Tooltip
-                    labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                    formatter={(value) => `${value?.toFixed(2) || 'N/A'}ms`}
-                  />
-                  <Legend />
-                  {scenarios.postgres && (
-                    <Line
-                      type="monotone"
-                      dataKey="view_end_to_end_latency"
-                      name="PostgreSQL View Reaction Time"
-                      stroke="#8884d8"
-                      dot={false}
-                      isAnimationActive={false}
-                      connectNulls={true}
-                    />
-                  )}
-                  {scenarios.materializeView && (
-                    <Line
-                      type="monotone"
-                      dataKey="materialized_view_end_to_end_latency"
-                      name="Cached Table Reaction Time"
-                      stroke="#82ca9d"
-                      dot={false}
-                      isAnimationActive={false}
-                      connectNulls={true}
-                    />
-                  )}
-                  {scenarios.materialize && (
-                    <Line
-                      type="monotone"
-                      dataKey="materialize_end_to_end_latency"
-                      name="Materialize Reaction Time"
-                      stroke="#ff7300"
-                      dot={false}
-                      isAnimationActive={false}
-                      connectNulls={true}
-                    />
-                  )}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </Paper>
+          <Accordion defaultValue={null} mt="md">
+            <Accordion.Item value="advanced">
+              <Accordion.Control>Advanced</Accordion.Control>
+              <Accordion.Panel>
+                <Stack spacing="md">
+                  <Group>
+                    <Button
+                      onClick={toggleIsolation}
+                      variant="outline"
+                      color="violet"
+                      disabled={isIsolationLoading}
+                    >
+                      {isIsolationLoading
+                        ? "Changing Isolation Level..."
+                        : `Switch to ${isolationLevel === 'serializable' ? 'Strict Serializable' : 'Serializable'}`
+                      }
+                    </Button>
+                    <div>Isolation Level: <Badge color="violet" variant="light">{isolationLevel ? isolationLevel.replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'}</Badge></div>
+                  </Group>
+                  <Group>
+                    <div>Database Size: <Badge color="blue" variant="light">{databaseSize ? `${databaseSize.toFixed(2)} GB` : 'Unknown'}</Badge></div>
+                  </Group>
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
         </Stack>
-        
-        <Paper p="md" withBorder mt="md">
-          <Text size="lg" weight={500} mb="md">Compute Usage</Text>
-          <ContainersCPUChart />
-        </Paper>
-
-        <Accordion defaultValue={null} mt="md">
-          <Accordion.Item value="advanced">
-            <Accordion.Control>Advanced</Accordion.Control>
-            <Accordion.Panel>
-              <Stack spacing="md">
-                <Group>
-                  <Button
-                    onClick={toggleIsolation}
-                    variant="outline"
-                    color="violet"
-                    disabled={isIsolationLoading}
-                  >
-                    {isIsolationLoading
-                      ? "Changing Isolation Level..."
-                      : `Switch to ${isolationLevel === 'serializable' ? 'Strict Serializable' : 'Serializable'}`
-                    }
-                  </Button>
-                  <div>Isolation Level: <Badge color="violet" variant="light">{isolationLevel ? isolationLevel.replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'}</Badge></div>
-                </Group>
-                <Group>
-                  <div>Database Size: <Badge color="blue" variant="light">{databaseSize ? `${databaseSize.toFixed(2)} GB` : 'Unknown'}</Badge></div>
-                </Group>
-              </Stack>
-            </Accordion.Panel>
-          </Accordion.Item>
-        </Accordion>
       </Container>
     </MantineProvider>
   );

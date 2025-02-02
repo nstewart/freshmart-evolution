@@ -25,7 +25,7 @@ ChartJS.register(
 const HISTORY_WINDOW_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
 
-const ContainersCPUChart = () => {
+const ContainersCPUChart = ({ scenarios }) => {
   const [cpuData, setCpuData] = useState([]);
   const maxDataPoints = 300; // 5 minutes of data points (1 per second)
 
@@ -96,13 +96,13 @@ const ContainersCPUChart = () => {
         tension: 0.1,
         fill: false,
       },
-      {
+      ...(scenarios?.materialize ? [{
         label: 'Materialize CPU Usage (%)',
         data: cpuData.map(d => d.materialize_cpu_usage),
         borderColor: 'rgb(255, 99, 132)',
         tension: 0.1,
         fill: false,
-      }
+      }] : [])
     ],
   };
 
