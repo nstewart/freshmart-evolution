@@ -799,7 +799,7 @@ function App() {
                     </div>
                   </div>
                   <div style={{ borderTop: '1px solid #eee', padding: '15px' }}>
-                    <Text weight={500} align="center" color="teal">Cache</Text>
+                    <Text weight={500} align="center" color="teal">Batch (Cache) Table</Text>
                   </div>
                 </Paper>
               )}
@@ -861,7 +861,7 @@ function App() {
                       )}
                       {scenarios.materializeView && (
                         <tr style={{ borderBottom: '1px solid #eee' }}>
-                          <td style={{ padding: '8px' }}>Cached Table</td>
+                          <td style={{ padding: '8px' }}>Batch (Cache) Table</td>
                           <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                           <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                           <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
@@ -921,7 +921,7 @@ function App() {
                           <Line
                             type="monotone"
                             dataKey="materialized_view_latency"
-                            name="Cached Table Latency"
+                            name="Batch Result Latency"
                             stroke="#82ca9d"
                             dot={false}
                             isAnimationActive={false}
@@ -974,7 +974,7 @@ function App() {
                             <Line
                               type="monotone"
                               dataKey="materialized_view_freshness"
-                              name="Cached Table Refresh Age"
+                              name="Batch Refresh Age"
                               stroke="#82ca9d"
                               dot={false}
                               isAnimationActive={false}
@@ -1038,7 +1038,7 @@ function App() {
                           <Line
                             type="monotone"
                             dataKey="materialized_view_end_to_end_latency"
-                            name="Cached Table Reaction Time"
+                            name="Batch Reaction Time"
                             stroke="#82ca9d"
                             dot={false}
                             isAnimationActive={false}
@@ -1099,7 +1099,7 @@ function App() {
                           className="button-pulse"
                           style={{ width: '180px' }}
                         >
-                          Cached Table
+                          Batch (Cache) Table
                         </Button>
                         <Button
                           onClick={() => toggleScenario('materialize')}
@@ -1132,7 +1132,7 @@ function App() {
                           className="button-pulse"
                           style={{ width: '180px' }}
                         >
-                          {trafficEnabled.materializeView ? "Stop Cache" : "Start Cache"}
+                          {trafficEnabled.materializeView ? "Stop Batch" : "Start Batch"}
                         </Button>
                         <Button
                           onClick={() => handleTrafficToggle('materialize')}
