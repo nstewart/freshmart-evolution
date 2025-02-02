@@ -30,21 +30,34 @@ const PostgresCPUChart = () => {
   useEffect(() => {
     const fetchCPUStats = async () => {
       try {
-        const response = await fetch('http://localhost:8000/postgres-cpu');
+        console.debug('Fetching CPU stats...');
+        const response = await fetch('http://localhost:8000/api/cpu');
         const data = await response.json();
+        console.debug('Received CPU stats:', data);
         
         // Add current time if timestamp is missing
         const timestamp = data.timestamp || Date.now();
         
-        setCpuData(prevData => {
-          const now = Date.now();
-          // Filter out data points older than HISTORY_WINDOW_MS
-          const filteredData = prevData.filter(d => (now - d.timestamp) <= HISTORY_WINDOW_MS);
-          // Add new data point
-          const newData = [...filteredData, { ...data, timestamp }];
-          // Keep only the last maxDataPoints
-          return newData.slice(-maxDataPoints);
-        });
+        // Only update if we have valid data
+        if (data.cpu_usage !== null) {
+          console.debug('Updating CPU data with valid stats');
+          setCpuData(prevData => {
+            const now = Date.now();
+            // Filter out data points older than HISTORY_WINDOW_MS
+            const filteredData = prevData.filter(d => (now - d.timestamp) <= HISTORY_WINDOW_MS);
+            // Add new data point
+            const newData = [...filteredData, { 
+              timestamp,
+              cpu_usage: data.cpu_usage,
+              stats: data.stats
+            }];
+            console.debug('New CPU data state:', newData);
+            // Keep only the last maxDataPoints
+            return newData.slice(-maxDataPoints);
+          });
+        } else {
+          console.debug('Received null CPU usage, skipping update');
+        }
       } catch (error) {
         console.error('Error fetching CPU stats:', error);
       }
@@ -54,7 +67,7 @@ const PostgresCPUChart = () => {
     fetchCPUStats();
 
     // Set up polling interval
-    const interval = setInterval(fetchCPUStats, 1000);
+    const interval = setInterval(fetchCPUStats, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -62,10 +75,10 @@ const PostgresCPUChart = () => {
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { 
-      hour: '2-digit',
+      hour: 'numeric',
       minute: '2-digit',
       second: '2-digit',
-      hour12: false 
+      hour12: true 
     });
   };
 
@@ -73,12 +86,20 @@ const PostgresCPUChart = () => {
     labels: cpuData.map(d => formatTime(d.timestamp)),
     datasets: [
       {
-        label: 'PostgreSQL CPU Usage (%)',
+        label: 'Current CPU Usage (%)',
         data: cpuData.map(d => d.cpu_usage),
         borderColor: 'rgb(75, 192, 192)',
         tension: 0.1,
         fill: false,
       },
+      {
+        label: 'Average CPU Usage (%)',
+        data: cpuData.map(d => d.stats?.average),
+        borderColor: 'rgb(255, 159, 64)',
+        tension: 0.1,
+        fill: false,
+        borderDash: [5, 5],
+      }
     ],
   };
 
@@ -88,11 +109,14 @@ const PostgresCPUChart = () => {
     scales: {
       y: {
         beginAtZero: true,
-        max: 100,
+        suggestedMax: 400,
         title: {
           display: true,
           text: 'CPU Usage (%)',
         },
+        ticks: {
+          callback: (value) => `${value}%`
+        }
       },
       x: {
         title: {
@@ -120,7 +144,12 @@ const PostgresCPUChart = () => {
             return formatTime(cpuData[context[0].dataIndex].timestamp);
           },
           label: (context) => {
-            return `CPU: ${context.raw.toFixed(1)}%`;
+            const datapoint = cpuData[context.dataIndex];
+            if (context.dataset.label === 'Current CPU Usage (%)') {
+              return `Current: ${datapoint.cpu_usage?.toFixed(1)}%`;
+            } else if (context.dataset.label === 'Average CPU Usage (%)') {
+              return `Average: ${datapoint.stats?.average?.toFixed(1)}%`;
+            }
           }
         }
       }

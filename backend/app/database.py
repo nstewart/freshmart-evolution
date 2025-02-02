@@ -96,6 +96,14 @@ query_stats = {
             "last_updated": 0.0,
             "freshness": 0.0
         }
+    },
+    "cpu": {  # New CPU stats structure
+        "measurements": [],  # Store last 100 CPU measurements
+        "timestamps": [],    # Store corresponding timestamps
+        "current_stats": {
+            "usage": 0.0,
+            "last_updated": 0.0
+        }
     }
 }
 
@@ -1334,11 +1342,12 @@ async def update_freshness_metrics():
             await asyncio.sleep(1)
 
 async def collect_cpu_stats():
-    """Background task to collect CPU stats every second"""
-    global latest_cpu_stats
+    """Background task to collect CPU stats every 5 seconds"""
+    logger.info("Starting CPU stats collection task")
     while True:
         try:
             # Get stats from docker container
+            logger.debug("Collecting CPU stats from Docker...")
             result = subprocess.run(
                 ['docker', 'stats', 'my_postgres', '--no-stream', '--format', '{{.CPUPerc}}'],
                 capture_output=True,
@@ -1350,13 +1359,31 @@ async def collect_cpu_stats():
             else:
                 # Parse the CPU percentage
                 cpu_str = result.stdout.strip().rstrip('%')
+                logger.debug(f"Raw CPU stats from Docker: {cpu_str}")
                 if cpu_str:
                     try:
                         cpu_usage = float(cpu_str)
-                        latest_cpu_stats.update({
-                            "timestamp": int(time.time() * 1000),
-                            "cpu_usage": cpu_usage
-                        })
+                        current_time = time.time()
+                        
+                        async with stats_lock:
+                            stats = query_stats["cpu"]
+                            
+                            # Add new measurement
+                            stats["measurements"].append(cpu_usage)
+                            stats["timestamps"].append(current_time)
+                            
+                            # Keep only last 100 measurements
+                            if len(stats["measurements"]) > 100:
+                                stats["measurements"].pop(0)
+                                stats["timestamps"].pop(0)
+                            
+                            # Update current stats
+                            stats["current_stats"].update({
+                                "usage": cpu_usage,
+                                "last_updated": current_time
+                            })
+                            logger.debug(f"Updated CPU stats: usage={cpu_usage}%, measurements={len(stats['measurements'])}")
+                            
                     except ValueError as e:
                         logger.error(f"Error converting CPU string '{cpu_str}' to float: {str(e)}")
                 else:
@@ -1364,12 +1391,51 @@ async def collect_cpu_stats():
         except Exception as e:
             logger.error(f"Error collecting CPU stats: {str(e)}")
         
-        # Wait before next collection
-        await asyncio.sleep(1)
+        # Wait 5 seconds before next collection
+        await asyncio.sleep(5)
 
 async def get_postgres_cpu_stats():
-    """Get CPU usage stats from cache"""
-    return latest_cpu_stats
+    """Get CPU usage stats including historical data and statistics"""
+    current_time = time.time()
+    stats = query_stats["cpu"]
+    
+    # Check if data is fresh (within last 10 seconds)
+    is_fresh = current_time - stats["current_stats"]["last_updated"] <= 10.0
+    
+    if not is_fresh:
+        return {
+            "timestamp": int(current_time * 1000),
+            "cpu_usage": None,
+            "stats": None
+        }
+    
+    # Calculate statistics from measurements
+    cpu_stats = None
+    if stats["measurements"]:
+        cpu_stats = {
+            "max": max(stats["measurements"]),
+            "average": sum(stats["measurements"]) / len(stats["measurements"]),
+            "p99": sorted(stats["measurements"])[int(len(stats["measurements"]) * 0.99)] if len(stats["measurements"]) >= 100 else max(stats["measurements"])
+        }
+    
+    return {
+        "timestamp": int(current_time * 1000),
+        "cpu_usage": stats["current_stats"]["usage"],
+        "stats": cpu_stats
+    }
+
+# Add the CPU stats endpoint
+@app.get("/postgres-cpu")
+async def get_cpu_stats():
+    """Get PostgreSQL CPU usage stats"""
+    logger.debug("CPU stats endpoint called")
+    stats = await get_postgres_cpu_stats()
+    logger.debug(f"Returning CPU stats: {stats}")
+    return {
+        "timestamp": int(time.time() * 1000),
+        "cpu_usage": stats["cpu_usage"] if stats else None,
+        "stats": stats["stats"] if stats else None
+    }
 
 # Update startup event to start the freshness metrics update task
 @app.on_event("startup")
@@ -1434,6 +1500,16 @@ async def startup_event():
         cpu_stats_task = asyncio.create_task(collect_cpu_stats(), name="cpu_stats")
         background_tasks.append(cpu_stats_task)
         logger.info("3.10: CPU stats collection task created")
+        
+        # Add explicit check for CPU stats task
+        await asyncio.sleep(1)  # Wait a moment for task to start
+        if not cpu_stats_task.done():
+            logger.info("CPU stats collection task is running")
+            # Force an initial CPU stats collection
+            stats = query_stats["cpu"]
+            logger.info(f"Initial CPU stats: {stats}")
+        else:
+            logger.error("CPU stats collection task failed to start")
     except Exception as e:
         logger.error(f"Error creating background tasks: {str(e)}", exc_info=True)
         raise

@@ -35,7 +35,9 @@ async def startup_event():
     asyncio.create_task(database.auto_refresh_materialized_view())
     # Start the continuous query load task
     asyncio.create_task(database.continuous_query_load())
-    print("Started background tasks: heartbeat, materialized view auto-refresh, and continuous query load")
+    # Start the CPU stats collection task
+    asyncio.create_task(database.collect_cpu_stats())
+    print("Started background tasks: heartbeat, materialized view auto-refresh, continuous query load, and CPU stats collection")
 
 @app.post("/configure-refresh-interval/{interval}")
 async def configure_refresh_interval(interval: int):
@@ -127,22 +129,6 @@ async def get_database_size():
             detail="Failed to get database size"
         )
 
-@app.get("/postgres-cpu")
-async def get_postgres_cpu():
-    """Endpoint to get PostgreSQL CPU usage"""
-    try:
-        cpu_usage = await database.get_postgres_cpu_stats()
-        if cpu_usage is None:
-            raise HTTPException(status_code=500, detail="Failed to get CPU stats")
-            
-        return {
-            "timestamp": int(time.time() * 1000),
-            "cpu_usage": cpu_usage
-        }
-    except Exception as e:
-        logger.error(f"Error in CPU stats endpoint: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.get("/current-refresh-interval")
 async def get_current_refresh_interval():
     """Get the current refresh interval for the materialized view"""
@@ -162,10 +148,19 @@ async def get_current_refresh_interval():
 async def get_cpu_stats():
     """Get CPU usage stats for PostgreSQL"""
     try:
+        logger.debug("CPU stats endpoint called")
         stats = await database.get_postgres_cpu_stats()
-        if stats["cpu_usage"] is None:
+        logger.debug(f"Raw CPU stats: {stats}")
+        
+        if stats is None or stats.get("cpu_usage") is None:
+            logger.warning("CPU stats not available")
             raise HTTPException(status_code=503, detail="CPU stats not available")
-        return stats
+            
+        return {
+            "timestamp": stats["timestamp"],
+            "cpu_usage": stats["cpu_usage"],
+            "stats": stats["stats"]
+        }
     except Exception as e:
         logger.error(f"Error getting CPU stats: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
