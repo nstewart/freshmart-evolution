@@ -57,7 +57,6 @@ EOF
     SET statement_timeout = 0;  -- Disable statement timeout
     SET idle_in_transaction_session_timeout = 0;  -- Disable idle timeout
     SET lock_timeout = 0;  -- Disable lock timeout
-    SET command_timeout = 0;  -- Disable command timeout
     ALTER DATABASE $DB_NAME SET statement_timeout = 0;  -- Set default for new sessions
     ALTER DATABASE $DB_NAME SET idle_in_transaction_session_timeout = 0;
     ALTER DATABASE $DB_NAME SET lock_timeout = 0;
@@ -89,7 +88,7 @@ EOF
 EOF
 
     echo "Loading sales data from chunks..."
-    for chunk in data_files/sales_chunks/sales_part_*.csv; do
+    for chunk in data_files/sales_chunks/chunk_*; do
         if [ -f "$chunk" ]; then
             echo "Processing chunk: $chunk"
             PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $DB_NAME << EOF
