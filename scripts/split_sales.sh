@@ -1,20 +1,42 @@
 #!/bin/bash
 
-# Create the sales_chunks directory if it doesn't exist
-mkdir -p data_files/sales_chunks
+# Exit on error
+set -e
 
-# Get the header from the original file
-head -n 1 data_files/sales.csv > data_files/sales_chunks/header
+echo "Creating reduced data directory..."
+mkdir -p data_files/reduced
 
-# Split the file (excluding header) into chunks of 1 million lines each
-tail -n +2 data_files/sales.csv | split -l 1000000 - data_files/sales_chunks/chunk_
+# Copy all non-sales files as-is to maintain referential integrity
+cp data_files/categories.csv data_files/reduced/
+cp data_files/suppliers.csv data_files/reduced/
+cp data_files/products.csv data_files/reduced/
+cp data_files/promotions.csv data_files/reduced/
 
-# Add header to each chunk
+# Create reduced sales chunks directory
+mkdir -p data_files/reduced/sales_chunks
+
+# Process each sales chunk and take every other line
 for chunk in data_files/sales_chunks/chunk_*; do
-    cat data_files/sales_chunks/header "$chunk" > "$chunk.tmp" && mv "$chunk.tmp" "$chunk"
+    if [ -f "$chunk" ]; then
+        filename=$(basename "$chunk")
+        echo "Processing $filename..."
+        # Save header line
+        head -n 1 "$chunk" > "data_files/reduced/sales_chunks/$filename"
+        # Take every other line after header (odd-numbered lines)
+        tail -n +2 "$chunk" | sed -n 'p;n' >> "data_files/reduced/sales_chunks/$filename"
+    fi
 done
 
-# Remove the temporary header file
-rm data_files/sales_chunks/header
+# Adjust inventory proportionally
+echo "Adjusting inventory levels..."
+# Save header
+head -n 1 data_files/inventory.csv > data_files/reduced/inventory.csv
+# Reduce stock levels by roughly half for each product
+tail -n +2 data_files/inventory.csv | awk -F',' '{
+    # Divide stock by 2 and round to nearest integer
+    $3 = int(($3 + 1) / 2);
+    # Print the modified line
+    print $1 "," $2 "," $3 "," $4 "," $5
+}' >> data_files/reduced/inventory.csv
 
-echo "Sales data has been split into chunks in data_files/sales_chunks/" 
+echo "Data reduction complete! New files are in data_files/reduced/" 

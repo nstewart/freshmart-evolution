@@ -10,18 +10,29 @@ set +a
 
 # Function to show usage
 show_usage() {
-    echo "Usage: $0 [postgres|materialize|all]"
+    echo "Usage: $0 [postgres|materialize|all] [--reduced]"
     echo "  postgres     - Setup PostgreSQL database only"
     echo "  materialize  - Setup Materialize only"
     echo "  all         - Setup both (default)"
+    echo "  --reduced   - Use reduced dataset (optional)"
     exit 1
 }
+
+# Parse command line arguments
+MODE=${1:-all}
+DATA_DIR="data_files"
+CHUNKS_DIR="data_files/sales_chunks"
+if [ "$2" == "--reduced" ]; then
+    DATA_DIR="data_files/reduced"
+    CHUNKS_DIR="data_files/reduced/sales_chunks"
+    echo "Using reduced dataset from $DATA_DIR"
+fi
 
 # Function to setup PostgreSQL
 setup_postgres() {
     echo "Creating data directory..."
     mkdir -p data
-    cp -v data_files/*.csv data/
+    cp -v $DATA_DIR/*.csv data/
 
     echo "Cleaning up existing replication slots..."
     PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d postgres << EOF
@@ -88,7 +99,7 @@ EOF
 EOF
 
     echo "Loading sales data from chunks..."
-    for chunk in data_files/sales_chunks/chunk_*; do
+    for chunk in $CHUNKS_DIR/chunk_*; do
         if [ -f "$chunk" ]; then
             echo "Processing chunk: $chunk"
             PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $DB_NAME << EOF
@@ -179,9 +190,6 @@ EOF
 
     echo "Materialize setup complete!"
 }
-
-# Parse command line argument
-MODE=${1:-all}
 
 case $MODE in
     postgres)
