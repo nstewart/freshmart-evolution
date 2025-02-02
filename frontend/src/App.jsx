@@ -571,15 +571,27 @@ function App() {
     <MantineProvider theme={theme}>
       <Container size="xl" py="xl">
         <Stack spacing="lg">
-          <Paper p="xl" className="gradient-bg">
+          <Paper p="xl" withBorder={false} style={{ 
+            background: 'linear-gradient(-45deg, #4f46e5, #6366f1, #818cf8, #4f46e5)',
+            backgroundSize: '400% 400%',
+            animation: 'gradient 15s ease infinite'
+          }}>
             <Grid>
               <Grid.Col span={8}>
                 <Stack spacing="xs">
-                  <Text size="xl" weight={700} color="white" style={{ fontSize: '2rem', letterSpacing: '-0.02em' }}>
-                    Materialize: Real-time Data Integration
+                  <Stack spacing={0}>
+                    <Text size="xl" weight={700} style={{ fontSize: '2rem', letterSpacing: '-0.02em', color: 'white', lineHeight: 1.2 }}>
+                      Real-time Data
+                    </Text>
+                    <Text size="xl" weight={700} style={{ fontSize: '2rem', letterSpacing: '-0.02em', color: 'white', lineHeight: 1.2 }}>
+                      Integration and Transformation
+                    </Text>
+                  </Stack>
+                  <Text size="lg" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.5rem' }}>
+                    Use SQL to create live data products you can trust
                   </Text>
-                  <Text size="lg" color="white" opacity={0.9}>
-                    Create live data products with SQL you can trust
+                  <Text size="md" style={{ color: 'rgba(255, 255, 255, 0.8)', maxWidth: '600px', lineHeight: 1.5 }}>
+                    How can you make trustworthy, transformed data available throughout your systems and teams, while it's still fresh?
                   </Text>
                 </Stack>
               </Grid.Col>
