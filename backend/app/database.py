@@ -683,6 +683,12 @@ async def auto_refresh_materialized_view():
     global refresh_interval
     while True:
         try:
+            # Skip refresh if MV traffic is disabled
+            if not traffic_enabled["materialized_view"]:
+                logger.debug("Materialized view traffic is disabled, skipping refresh")
+                await asyncio.sleep(1)  # Short sleep before next check
+                continue
+
             start_time = time.time()
             logger.debug(f"Starting materialized view refresh cycle with interval: {refresh_interval}s")
             
