@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stack, Badge, LoadingOverlay, Slider, Image, Accordion, Grid } from '@mantine/core';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import ContainersCPUChart from './components/ContainersCPUChart.jsx';
 
 const HISTORY_WINDOW_MS = 2 * 60 * 1000; // 2 minutes in milliseconds
@@ -12,6 +12,39 @@ const theme = {
   fontFamily: 'Inter, sans-serif',
   headings: {
     fontFamily: 'Inter, sans-serif',
+  },
+  components: {
+    Paper: {
+      defaultProps: {
+        shadow: 'sm',
+        radius: 'md',
+        withBorder: true,
+      }
+    },
+    Button: {
+      defaultProps: {
+        radius: 'md',
+      }
+    },
+    Container: {
+      defaultProps: {
+        size: 'xl',
+      }
+    }
+  },
+  colors: {
+    brand: [
+      '#eef2ff',
+      '#e0e7ff',
+      '#c7d2fe',
+      '#a5b4fc',
+      '#818cf8',
+      '#6366f1',
+      '#4f46e5',
+      '#4338ca',
+      '#3730a3',
+      '#312e81',
+    ],
   },
 };
 
@@ -537,46 +570,51 @@ function App() {
   return (
     <MantineProvider theme={theme}>
       <Container size="xl" py="xl">
-        <Stack spacing="md">
-          <Paper p="md" withBorder style={{ backgroundColor: '#ad94f4' }}>
+        <Stack spacing="lg">
+          <Paper p="xl" className="gradient-bg">
             <Grid>
-              <Grid.Col span={6}>
+              <Grid.Col span={8}>
                 <Stack spacing="xs">
-                  <Text size="xl" weight={700} color="white">Materialize: Real-time Data Integration and Transformation</Text>
-                  <Text size="md" color="white">Use SQL to create live data products you can trust</Text>
+                  <Text size="xl" weight={700} color="white" style={{ fontSize: '2rem', letterSpacing: '-0.02em' }}>
+                    Materialize: Real-time Data Integration
+                  </Text>
+                  <Text size="lg" color="white" opacity={0.9}>
+                    Create live data products with SQL you can trust
+                  </Text>
                 </Stack>
-              </Grid.Col>
-              <Grid.Col span={6}>
               </Grid.Col>
             </Grid>
           </Paper>
 
-          <Paper p="md" withBorder>
-            <Text size="lg" weight={500} mb="md">Scenario Selection</Text>
+          <Paper p="xl" className="hover-card">
+            <Text size="lg" weight={600} mb="md" style={{ color: '#1a1a1a' }}>Scenario Selection</Text>
             <Stack spacing="xl">
               <Stack spacing="xs">
-                <Text size="sm" weight={500}>Query Source:</Text>
+                <Text size="sm" weight={500} color="dimmed">Query Source:</Text>
                 <Group position="left" spacing="md">
                   <Button
                     onClick={() => toggleScenario('postgres')}
-                    variant={scenarios.postgres ? "filled" : "outline"}
+                    variant={scenarios.postgres ? "filled" : "light"}
                     color="blue"
+                    className="button-pulse"
                     style={{ width: '180px' }}
                   >
                     PostgreSQL View
                   </Button>
                   <Button
                     onClick={() => toggleScenario('materializeView')}
-                    variant={scenarios.materializeView ? "filled" : "outline"}
-                    color="green"
+                    variant={scenarios.materializeView ? "filled" : "light"}
+                    color="teal"
+                    className="button-pulse"
                     style={{ width: '180px' }}
                   >
                     Cached Table
                   </Button>
                   <Button
                     onClick={() => toggleScenario('materialize')}
-                    variant={scenarios.materialize ? "filled" : "outline"}
-                    color="orange"
+                    variant={scenarios.materialize ? "filled" : "light"}
+                    color="violet"
+                    className="button-pulse"
                     style={{ width: '180px' }}
                   >
                     Materialize Query
@@ -585,12 +623,13 @@ function App() {
               </Stack>
 
               <Stack spacing="xs">
-                <Text size="sm" weight={500}>Traffic Control:</Text>
+                <Text size="sm" weight={500} color="dimmed">Traffic Control:</Text>
                 <Group position="left" spacing="md">
                   <Button
                     onClick={() => handleTrafficToggle('postgres')}
                     variant={trafficEnabled.postgres ? "light" : "subtle"}
                     color={trafficEnabled.postgres ? "blue" : "gray"}
+                    className="button-pulse"
                     style={{ width: '180px' }}
                   >
                     {trafficEnabled.postgres ? "Stop PostgreSQL" : "Start PostgreSQL"}
@@ -598,7 +637,8 @@ function App() {
                   <Button
                     onClick={() => handleTrafficToggle('materializeView')}
                     variant={trafficEnabled.materializeView ? "light" : "subtle"}
-                    color={trafficEnabled.materializeView ? "green" : "gray"}
+                    color={trafficEnabled.materializeView ? "teal" : "gray"}
+                    className="button-pulse"
                     style={{ width: '180px' }}
                   >
                     {trafficEnabled.materializeView ? "Stop Cache" : "Start Cache"}
@@ -606,7 +646,8 @@ function App() {
                   <Button
                     onClick={() => handleTrafficToggle('materialize')}
                     variant={trafficEnabled.materialize ? "light" : "subtle"}
-                    color={trafficEnabled.materialize ? "orange" : "gray"}
+                    color={trafficEnabled.materialize ? "violet" : "gray"}
+                    className="button-pulse"
                     style={{ width: '180px' }}
                   >
                     {trafficEnabled.materialize ? "Stop Materialize" : "Start Materialize"}
@@ -616,23 +657,29 @@ function App() {
             </Stack>
           </Paper>
 
-          <Paper p="md" withBorder>
-            <Text size="lg" weight={500} mb="md">Data Product Price Comparison</Text>
-            <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px' }}>
+          <Paper p="xl" className="hover-card">
+            <Text size="lg" weight={600} mb="md" style={{ color: '#1a1a1a' }}>Data Product Price Comparison</Text>
+            <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
               Each data product is composed by joining data from multiple sources, these could be separate tables or separate databases entirely. Data products are made available to consumers ranging from web services to inventory systems.
             </Text>
-            <Paper p="md" mb="lg" style={{ backgroundColor: '#f8f9fa' }}>
-              <Accordion defaultValue={null}>
+            
+            <Paper p="lg" mb="lg" style={{ backgroundColor: '#f8fafc' }}>
+              <Accordion>
                 <Accordion.Item value="dataflow">
-                  <Accordion.Control>Data Lineage</Accordion.Control>
+                  <Accordion.Control>
+                    <Text weight={500}>Data Lineage</Text>
+                  </Accordion.Control>
                   <Accordion.Panel>
                     <pre style={{ 
-                      fontFamily: 'monospace',
+                      fontFamily: 'Inter, monospace',
                       fontSize: '14px',
-                      lineHeight: '1.2',
+                      lineHeight: '1.5',
                       whiteSpace: 'pre',
                       overflow: 'auto',
-                      padding: '20px'
+                      padding: '20px',
+                      backgroundColor: '#ffffff',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(0, 0, 0, 0.05)'
                     }}>
 {`
    Categories ──┐
@@ -660,80 +707,75 @@ function App() {
                 </Accordion.Item>
               </Accordion>
             </Paper>
-            <Group position="apart">
+
+            <Group position="apart" grow>
               {scenarios.postgres && (
-                <Paper shadow="sm" p={0} withBorder style={{ width: '30%' }}>
-                  <Stack spacing={0}>
-                    <div style={{ padding: '1rem' }}>
-                      <Image
-                        src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
-                        height={200}
-                        fit="contain"
-                        alt="Product"
+                <Paper p={0} className="hover-card">
+                  <div className="product-image-container">
+                    <Image
+                      src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
+                      height={200}
+                      fit="contain"
+                      alt="Product"
+                    />
+                    <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
+                    <Group position="center" mt="md">
+                      <PriceDisplay 
+                        price={currentMetric.view_price}
+                        prevPrice={prevPrices.current.view}
+                        reactionTime={currentMetric.view_end_to_end_latency}
                       />
-                      <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
-                      <Group position="center" mt="md">
-                        <PriceDisplay 
-                          price={currentMetric.view_price}
-                          prevPrice={prevPrices.current.view}
-                          reactionTime={currentMetric.view_end_to_end_latency}
-                        />
-                      </Group>
-                    </div>
-                    <Paper p="md" style={{ backgroundColor: '#edf2ff', borderTop: '1px solid #dee2e6' }}>
-                      <Text weight={500} align="center" color="blue">PostgreSQL</Text>
-                    </Paper>
-                  </Stack>
+                    </Group>
+                  </div>
+                  <div className="price-display">
+                    <Text weight={500} align="center" color="blue">PostgreSQL View</Text>
+                  </div>
                 </Paper>
               )}
               {scenarios.materializeView && (
-                <Paper shadow="sm" p={0} withBorder style={{ width: '30%' }}>
-                  <Stack spacing={0}>
-                    <div style={{ padding: '1rem' }}>
-                      <Image
-                        src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
-                        height={200}
-                        fit="contain"
-                        alt="Product"
+                <Paper p={0} className="hover-card">
+                  <div className="product-image-container">
+                    <Image
+                      src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
+                      height={200}
+                      fit="contain"
+                      alt="Product"
+                    />
+                    <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
+                    <Group position="center" mt="md" spacing="xs">
+                      <PriceDisplay 
+                        price={currentMetric.materialized_view_price}
+                        prevPrice={prevPrices.current.materialized_view}
+                        reactionTime={currentMetric.materialized_view_end_to_end_latency}
                       />
-                      <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
-                      <Group position="center" mt="md" spacing="xs">
-                        <PriceDisplay 
-                          price={currentMetric.materialized_view_price}
-                          prevPrice={prevPrices.current.materialized_view}
-                          reactionTime={currentMetric.materialized_view_end_to_end_latency}
-                        />
-                      </Group>
-                    </div>
-                    <Paper p="md" style={{ backgroundColor: '#e9fef0', borderTop: '1px solid #dee2e6' }}>
-                      <Text weight={500} align="center" color="green">Cache</Text>
-                    </Paper>
-                  </Stack>
+                    </Group>
+                  </div>
+                  <div className="price-display">
+                    <Text weight={500} align="center" color="teal">Cache</Text>
+                  </div>
                 </Paper>
               )}
               {scenarios.materialize && (
-                <Paper shadow="sm" p={0} withBorder style={{ width: '30%' }}>
-                  <Stack spacing={0}>
-                    <div style={{ padding: '1rem' }}>
-                      <Image
-                        src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
-                        height={200}
-                        fit="contain"
-                        alt="Product"
+                <Paper p={0} className="hover-card">
+                  <div className="product-image-container">
+                    <Image
+                      src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
+                      height={200}
+                      fit="contain"
+                      alt="Product"
+                    />
+                    <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
+                    <Group position="center" mt="md" spacing="xs">
+                      <PriceDisplay 
+                        price={currentMetric.materialize_price}
+                        prevPrice={prevPrices.current.materialize}
+                        reactionTime={currentMetric.materialize_end_to_end_latency}
                       />
-                      <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
-                      <Group position="center" mt="md" spacing="xs">
-                        <PriceDisplay 
-                          price={currentMetric.materialize_price}
-                          prevPrice={prevPrices.current.materialize}
-                          reactionTime={currentMetric.materialize_end_to_end_latency}
-                        />
-                      </Group>
-                    </div>
-                    <Paper p="md" style={{ backgroundColor: '#fff4e6', borderTop: '1px solid #dee2e6' }}>
-                      <Text weight={500} align="center" color="orange">Materialize</Text>
-                    </Paper>
-                  </Stack>
+                    </Group>
+                  </div>
+                  <div className="price-display">
+                    <Text weight={500} align="center" color="violet">Materialize</Text>
+                  </div>
                 </Paper>
               )}
             </Group>
@@ -788,180 +830,172 @@ function App() {
 
           <Paper p="md" withBorder>
             <Text size="lg" weight={500} mb="md">Query Latency</Text>
-            <LineChart width={800} height={200} data={metrics}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="timestamp"
-                type="number"
-                domain={['dataMin', 'dataMax']}
-                tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                scale="time"
-                interval="preserveStartEnd"
-                minTickGap={50}
-              />
-              <YAxis />
-              <Tooltip
-                labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                formatter={(value) => `${value?.toFixed(2)}ms`}
-              />
-              <Legend />
-              {scenarios.postgres && (
-                <Line
-                  type="monotone"
-                  dataKey="view_latency"
-                  name="PostgreSQL View Latency"
-                  stroke="#8884d8"
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={true}
-                />
-              )}
-              {scenarios.materializeView && (
-                <Line
-                  type="monotone"
-                  dataKey="materialized_view_latency"
-                  name="Cached Table Latency"
-                  stroke="#82ca9d"
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={true}
-                />
-              )}
-              {scenarios.materialize && (
-                <Line
-                  type="monotone"
-                  dataKey="materialize_latency"
-                  name="Materialize Latency"
-                  stroke="#ff7300"
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={true}
-                />
-              )}
-            </LineChart>
+            <div style={{ width: '100%', height: '200px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={metrics}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="timestamp"
+                    type="number"
+                    domain={['dataMin', 'dataMax']}
+                    tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                    scale="time"
+                    interval="preserveStartEnd"
+                    minTickGap={50}
+                  />
+                  <YAxis />
+                  <Tooltip
+                    labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                    formatter={(value) => `${value?.toFixed(2)}ms`}
+                  />
+                  <Legend />
+                  {scenarios.postgres && (
+                    <Line
+                      type="monotone"
+                      dataKey="view_latency"
+                      name="PostgreSQL View Latency"
+                      stroke="#8884d8"
+                      dot={false}
+                      isAnimationActive={false}
+                      connectNulls={true}
+                    />
+                  )}
+                  {scenarios.materializeView && (
+                    <Line
+                      type="monotone"
+                      dataKey="materialized_view_latency"
+                      name="Cached Table Latency"
+                      stroke="#82ca9d"
+                      dot={false}
+                      isAnimationActive={false}
+                      connectNulls={true}
+                    />
+                  )}
+                  {scenarios.materialize && (
+                    <Line
+                      type="monotone"
+                      dataKey="materialize_latency"
+                      name="Materialize Latency"
+                      stroke="#ff7300"
+                      dot={false}
+                      isAnimationActive={false}
+                      connectNulls={true}
+                    />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </Paper>
 
           {(scenarios.materializeView || scenarios.materialize) && (
             <Paper p="md" withBorder>
               <Group position="apart" mb="md">
                 <Text size="lg" weight={500}>Replication and Refresh Status</Text>
-                <Group>
-                  {scenarios.materialize && (
-                    <Group>
-                      <div>Current Replication Lag:</div>
-                      <Badge color={lagStatus.color} size="lg" variant="filled">
-                        {currentMetric.materialize_freshness?.toFixed(3)}s ({lagStatus.label})
-                      </Badge>
-                    </Group>
-                  )}
-                  {scenarios.materializeView && (
-                    <Group>
-                      <div>Cache Rehydration Time Stats:</div>
-                      <Text size="sm">
-                        Max: {stats.mvRefresh.max.toFixed(2)}ms | 
-                        Avg: {stats.mvRefresh.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}ms | 
-                        P99: {stats.mvRefresh.p99.toFixed(2)}ms
-                      </Text>
-                    </Group>
-                  )}
-                </Group>
               </Group>
-              <LineChart width={800} height={200} data={metrics}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="timestamp"
-                  type="number"
-                  domain={['dataMin', 'dataMax']}
-                  tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                  scale="time"
-                  interval="preserveStartEnd"
-                  minTickGap={50}
-                />
-                <YAxis />
-                <Tooltip
-                  labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                  formatter={(value) => `${value?.toFixed(3) || 'N/A'}s`}
-                />
-                <Legend />
-                {scenarios.materializeView && (
-                  <Line
-                    type="monotone"
-                    dataKey="materialized_view_freshness"
-                    name="Cached Table Refresh Age"
-                    stroke="#82ca9d"
-                    dot={false}
-                    isAnimationActive={false}
-                    connectNulls={true}
-                  />
-                )}
-                {scenarios.materialize && (
-                  <Line
-                    type="monotone"
-                    dataKey="materialize_freshness"
-                    name="Materialize Replication Lag"
-                    stroke="#ff7300"
-                    dot={false}
-                    isAnimationActive={false}
-                    connectNulls={true}
-                  />
-                )}
-              </LineChart>
+              <div style={{ width: '100%', height: '200px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={metrics}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="timestamp"
+                      type="number"
+                      domain={['dataMin', 'dataMax']}
+                      tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                      scale="time"
+                      interval="preserveStartEnd"
+                      minTickGap={50}
+                    />
+                    <YAxis />
+                    <Tooltip
+                      labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                      formatter={(value) => `${value?.toFixed(3) || 'N/A'}s`}
+                    />
+                    <Legend />
+                    {scenarios.materializeView && (
+                      <Line
+                        type="monotone"
+                        dataKey="materialized_view_freshness"
+                        name="Cached Table Refresh Age"
+                        stroke="#82ca9d"
+                        dot={false}
+                        isAnimationActive={false}
+                        connectNulls={true}
+                      />
+                    )}
+                    {scenarios.materialize && (
+                      <Line
+                        type="monotone"
+                        dataKey="materialize_freshness"
+                        name="Materialize Replication Lag"
+                        stroke="#ff7300"
+                        dot={false}
+                        isAnimationActive={false}
+                        connectNulls={true}
+                      />
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </Paper>
           )}
 
           <Paper p="md" withBorder>
             <Text size="lg" weight={500} mb="md">Reaction Time</Text>
-            <LineChart width={800} height={200} data={metrics}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="timestamp"
-                type="number"
-                domain={['dataMin', 'dataMax']}
-                tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                scale="time"
-                interval="preserveStartEnd"
-                minTickGap={50}
-              />
-              <YAxis />
-              <Tooltip
-                labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                formatter={(value) => `${value?.toFixed(2) || 'N/A'}ms`}
-              />
-              <Legend />
-              {scenarios.postgres && (
-                <Line
-                  type="monotone"
-                  dataKey="view_end_to_end_latency"
-                  name="PostgreSQL View Reaction Time"
-                  stroke="#8884d8"
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={true}
-                />
-              )}
-              {scenarios.materializeView && (
-                <Line
-                  type="monotone"
-                  dataKey="materialized_view_end_to_end_latency"
-                  name="Cached Table Reaction Time"
-                  stroke="#82ca9d"
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={true}
-                />
-              )}
-              {scenarios.materialize && (
-                <Line
-                  type="monotone"
-                  dataKey="materialize_end_to_end_latency"
-                  name="Materialize Reaction Time"
-                  stroke="#ff7300"
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={true}
-                />
-              )}
-            </LineChart>
+            <div style={{ width: '100%', height: '200px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={metrics}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="timestamp"
+                    type="number"
+                    domain={['dataMin', 'dataMax']}
+                    tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                    scale="time"
+                    interval="preserveStartEnd"
+                    minTickGap={50}
+                  />
+                  <YAxis />
+                  <Tooltip
+                    labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                    formatter={(value) => `${value?.toFixed(2) || 'N/A'}ms`}
+                  />
+                  <Legend />
+                  {scenarios.postgres && (
+                    <Line
+                      type="monotone"
+                      dataKey="view_end_to_end_latency"
+                      name="PostgreSQL View Reaction Time"
+                      stroke="#8884d8"
+                      dot={false}
+                      isAnimationActive={false}
+                      connectNulls={true}
+                    />
+                  )}
+                  {scenarios.materializeView && (
+                    <Line
+                      type="monotone"
+                      dataKey="materialized_view_end_to_end_latency"
+                      name="Cached Table Reaction Time"
+                      stroke="#82ca9d"
+                      dot={false}
+                      isAnimationActive={false}
+                      connectNulls={true}
+                    />
+                  )}
+                  {scenarios.materialize && (
+                    <Line
+                      type="monotone"
+                      dataKey="materialize_end_to_end_latency"
+                      name="Materialize Reaction Time"
+                      stroke="#ff7300"
+                      dot={false}
+                      isAnimationActive={false}
+                      connectNulls={true}
+                    />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </Paper>
         </Stack>
         
