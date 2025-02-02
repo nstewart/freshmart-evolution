@@ -517,13 +517,6 @@ function App() {
                 >
                   Materialize Query
                 </Button>
-                <Button
-                  onClick={() => setShowTTCA(!showTTCA)}
-                  variant={showTTCA ? "filled" : "outline"}
-                  color="gray"
-                >
-                  Show Reaction Time
-                </Button>
               </Group>
 
               <Group>
@@ -689,13 +682,6 @@ function App() {
                   <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency Max</th>
                   <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency Avg</th>
                   <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency P99</th>
-                  {showTTCA && (
-                    <>
-                      <th style={{ textAlign: 'right', padding: '8px' }}>RT Max</th>
-                      <th style={{ textAlign: 'right', padding: '8px' }}>RT Avg</th>
-                      <th style={{ textAlign: 'right', padding: '8px' }}>RT P99</th>
-                    </>
-                  )}
                   <th style={{ textAlign: 'right', padding: '8px' }}>QPS</th>
                 </tr>
               </thead>
@@ -706,13 +692,6 @@ function App() {
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.view.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.view.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.view.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    {showTTCA && (
-                      <>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.viewEndToEnd.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.viewEndToEnd.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.viewEndToEnd.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                      </>
-                    )}
                     <td style={{ textAlign: 'right', padding: '8px' }}>{currentMetric.view_qps?.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) || '0.0'}</td>
                   </tr>
                 )}
@@ -722,13 +701,6 @@ function App() {
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    {showTTCA && (
-                      <>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeViewEndToEnd.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeViewEndToEnd.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeViewEndToEnd.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                      </>
-                    )}
                     <td style={{ textAlign: 'right', padding: '8px' }}>{currentMetric.materialized_view_qps?.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) || '0.0'}</td>
                   </tr>
                 )}
@@ -738,13 +710,6 @@ function App() {
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materialize.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materialize.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materialize.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    {showTTCA && (
-                      <>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeEndToEnd.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeEndToEnd.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeEndToEnd.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                      </>
-                    )}
                     <td style={{ textAlign: 'right', padding: '8px' }}>{currentMetric.materialize_qps?.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) || '0.0'}</td>
                   </tr>
                 )}
@@ -875,62 +840,60 @@ function App() {
             </Paper>
           )}
 
-          {showTTCA && (
-            <Paper p="md" withBorder>
-              <Text size="lg" weight={500} mb="md">Reaction Time</Text>
-              <LineChart width={800} height={200} data={metrics}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="timestamp"
-                  type="number"
-                  domain={['dataMin', 'dataMax']}
-                  tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                  scale="time"
-                  interval="preserveStartEnd"
-                  minTickGap={50}
+          <Paper p="md" withBorder>
+            <Text size="lg" weight={500} mb="md">Reaction Time</Text>
+            <LineChart width={800} height={200} data={metrics}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="timestamp"
+                type="number"
+                domain={['dataMin', 'dataMax']}
+                tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                scale="time"
+                interval="preserveStartEnd"
+                minTickGap={50}
+              />
+              <YAxis />
+              <Tooltip
+                labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                formatter={(value) => `${value?.toFixed(2) || 'N/A'}ms`}
+              />
+              <Legend />
+              {scenarios.postgres && (
+                <Line
+                  type="monotone"
+                  dataKey="view_end_to_end_latency"
+                  name="PostgreSQL View Reaction Time"
+                  stroke="#8884d8"
+                  dot={false}
+                  isAnimationActive={false}
+                  connectNulls={true}
                 />
-                <YAxis />
-                <Tooltip
-                  labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                  formatter={(value) => `${value?.toFixed(2) || 'N/A'}ms`}
+              )}
+              {scenarios.materializeView && (
+                <Line
+                  type="monotone"
+                  dataKey="materialized_view_end_to_end_latency"
+                  name="Cached Table Reaction Time"
+                  stroke="#82ca9d"
+                  dot={false}
+                  isAnimationActive={false}
+                  connectNulls={true}
                 />
-                <Legend />
-                {scenarios.postgres && (
-                  <Line
-                    type="monotone"
-                    dataKey="view_end_to_end_latency"
-                    name="PostgreSQL View Reaction Time"
-                    stroke="#8884d8"
-                    dot={false}
-                    isAnimationActive={false}
-                    connectNulls={true}
-                  />
-                )}
-                {scenarios.materializeView && (
-                  <Line
-                    type="monotone"
-                    dataKey="materialized_view_end_to_end_latency"
-                    name="Cached Table Reaction Time"
-                    stroke="#82ca9d"
-                    dot={false}
-                    isAnimationActive={false}
-                    connectNulls={true}
-                  />
-                )}
-                {scenarios.materialize && (
-                  <Line
-                    type="monotone"
-                    dataKey="materialize_end_to_end_latency"
-                    name="Materialize Reaction Time"
-                    stroke="#ff7300"
-                    dot={false}
-                    isAnimationActive={false}
-                    connectNulls={true}
-                  />
-                )}
-              </LineChart>
-            </Paper>
-          )}
+              )}
+              {scenarios.materialize && (
+                <Line
+                  type="monotone"
+                  dataKey="materialize_end_to_end_latency"
+                  name="Materialize Reaction Time"
+                  stroke="#ff7300"
+                  dot={false}
+                  isAnimationActive={false}
+                  connectNulls={true}
+                />
+              )}
+            </LineChart>
+          </Paper>
         </Stack>
         <Accordion defaultValue={null} mt="md">
           <Accordion.Item value="advanced">
