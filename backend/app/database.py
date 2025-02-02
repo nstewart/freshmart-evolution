@@ -17,12 +17,19 @@ load_dotenv()
 # Global variables
 latest_heartbeat = {"insert_time": None, "id": None, "ts": None}
 current_isolation_level = "serializable"  # Track the desired isolation level
-refresh_interval = 30  # Default refresh interval changed from 60 to 30 seconds
+refresh_interval = 60  # Default refresh interval in seconds
 mz_schema = os.getenv('MZ_SCHEMA', 'public')  # Get schema from env with default
 
 # Connection pools
 pg_pool = None
 mz_pool = None
+
+# Track active tasks per source using consistent keys
+active_tasks = {
+    'view': set(),
+    'materialized_view': set(),
+    'materialize': set()
+}
 
 # Query count tracking with rolling window
 WINDOW_SIZE = 1  # 1 second window for QPS calculation to match frontend polling
@@ -1114,16 +1121,46 @@ async def toggle_traffic(source: str) -> bool:
     logger.info(f"Traffic for {source} is now {'enabled' if traffic_enabled[source] else 'disabled'}")
     return traffic_enabled[source]
 
+async def execute_query(source_key: str, is_materialize: bool, pool, query: str, product_id: int):
+    """Execute a single query with proper delays"""
+    global active_tasks
+    try:
+        # Skip if traffic is disabled for this source
+        if not traffic_enabled[source_key]:
+            return
+            
+        # Map source key to display name using source_names mapping
+        source_display = source_names[source_key]
+        
+        # Create and track the query task
+        task = asyncio.create_task(measure_query_time(
+            query,
+            [product_id],
+            pool,
+            is_materialize,
+            source_display
+        ))
+        
+        # Track the task in active_tasks
+        active_tasks[source_key].add(task)
+        try:
+            await task
+        finally:
+            active_tasks[source_key].remove(task)
+        
+        # Get current concurrency limits
+        max_concurrent = await get_concurrency_limits()
+        
+        # Only start a new query if traffic is enabled and under limit
+        if traffic_enabled[source_key] and len(active_tasks[source_key]) < max_concurrent[source_key]:
+            asyncio.create_task(execute_query(source_key, is_materialize, pool, query, product_id))
+            
+    except Exception as e:
+        logger.error(f"Error executing query for {source_key}: {str(e)}", exc_info=True)
+
 async def continuous_query_load():
     """Continuously send queries to all sources with balanced concurrency"""
     product_id = 1
-    
-    # Track active tasks per source using consistent keys
-    active_tasks = {
-        'view': set(),
-        'materialized_view': set(),
-        'materialize': set()
-    }
     
     # Define queries with explicit column selection
     QUERIES = {
@@ -1144,93 +1181,53 @@ async def continuous_query_load():
         """
     }
     
-    async def execute_query(source_key: str, is_materialize: bool, pool, query: str):
-        """Execute a single query with proper delays"""
-        try:
-            # Skip if traffic is disabled for this source
-            if not traffic_enabled[source_key]:
-                return
-                
-            # Map source key to display name using source_names mapping
-            source_display = source_names[source_key]
-            
-            # Add delay before query to reduce contention
-            await asyncio.sleep(0.5)  # Increased delay between queries
-            
-            # Create and track the query task
-            task = asyncio.create_task(measure_query_time(
-                query,
-                [product_id],
-                pool,
-                is_materialize,
-                source_display
-            ))
-            
-            # Track the task in active_tasks
-            active_tasks[source_key].add(task)
-            try:
-                await task
-            finally:
-                active_tasks[source_key].remove(task)
-            
-            # Get current concurrency limits
-            max_concurrent = await get_concurrency_limits()
-            
-            # Only start a new query if traffic is enabled and under limit
-            if traffic_enabled[source_key] and len(active_tasks[source_key]) < max_concurrent[source_key]:
-                await asyncio.sleep(0.2)  # Added delay before starting new query
-                asyncio.create_task(execute_query(source_key, is_materialize, pool, query))
-                
-        except Exception as e:
-            logger.error(f"Error executing query for {source_key}: {str(e)}", exc_info=True)
-    
-    async def get_concurrency_limits():
-        """Get concurrency limits based on index status"""
-        has_index = await check_materialize_index_exists()
-        return {
-            'view': 1,     # PostgreSQL View - low concurrency
-            'materialized_view': 1,  # Materialized View - low concurrency
-            'materialize': 2 if has_index else 1  # Materialize - moderate concurrency with index
-        }
-    
     while True:
         try:
             # Get current concurrency limits
             max_concurrent = await get_concurrency_limits()
             
-            # Start initial queries if under limit with delays between each type
+            # Start initial queries if under limit
             if len(active_tasks['view']) < max_concurrent['view']:
                 asyncio.create_task(execute_query(
                     'view',
                     False,
                     pg_pool,
-                    QUERIES['view']
+                    QUERIES['view'],
+                    product_id
                 ))
-                await asyncio.sleep(0.2)  # Added delay between different query types
             
             if len(active_tasks['materialized_view']) < max_concurrent['materialized_view']:
                 asyncio.create_task(execute_query(
                     'materialized_view',
                     False,
                     pg_pool,
-                    QUERIES['materialized_view']
+                    QUERIES['materialized_view'],
+                    product_id
                 ))
-                await asyncio.sleep(0.2)  # Added delay between different query types
             
             if mz_pool is not None and len(active_tasks['materialize']) < max_concurrent['materialize']:
                 asyncio.create_task(execute_query(
                     'materialize',
                     True,
                     mz_pool,
-                    QUERIES['materialize']
+                    QUERIES['materialize'],
+                    product_id
                 ))
             
-            # Increased pause between checks
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.1)  # Small delay to prevent tight loop
             
         except Exception as e:
             logger.error(f"Error in continuous query load: {str(e)}", exc_info=True)
             await asyncio.sleep(1)
+
+async def get_concurrency_limits():
+    """Get concurrency limits based on index status"""
+    has_index = await check_materialize_index_exists()
+    return {
+        'view': 1,     # PostgreSQL View - low concurrency
+        'materialized_view': 5,  # Materialized View - low concurrency
+        'materialize': 5 if has_index else 1  # Materialize - moderate concurrency with index
+    }
 
 async def update_freshness_metrics():
     """Background task to update freshness metrics for materialized views and Materialize"""
