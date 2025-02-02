@@ -130,6 +130,13 @@ latest_cpu_stats = {
     "cpu_usage": None
 }
 
+# Add traffic control state
+traffic_enabled = {
+    "view": True,
+    "materialized_view": True,
+    "materialize": True
+}
+
 def calculate_qps(source: str) -> float:
     stats = query_stats[source]
     current_time = time.time()
@@ -1138,6 +1145,13 @@ async def check_materialize_index_exists():
                 except Exception as e:
                     logger.error(f"Error releasing connection during index check: {str(e)}")
 
+async def toggle_traffic(source: str) -> bool:
+    """Toggle traffic for a specific source"""
+    global traffic_enabled
+    traffic_enabled[source] = not traffic_enabled[source]
+    logger.info(f"Traffic for {source} is now {'enabled' if traffic_enabled[source] else 'disabled'}")
+    return traffic_enabled[source]
+
 async def continuous_query_load():
     """Continuously send queries to all sources with balanced concurrency"""
     product_id = 1
@@ -1171,6 +1185,10 @@ async def continuous_query_load():
     async def execute_query(source_key: str, is_materialize: bool, pool, query: str):
         """Execute a single query with proper delays"""
         try:
+            # Skip if traffic is disabled for this source
+            if not traffic_enabled[source_key]:
+                return
+                
             # Map source key to display name using source_names mapping
             source_display = source_names[source_key]
             
@@ -1196,8 +1214,8 @@ async def continuous_query_load():
             # Get current concurrency limits
             max_concurrent = await get_concurrency_limits()
             
-            # Only start a new query if under limit and after a delay
-            if len(active_tasks[source_key]) < max_concurrent[source_key]:
+            # Only start a new query if traffic is enabled and under limit
+            if traffic_enabled[source_key] and len(active_tasks[source_key]) < max_concurrent[source_key]:
                 await asyncio.sleep(0.2)  # Added delay before starting new query
                 asyncio.create_task(execute_query(source_key, is_materialize, pool, query))
                 

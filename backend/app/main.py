@@ -165,6 +165,32 @@ async def get_cpu_stats():
         logger.error(f"Error getting CPU stats: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/toggle-traffic/{source}")
+async def toggle_traffic(source: str):
+    """Toggle traffic for a specific source"""
+    try:
+        # Map frontend source names to backend names
+        source_map = {
+            "postgres": "view",
+            "materializeView": "materialized_view",
+            "materialize": "materialize"
+        }
+        
+        if source not in source_map:
+            raise HTTPException(status_code=400, detail="Invalid source")
+            
+        backend_source = source_map[source]
+        current_state = await database.toggle_traffic(backend_source)
+        
+        return {
+            "status": "success",
+            "source": source,
+            "traffic_enabled": current_state
+        }
+    except Exception as e:
+        logger.error(f"Error toggling traffic for {source}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug", access_log=False)

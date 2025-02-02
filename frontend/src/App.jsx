@@ -151,6 +151,11 @@ function App() {
     materializeView: true,
     materialize: true
   });
+  const [trafficEnabled, setTrafficEnabled] = useState({
+    postgres: true,
+    materializeView: true,
+    materialize: true
+  });
   const productId = '1';
   const [isFetching, setIsFetching] = useState(false);
   const currentMetric = metrics[metrics.length - 1] || {};
@@ -449,6 +454,18 @@ function App() {
     fetchRefreshInterval();
   }, []);  // Empty dependency array means this runs once on mount
 
+  // Add toggle handlers
+  const handleTrafficToggle = (source) => {
+    setTrafficEnabled(prev => ({
+      ...prev,
+      [source]: !prev[source]
+    }));
+    // Call backend to update traffic state
+    fetch(`http://localhost:8000/toggle-traffic/${source}`, {
+      method: 'POST'
+    }).catch(err => console.error('Error toggling traffic:', err));
+  };
+
   if (error) {
     console.error('Rendering error state:', error);
   }
@@ -477,36 +494,63 @@ function App() {
         <Stack spacing="md">
           <Paper p="md" withBorder>
             <Text size="lg" weight={500} mb="md">Scenario Selection</Text>
-            <Group>
-              <Button
-                onClick={() => toggleScenario('postgres')}
-                variant={scenarios.postgres ? "filled" : "outline"}
-                color="blue"
-              >
-                PostgreSQL View
-              </Button>
-              <Button
-                onClick={() => toggleScenario('materializeView')}
-                variant={scenarios.materializeView ? "filled" : "outline"}
-                color="green"
-              >
-                Cached Table
-              </Button>
-              <Button
-                onClick={() => toggleScenario('materialize')}
-                variant={scenarios.materialize ? "filled" : "outline"}
-                color="orange"
-              >
-                Materialize Query
-              </Button>
-              <Button
-                onClick={() => setShowTTCA(!showTTCA)}
-                variant={showTTCA ? "filled" : "outline"}
-                color="gray"
-              >
-                Show Reaction Time
-              </Button>
-            </Group>
+            <Stack spacing="md">
+              <Group>
+                <Button
+                  onClick={() => toggleScenario('postgres')}
+                  variant={scenarios.postgres ? "filled" : "outline"}
+                  color="blue"
+                >
+                  PostgreSQL View
+                </Button>
+                <Button
+                  onClick={() => toggleScenario('materializeView')}
+                  variant={scenarios.materializeView ? "filled" : "outline"}
+                  color="green"
+                >
+                  Cached Table
+                </Button>
+                <Button
+                  onClick={() => toggleScenario('materialize')}
+                  variant={scenarios.materialize ? "filled" : "outline"}
+                  color="orange"
+                >
+                  Materialize Query
+                </Button>
+                <Button
+                  onClick={() => setShowTTCA(!showTTCA)}
+                  variant={showTTCA ? "filled" : "outline"}
+                  color="gray"
+                >
+                  Show Reaction Time
+                </Button>
+              </Group>
+
+              <Group>
+                <Text size="sm" weight={500}>Traffic Control:</Text>
+                <Button
+                  onClick={() => handleTrafficToggle('postgres')}
+                  variant={trafficEnabled.postgres ? "light" : "subtle"}
+                  color={trafficEnabled.postgres ? "blue" : "gray"}
+                >
+                  {trafficEnabled.postgres ? "Stop PostgreSQL Traffic" : "Start PostgreSQL Traffic"}
+                </Button>
+                <Button
+                  onClick={() => handleTrafficToggle('materializeView')}
+                  variant={trafficEnabled.materializeView ? "light" : "subtle"}
+                  color={trafficEnabled.materializeView ? "green" : "gray"}
+                >
+                  {trafficEnabled.materializeView ? "Stop Cache Traffic" : "Start Cache Traffic"}
+                </Button>
+                <Button
+                  onClick={() => handleTrafficToggle('materialize')}
+                  variant={trafficEnabled.materialize ? "light" : "subtle"}
+                  color={trafficEnabled.materialize ? "orange" : "gray"}
+                >
+                  {trafficEnabled.materialize ? "Stop Materialize Traffic" : "Start Materialize Traffic"}
+                </Button>
+              </Group>
+            </Stack>
           </Paper>
 
           <Paper p="md" withBorder>
