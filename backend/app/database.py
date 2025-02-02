@@ -116,6 +116,12 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
+# Add CPU stats cache
+latest_cpu_stats = {
+    "timestamp": None,
+    "cpu_usage": None
+}
+
 def calculate_qps(source: str) -> float:
     stats = query_stats[source]
     current_time = time.time()
@@ -739,13 +745,18 @@ async def measure_query_time(query: str, params: Tuple, pool, is_materialize: bo
             stats["current_stats"]["qps"] = calculate_qps(stats_key)
             # Convert latency to milliseconds for UI
             stats["current_stats"]["latency"] = duration * 1000
-            if result and "adjusted_price" in result:
-                # Update price for all sources when we get a result
-                price = float(result["adjusted_price"])
-                stats["current_stats"]["price"] = price
-                logger.debug(f"Updated price for {source} to {price}")
+            
+            # Update price only if we have a valid result with adjusted_price
+            if result and "adjusted_price" in result and result["adjusted_price"] is not None:
+                try:
+                    price = float(result["adjusted_price"])
+                    stats["current_stats"]["price"] = price
+                    logger.debug(f"Updated price for {source} to {price}")
+                except (ValueError, TypeError) as e:
+                    logger.error(f"Error converting price for {source}: {str(e)}")
             else:
-                logger.debug(f"No price update for {source} - result: {result}")
+                logger.debug(f"No valid price update for {source} - result: {result}")
+            
             stats["current_stats"]["last_updated"] = current_time
         
         return duration, result
@@ -1126,7 +1137,7 @@ async def continuous_query_load():
     # Track active tasks per source using consistent keys
     active_tasks = {
         'view': set(),
-        'materialized_view': set(),  # Changed from 'mv' to 'materialized_view'
+        'materialized_view': set(),
         'materialize': set()
     }
     
@@ -1156,10 +1167,7 @@ async def continuous_query_load():
             source_display = source_names[source_key]
             
             # Add delay before query to reduce contention
-            if source_key == 'materialized_view':  # Changed from 'mv'
-                await asyncio.sleep(0.5)  # Reduced delay for MV queries
-            else:
-                await asyncio.sleep(0.1)  # Reduced delay for other queries
+            await asyncio.sleep(0.5)  # Increased delay between queries
             
             # Create and track the query task
             task = asyncio.create_task(measure_query_time(
@@ -1173,19 +1181,16 @@ async def continuous_query_load():
             # Track the task in active_tasks
             active_tasks[source_key].add(task)
             try:
-                # Actually await the task to ensure it completes
                 await task
-            except Exception as e:
-                logger.error(f"Error in query task for {source_key}: {str(e)}", exc_info=True)
             finally:
-                # Always remove the task from active set
                 active_tasks[source_key].remove(task)
             
             # Get current concurrency limits
             max_concurrent = await get_concurrency_limits()
             
-            # Only start a new query if under limit
+            # Only start a new query if under limit and after a delay
             if len(active_tasks[source_key]) < max_concurrent[source_key]:
+                await asyncio.sleep(0.2)  # Added delay before starting new query
                 asyncio.create_task(execute_query(source_key, is_materialize, pool, query))
                 
         except Exception as e:
@@ -1195,9 +1200,9 @@ async def continuous_query_load():
         """Get concurrency limits based on index status"""
         has_index = await check_materialize_index_exists()
         return {
-            'view': 1,     # PostgreSQL View - moderate concurrency
-            'materialized_view': 2,      # Changed from 'mv' - Materialized View
-            'materialize': 5 if has_index else 1  # Materialize - high concurrency with index
+            'view': 1,     # PostgreSQL View - low concurrency
+            'materialized_view': 1,  # Materialized View - low concurrency
+            'materialize': 2 if has_index else 1  # Materialize - moderate concurrency with index
         }
     
     while True:
@@ -1205,7 +1210,7 @@ async def continuous_query_load():
             # Get current concurrency limits
             max_concurrent = await get_concurrency_limits()
             
-            # Start initial queries if under limit
+            # Start initial queries if under limit with delays between each type
             if len(active_tasks['view']) < max_concurrent['view']:
                 asyncio.create_task(execute_query(
                     'view',
@@ -1213,17 +1218,17 @@ async def continuous_query_load():
                     pg_pool,
                     QUERIES['view']
                 ))
+                await asyncio.sleep(0.2)  # Added delay between different query types
             
-            # Start MV queries if under limit
-            if len(active_tasks['materialized_view']) < max_concurrent['materialized_view']:  # Changed from 'mv'
+            if len(active_tasks['materialized_view']) < max_concurrent['materialized_view']:
                 asyncio.create_task(execute_query(
-                    'materialized_view',  # Changed from 'mv'
+                    'materialized_view',
                     False,
                     pg_pool,
-                    QUERIES['materialized_view']  # Changed from 'mv'
+                    QUERIES['materialized_view']
                 ))
+                await asyncio.sleep(0.2)  # Added delay between different query types
             
-            # Start Materialize queries if available and under limit
             if mz_pool is not None and len(active_tasks['materialize']) < max_concurrent['materialize']:
                 asyncio.create_task(execute_query(
                     'materialize',
@@ -1232,8 +1237,8 @@ async def continuous_query_load():
                     QUERIES['materialize']
                 ))
             
-            # Brief pause between checks
-            await asyncio.sleep(0.1)
+            # Increased pause between checks
+            await asyncio.sleep(0.5)
             
         except Exception as e:
             logger.error(f"Error in continuous query load: {str(e)}", exc_info=True)
@@ -1328,6 +1333,44 @@ async def update_freshness_metrics():
             logger.error(f"Error in update_freshness_metrics: {str(e)}")
             await asyncio.sleep(1)
 
+async def collect_cpu_stats():
+    """Background task to collect CPU stats every second"""
+    global latest_cpu_stats
+    while True:
+        try:
+            # Get stats from docker container
+            result = subprocess.run(
+                ['docker', 'stats', 'my_postgres', '--no-stream', '--format', '{{.CPUPerc}}'],
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode != 0:
+                logger.error(f"Error getting Docker stats: {result.stderr}")
+            else:
+                # Parse the CPU percentage
+                cpu_str = result.stdout.strip().rstrip('%')
+                if cpu_str:
+                    try:
+                        cpu_usage = float(cpu_str)
+                        latest_cpu_stats.update({
+                            "timestamp": int(time.time() * 1000),
+                            "cpu_usage": cpu_usage
+                        })
+                    except ValueError as e:
+                        logger.error(f"Error converting CPU string '{cpu_str}' to float: {str(e)}")
+                else:
+                    logger.error("Empty CPU percentage string")
+        except Exception as e:
+            logger.error(f"Error collecting CPU stats: {str(e)}")
+        
+        # Wait before next collection
+        await asyncio.sleep(1)
+
+async def get_postgres_cpu_stats():
+    """Get CPU usage stats from cache"""
+    return latest_cpu_stats
+
 # Update startup event to start the freshness metrics update task
 @app.on_event("startup")
 async def startup_event():
@@ -1386,6 +1429,11 @@ async def startup_event():
         freshness_task = asyncio.create_task(update_freshness_metrics(), name="freshness_metrics")
         background_tasks.append(freshness_task)
         logger.info("3.8: Freshness metrics task created")
+
+        logger.info("3.9: Starting CPU stats collection task")
+        cpu_stats_task = asyncio.create_task(collect_cpu_stats(), name="cpu_stats")
+        background_tasks.append(cpu_stats_task)
+        logger.info("3.10: CPU stats collection task created")
     except Exception as e:
         logger.error(f"Error creating background tasks: {str(e)}", exc_info=True)
         raise
@@ -1420,33 +1468,3 @@ async def startup_event():
         raise
     
     logger.info("=== Application Startup Completed Successfully ===")
-
-async def get_postgres_cpu_stats():
-    """Get CPU usage stats for the PostgreSQL container"""
-    try:
-        # Get stats from docker container
-        result = subprocess.run(
-            ['docker', 'stats', 'my_postgres', '--no-stream', '--format', '{{.CPUPerc}}'],
-            capture_output=True,
-            text=True
-        )
-        
-        if result.returncode != 0:
-            logger.error(f"Error getting Docker stats: {result.stderr}")
-            return None
-            
-        # Parse the CPU percentage (removes the % sign and converts to float)
-        cpu_str = result.stdout.strip().rstrip('%')
-        if not cpu_str:
-            logger.error("Empty CPU percentage string")
-            return None
-            
-        try:
-            cpu_usage = float(cpu_str)
-            return cpu_usage
-        except ValueError as e:
-            logger.error(f"Error converting CPU string '{cpu_str}' to float: {str(e)}")
-            return None
-    except Exception as e:
-        logger.error(f"Error getting PostgreSQL CPU stats: {str(e)}")
-        return None

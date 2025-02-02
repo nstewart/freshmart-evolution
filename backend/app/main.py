@@ -158,6 +158,18 @@ async def get_current_refresh_interval():
             detail="Failed to get refresh interval"
         )
 
+@app.get("/api/cpu")
+async def get_cpu_stats():
+    """Get CPU usage stats for PostgreSQL"""
+    try:
+        stats = await database.get_postgres_cpu_stats()
+        if stats["cpu_usage"] is None:
+            raise HTTPException(status_code=503, detail="CPU stats not available")
+        return stats
+    except Exception as e:
+        logger.error(f"Error getting CPU stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug", access_log=False)
