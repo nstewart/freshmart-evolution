@@ -1,0 +1,2 @@
+sales.csv filter=lfs diff=lfs merge=lfs -text
+sales_chunks filter=lfs diff=lfs merge=lfs -text

@@ -13,6 +13,7 @@ CREATE SOURCE IF NOT EXISTS pg_src FROM POSTGRES CONNECTION pg_conn (
 ) FOR ALL TABLES;
 
 CREATE VIEW IF NOT EXISTS dynamic_pricing AS
+
 WITH recent_prices AS (
     SELECT grp.product_id, AVG(price) AS avg_price
     FROM (SELECT DISTINCT product_id FROM sales) grp, 

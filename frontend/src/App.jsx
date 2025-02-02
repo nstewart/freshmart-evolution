@@ -1,10 +1,52 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stack, Badge, LoadingOverlay, Slider, Image, Accordion } from '@mantine/core';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stack, Badge, LoadingOverlay, Slider, Image, Accordion, Grid } from '@mantine/core';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import ContainersCPUChart from './components/ContainersCPUChart.jsx';
 
 const HISTORY_WINDOW_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
+
+const theme = {
+  colorScheme: 'light',
+  fontFamily: 'Inter, sans-serif',
+  headings: {
+    fontFamily: 'Inter, sans-serif',
+  },
+  components: {
+    Paper: {
+      defaultProps: {
+        shadow: 'sm',
+        radius: 'md',
+        withBorder: true,
+      }
+    },
+    Button: {
+      defaultProps: {
+        radius: 'md',
+      }
+    },
+    Container: {
+      defaultProps: {
+        size: 'xl',
+      }
+    }
+  },
+  colors: {
+    brand: [
+      '#eef2ff',
+      '#e0e7ff',
+      '#c7d2fe',
+      '#a5b4fc',
+      '#818cf8',
+      '#6366f1',
+      '#4f46e5',
+      '#4338ca',
+      '#3730a3',
+      '#312e81',
+    ],
+  },
+};
 
 // Add CSS keyframes for the flash animation
 const flashAnimation = {
@@ -146,6 +188,11 @@ function App() {
     materializeEndToEnd: { max: 0, avg: 0, p99: 0 }
   });
   const [scenarios, setScenarios] = useState({
+    postgres: true,
+    materializeView: true,
+    materialize: true
+  });
+  const [trafficEnabled, setTrafficEnabled] = useState({
     postgres: true,
     materializeView: true,
     materialize: true
@@ -448,83 +495,203 @@ function App() {
     fetchRefreshInterval();
   }, []);  // Empty dependency array means this runs once on mount
 
+  // Update handleTrafficToggle to use the new endpoint
+  const handleTrafficToggle = async (source) => {
+    try {
+      // Map frontend source names to backend source names
+      const sourceMapping = {
+        'postgres': 'view',
+        'materializeView': 'materialized_view',
+        'materialize': 'materialize'
+      };
+
+      const backendSource = sourceMapping[source];
+      if (!backendSource) {
+        console.error(`Invalid source name: ${source}`);
+        return;
+      }
+
+      const response = await axios.post(`${API_URL}/api/toggle-traffic/${backendSource}`);
+      
+      // After toggle, fetch the current state to ensure we're in sync
+      const stateResponse = await axios.get(`${API_URL}/api/traffic-state`);
+      setTrafficEnabled({
+        postgres: stateResponse.data.view,
+        materializeView: stateResponse.data.materialized_view,
+        materialize: stateResponse.data.materialize
+      });
+    } catch (err) {
+      console.error('Error toggling traffic:', err);
+      setError(`Failed to toggle ${source} traffic: ${err.message}`);
+      
+      // On error, refresh the state to ensure we're in sync
+      try {
+        const stateResponse = await axios.get(`${API_URL}/api/traffic-state`);
+        setTrafficEnabled({
+          postgres: stateResponse.data.view,
+          materializeView: stateResponse.data.materialized_view,
+          materialize: stateResponse.data.materialize
+        });
+      } catch (stateErr) {
+        console.error('Error fetching traffic state after toggle error:', stateErr);
+      }
+    }
+  };
+
+  // Add useEffect to fetch initial traffic state and set up periodic refresh
+  useEffect(() => {
+    const fetchTrafficState = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/api/traffic-state`);
+        setTrafficEnabled({
+          postgres: response.data.view,
+          materializeView: response.data.materialized_view,
+          materialize: response.data.materialize
+        });
+      } catch (err) {
+        console.error('Error fetching traffic state:', err);
+      }
+    };
+
+    // Fetch initial state
+    fetchTrafficState();
+
+    // Set up periodic refresh every 2 seconds
+    const interval = setInterval(fetchTrafficState, 2000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
+  }, []);  // Empty dependency array means this runs once on mount
+
   if (error) {
     console.error('Rendering error state:', error);
   }
 
   return (
-    <MantineProvider>
-      <Container size="lg" py="xl" style={{ position: 'relative' }}>
-        <Stack spacing="xs" align="center" mb="xl">
-          <Text size="xl" weight={700} style={{ fontSize: '2.5rem' }}>Freshmart</Text>
-          <Text size="lg" color="dimmed">Live Data Products</Text>
-          <Text size="md" color="dimmed" align="center" mt="md" style={{ maxWidth: '800px' }}>
-            This demo shows the journey the team at Freshmart takes to deliver correct, dynamic prices to their customers while they are still engaging with their site.
-          </Text>
-        </Stack>
-        <LoadingOverlay 
-          visible={isIndexLoading || isPromotionLoading || isRefreshConfigLoading} 
-          overlayBlur={2}
-          loaderProps={{ size: 'xl', color: 'blue' }}
-          overlayOpacity={0.7}
-        />
-        {error && (
-          <Paper p="md" mb="md" style={{ backgroundColor: '#fff4f4' }}>
-            <Text color="red">Error: {error}</Text>
-          </Paper>
-        )}
-        <Stack spacing="md">
-          <Paper p="md" withBorder>
-            <Text size="lg" weight={500} mb="md">Scenario Selection</Text>
-            <Group>
-              <Button
-                onClick={() => toggleScenario('postgres')}
-                variant={scenarios.postgres ? "filled" : "outline"}
-                color="blue"
-              >
-                PostgreSQL View
-              </Button>
-              <Button
-                onClick={() => toggleScenario('materializeView')}
-                variant={scenarios.materializeView ? "filled" : "outline"}
-                color="green"
-              >
-                Cached Table
-              </Button>
-              <Button
-                onClick={() => toggleScenario('materialize')}
-                variant={scenarios.materialize ? "filled" : "outline"}
-                color="orange"
-              >
-                Materialize Query
-              </Button>
-              <Button
-                onClick={() => setShowTTCA(!showTTCA)}
-                variant={showTTCA ? "filled" : "outline"}
-                color="gray"
-              >
-                Show Reaction Time
-              </Button>
-            </Group>
+    <MantineProvider theme={theme}>
+      <Container size="xl" py="xl">
+        <Stack spacing="lg">
+          <Paper p="xl" withBorder={false} style={{ 
+            background: 'linear-gradient(-45deg, #4f46e5, #6366f1, #818cf8, #4f46e5)',
+            backgroundSize: '400% 400%',
+            animation: 'gradient 15s ease infinite'
+          }}>
+            <Grid>
+              <Grid.Col span={8}>
+                <Stack spacing="xs">
+                  <Stack spacing={0}>
+                    <Text size="xl" weight={700} style={{ fontSize: '2rem', letterSpacing: '-0.02em', color: 'white', lineHeight: 1.2 }}>
+                      Real-time Data
+                    </Text>
+                    <Text size="xl" weight={700} style={{ fontSize: '2rem', letterSpacing: '-0.02em', color: 'white', lineHeight: 1.2 }}>
+                      Integration and Transformation
+                    </Text>
+                  </Stack>
+                  <Text size="lg" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.5rem' }}>
+                    Use SQL to create live data products you can trust
+                  </Text>
+                  <Text size="md" style={{ color: 'rgba(255, 255, 255, 0.8)', maxWidth: '600px', lineHeight: 1.5 }}>
+                    How can you make trustworthy, transformed data available throughout your systems and teams, while it's still fresh?
+                  </Text>
+                </Stack>
+              </Grid.Col>
+            </Grid>
           </Paper>
 
-          <Paper p="md" withBorder>
-            <Text size="lg" weight={500} mb="md">Data Product Price Comparison</Text>
-            <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px' }}>
+          <Paper p="xl" className="hover-card">
+            <Text size="lg" weight={600} mb="md" style={{ color: '#1a1a1a' }}>Scenario Selection</Text>
+            <Stack spacing="xl">
+              <Stack spacing="xs">
+                <Text size="sm" weight={500} color="dimmed">Query Source:</Text>
+                <Group position="left" spacing="md">
+                  <Button
+                    onClick={() => toggleScenario('postgres')}
+                    variant={scenarios.postgres ? "filled" : "light"}
+                    color="blue"
+                    className="button-pulse"
+                    style={{ width: '180px' }}
+                  >
+                    PostgreSQL View
+                  </Button>
+                  <Button
+                    onClick={() => toggleScenario('materializeView')}
+                    variant={scenarios.materializeView ? "filled" : "light"}
+                    color="teal"
+                    className="button-pulse"
+                    style={{ width: '180px' }}
+                  >
+                    Cached Table
+                  </Button>
+                  <Button
+                    onClick={() => toggleScenario('materialize')}
+                    variant={scenarios.materialize ? "filled" : "light"}
+                    color="violet"
+                    className="button-pulse"
+                    style={{ width: '180px' }}
+                  >
+                    Materialize Query
+                  </Button>
+                </Group>
+              </Stack>
+
+              <Stack spacing="xs">
+                <Text size="sm" weight={500} color="dimmed">Traffic Control:</Text>
+                <Group position="left" spacing="md">
+                  <Button
+                    onClick={() => handleTrafficToggle('postgres')}
+                    variant={trafficEnabled.postgres ? "light" : "subtle"}
+                    color={trafficEnabled.postgres ? "blue" : "gray"}
+                    className="button-pulse"
+                    style={{ width: '180px' }}
+                  >
+                    {trafficEnabled.postgres ? "Stop PostgreSQL" : "Start PostgreSQL"}
+                  </Button>
+                  <Button
+                    onClick={() => handleTrafficToggle('materializeView')}
+                    variant={trafficEnabled.materializeView ? "light" : "subtle"}
+                    color={trafficEnabled.materializeView ? "teal" : "gray"}
+                    className="button-pulse"
+                    style={{ width: '180px' }}
+                  >
+                    {trafficEnabled.materializeView ? "Stop Cache" : "Start Cache"}
+                  </Button>
+                  <Button
+                    onClick={() => handleTrafficToggle('materialize')}
+                    variant={trafficEnabled.materialize ? "light" : "subtle"}
+                    color={trafficEnabled.materialize ? "violet" : "gray"}
+                    className="button-pulse"
+                    style={{ width: '180px' }}
+                  >
+                    {trafficEnabled.materialize ? "Stop Materialize" : "Start Materialize"}
+                  </Button>
+                </Group>
+              </Stack>
+            </Stack>
+          </Paper>
+
+          <Paper p="xl" className="hover-card">
+            <Text size="lg" weight={600} mb="md" style={{ color: '#1a1a1a' }}>Data Product Price Comparison</Text>
+            <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
               Each data product is composed by joining data from multiple sources, these could be separate tables or separate databases entirely. Data products are made available to consumers ranging from web services to inventory systems.
             </Text>
-            <Paper p="md" mb="lg" style={{ backgroundColor: '#f8f9fa' }}>
-              <Accordion defaultValue={null}>
+            
+            <Paper p="lg" mb="lg" style={{ backgroundColor: '#f8fafc' }}>
+              <Accordion>
                 <Accordion.Item value="dataflow">
-                  <Accordion.Control>Data Lineage</Accordion.Control>
+                  <Accordion.Control>
+                    <Text weight={500}>Data Lineage</Text>
+                  </Accordion.Control>
                   <Accordion.Panel>
                     <pre style={{ 
-                      fontFamily: 'monospace',
+                      fontFamily: 'Inter, monospace',
                       fontSize: '14px',
-                      lineHeight: '1.2',
+                      lineHeight: '1.5',
                       whiteSpace: 'pre',
                       overflow: 'auto',
-                      padding: '20px'
+                      padding: '20px',
+                      backgroundColor: '#ffffff',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(0, 0, 0, 0.05)'
                     }}>
 {`
    Categories ──┐
@@ -548,85 +715,79 @@ function App() {
    </span>
 
 </pre>
-                    <div>Database Size: <Badge color="blue" variant="light">{databaseSize ? `${databaseSize.toFixed(2)} GB` : 'Unknown'}</Badge></div>
                   </Accordion.Panel>
                 </Accordion.Item>
               </Accordion>
             </Paper>
-            <Group position="apart">
+
+            <Group position="apart" grow>
               {scenarios.postgres && (
-                <Paper shadow="sm" p={0} withBorder style={{ width: '30%' }}>
-                  <Stack spacing={0}>
-                    <div style={{ padding: '1rem' }}>
-                      <Image
-                        src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
-                        height={200}
-                        fit="contain"
-                        alt="Product"
+                <Paper p={0} className="hover-card">
+                  <div className="product-image-container">
+                    <Image
+                      src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
+                      height={200}
+                      fit="contain"
+                      alt="Product"
+                    />
+                    <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
+                    <Group position="center" mt="md">
+                      <PriceDisplay 
+                        price={currentMetric.view_price}
+                        prevPrice={prevPrices.current.view}
+                        reactionTime={currentMetric.view_end_to_end_latency}
                       />
-                      <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
-                      <Group position="center" mt="md">
-                        <PriceDisplay 
-                          price={currentMetric.view_price}
-                          prevPrice={prevPrices.current.view}
-                          reactionTime={currentMetric.view_end_to_end_latency}
-                        />
-                      </Group>
-                    </div>
-                    <Paper p="md" style={{ backgroundColor: '#edf2ff', borderTop: '1px solid #dee2e6' }}>
-                      <Text weight={500} align="center" color="blue">PostgreSQL</Text>
-                    </Paper>
-                  </Stack>
+                    </Group>
+                  </div>
+                  <div className="price-display">
+                    <Text weight={500} align="center" color="blue">PostgreSQL View</Text>
+                  </div>
                 </Paper>
               )}
               {scenarios.materializeView && (
-                <Paper shadow="sm" p={0} withBorder style={{ width: '30%' }}>
-                  <Stack spacing={0}>
-                    <div style={{ padding: '1rem' }}>
-                      <Image
-                        src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
-                        height={200}
-                        fit="contain"
-                        alt="Product"
+                <Paper p={0} className="hover-card">
+                  <div className="product-image-container">
+                    <Image
+                      src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
+                      height={200}
+                      fit="contain"
+                      alt="Product"
+                    />
+                    <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
+                    <Group position="center" mt="md" spacing="xs">
+                      <PriceDisplay 
+                        price={currentMetric.materialized_view_price}
+                        prevPrice={prevPrices.current.materialized_view}
+                        reactionTime={currentMetric.materialized_view_end_to_end_latency}
                       />
-                      <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
-                      <Group position="center" mt="md" spacing="xs">
-                        <PriceDisplay 
-                          price={currentMetric.materialized_view_price}
-                          prevPrice={prevPrices.current.materialized_view}
-                          reactionTime={currentMetric.materialized_view_end_to_end_latency}
-                        />
-                      </Group>
-                    </div>
-                    <Paper p="md" style={{ backgroundColor: '#e9fef0', borderTop: '1px solid #dee2e6' }}>
-                      <Text weight={500} align="center" color="green">Cache</Text>
-                    </Paper>
-                  </Stack>
+                    </Group>
+                  </div>
+                  <div className="price-display">
+                    <Text weight={500} align="center" color="teal">Cache</Text>
+                  </div>
                 </Paper>
               )}
               {scenarios.materialize && (
-                <Paper shadow="sm" p={0} withBorder style={{ width: '30%' }}>
-                  <Stack spacing={0}>
-                    <div style={{ padding: '1rem' }}>
-                      <Image
-                        src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
-                        height={200}
-                        fit="contain"
-                        alt="Product"
+                <Paper p={0} className="hover-card">
+                  <div className="product-image-container">
+                    <Image
+                      src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
+                      height={200}
+                      fit="contain"
+                      alt="Product"
+                    />
+                    <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
+                    <Group position="center" mt="md" spacing="xs">
+                      <PriceDisplay 
+                        price={currentMetric.materialize_price}
+                        prevPrice={prevPrices.current.materialize}
+                        reactionTime={currentMetric.materialize_end_to_end_latency}
                       />
-                      <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
-                      <Group position="center" mt="md" spacing="xs">
-                        <PriceDisplay 
-                          price={currentMetric.materialize_price}
-                          prevPrice={prevPrices.current.materialize}
-                          reactionTime={currentMetric.materialize_end_to_end_latency}
-                        />
-                      </Group>
-                    </div>
-                    <Paper p="md" style={{ backgroundColor: '#fff4e6', borderTop: '1px solid #dee2e6' }}>
-                      <Text weight={500} align="center" color="orange">Materialize</Text>
-                    </Paper>
-                  </Stack>
+                    </Group>
+                  </div>
+                  <div className="price-display">
+                    <Text weight={500} align="center" color="violet">Materialize</Text>
+                  </div>
                 </Paper>
               )}
             </Group>
@@ -644,13 +805,6 @@ function App() {
                   <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency Max</th>
                   <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency Avg</th>
                   <th style={{ textAlign: 'right', padding: '8px' }}>Query Latency P99</th>
-                  {showTTCA && (
-                    <>
-                      <th style={{ textAlign: 'right', padding: '8px' }}>RT Max</th>
-                      <th style={{ textAlign: 'right', padding: '8px' }}>RT Avg</th>
-                      <th style={{ textAlign: 'right', padding: '8px' }}>RT P99</th>
-                    </>
-                  )}
                   <th style={{ textAlign: 'right', padding: '8px' }}>QPS</th>
                 </tr>
               </thead>
@@ -661,13 +815,6 @@ function App() {
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.view.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.view.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.view.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    {showTTCA && (
-                      <>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.viewEndToEnd.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.viewEndToEnd.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.viewEndToEnd.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                      </>
-                    )}
                     <td style={{ textAlign: 'right', padding: '8px' }}>{currentMetric.view_qps?.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) || '0.0'}</td>
                   </tr>
                 )}
@@ -677,13 +824,6 @@ function App() {
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeView.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    {showTTCA && (
-                      <>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeViewEndToEnd.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeViewEndToEnd.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeViewEndToEnd.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                      </>
-                    )}
                     <td style={{ textAlign: 'right', padding: '8px' }}>{currentMetric.materialized_view_qps?.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) || '0.0'}</td>
                   </tr>
                 )}
@@ -693,13 +833,6 @@ function App() {
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materialize.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materialize.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materialize.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    {showTTCA && (
-                      <>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeEndToEnd.max.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeEndToEnd.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td style={{ textAlign: 'right', padding: '8px' }}>{stats.materializeEndToEnd.p99.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                      </>
-                    )}
                     <td style={{ textAlign: 'right', padding: '8px' }}>{currentMetric.materialize_qps?.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) || '0.0'}</td>
                   </tr>
                 )}
@@ -709,200 +842,203 @@ function App() {
 
           <Paper p="md" withBorder>
             <Text size="lg" weight={500} mb="md">Query Latency</Text>
-            <LineChart width={800} height={200} data={metrics}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="timestamp"
-                type="number"
-                domain={['dataMin', 'dataMax']}
-                tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                scale="time"
-                interval="preserveStartEnd"
-                minTickGap={50}
-              />
-              <YAxis />
-              <Tooltip
-                labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                formatter={(value) => `${value?.toFixed(2)}ms`}
-              />
-              <Legend />
-              {scenarios.postgres && (
-                <Line
-                  type="monotone"
-                  dataKey="view_latency"
-                  name="PostgreSQL View Latency"
-                  stroke="#8884d8"
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={true}
-                />
-              )}
-              {scenarios.materializeView && (
-                <Line
-                  type="monotone"
-                  dataKey="materialized_view_latency"
-                  name="Cached Table Latency"
-                  stroke="#82ca9d"
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={true}
-                />
-              )}
-              {scenarios.materialize && (
-                <Line
-                  type="monotone"
-                  dataKey="materialize_latency"
-                  name="Materialize Latency"
-                  stroke="#ff7300"
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={true}
-                />
-              )}
-            </LineChart>
+            <div style={{ width: '100%', height: '200px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={metrics}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="timestamp"
+                    type="number"
+                    domain={['dataMin', 'dataMax']}
+                    tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                    scale="time"
+                    interval="preserveStartEnd"
+                    minTickGap={50}
+                  />
+                  <YAxis />
+                  <Tooltip
+                    labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                    formatter={(value) => `${value?.toFixed(2)}ms`}
+                  />
+                  <Legend />
+                  {scenarios.postgres && (
+                    <Line
+                      type="monotone"
+                      dataKey="view_latency"
+                      name="PostgreSQL View Latency"
+                      stroke="#8884d8"
+                      dot={false}
+                      isAnimationActive={false}
+                      connectNulls={true}
+                    />
+                  )}
+                  {scenarios.materializeView && (
+                    <Line
+                      type="monotone"
+                      dataKey="materialized_view_latency"
+                      name="Cached Table Latency"
+                      stroke="#82ca9d"
+                      dot={false}
+                      isAnimationActive={false}
+                      connectNulls={true}
+                    />
+                  )}
+                  {scenarios.materialize && (
+                    <Line
+                      type="monotone"
+                      dataKey="materialize_latency"
+                      name="Materialize Latency"
+                      stroke="#ff7300"
+                      dot={false}
+                      isAnimationActive={false}
+                      connectNulls={true}
+                    />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </Paper>
 
-          <Paper p="md" withBorder>
-            <Group position="apart" mb="md">
-              <Text size="lg" weight={500}>Replication and Refresh Status</Text>
-              <Group>
-                {scenarios.materialize && (
-                  <Group>
-                    <div>Current Replication Lag:</div>
-                    <Badge color={lagStatus.color} size="lg" variant="filled">
-                      {currentMetric.materialize_freshness?.toFixed(3)}s ({lagStatus.label})
-                    </Badge>
-                  </Group>
-                )}
-                {scenarios.materializeView && (
-                  <Group>
-                    <div>Cache Rehydration Time Stats:</div>
-                    <Text size="sm">
-                      Max: {stats.mvRefresh.max.toFixed(2)}ms | 
-                      Avg: {stats.mvRefresh.avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}ms | 
-                      P99: {stats.mvRefresh.p99.toFixed(2)}ms
-                    </Text>
-                  </Group>
-                )}
-              </Group>
-            </Group>
-            <LineChart width={800} height={200} data={metrics}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="timestamp"
-                type="number"
-                domain={['dataMin', 'dataMax']}
-                tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                scale="time"
-                interval="preserveStartEnd"
-                minTickGap={50}
-              />
-              <YAxis />
-              <Tooltip
-                labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                formatter={(value) => `${value?.toFixed(3) || 'N/A'}s`}
-              />
-              <Legend />
-              {scenarios.materializeView && (
-                <Line
-                  type="monotone"
-                  dataKey="materialized_view_freshness"
-                  name="Cached Table Refresh Age"
-                  stroke="#82ca9d"
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={true}
-                />
-              )}
-              {scenarios.materialize && (
-                <Line
-                  type="monotone"
-                  dataKey="materialize_freshness"
-                  name="Materialize Replication Lag"
-                  stroke="#ff7300"
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={true}
-                />
-              )}
-            </LineChart>
-          </Paper>
-
-          {showTTCA && (
+          {(scenarios.materializeView || scenarios.materialize) && (
             <Paper p="md" withBorder>
-              <Text size="lg" weight={500} mb="md">Reaction Time</Text>
-              <LineChart width={800} height={200} data={metrics}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="timestamp"
-                  type="number"
-                  domain={['dataMin', 'dataMax']}
-                  tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                  scale="time"
-                  interval="preserveStartEnd"
-                  minTickGap={50}
-                />
-                <YAxis />
-                <Tooltip
-                  labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                  formatter={(value) => `${value?.toFixed(2) || 'N/A'}ms`}
-                />
-                <Legend />
-                {scenarios.postgres && (
-                  <Line
-                    type="monotone"
-                    dataKey="view_end_to_end_latency"
-                    name="PostgreSQL View Reaction Time"
-                    stroke="#8884d8"
-                    dot={false}
-                    isAnimationActive={false}
-                    connectNulls={true}
-                  />
-                )}
-                {scenarios.materializeView && (
-                  <Line
-                    type="monotone"
-                    dataKey="materialized_view_end_to_end_latency"
-                    name="Cached Table Reaction Time"
-                    stroke="#82ca9d"
-                    dot={false}
-                    isAnimationActive={false}
-                    connectNulls={true}
-                  />
-                )}
-                {scenarios.materialize && (
-                  <Line
-                    type="monotone"
-                    dataKey="materialize_end_to_end_latency"
-                    name="Materialize Reaction Time"
-                    stroke="#ff7300"
-                    dot={false}
-                    isAnimationActive={false}
-                    connectNulls={true}
-                  />
-                )}
-              </LineChart>
+              <Group position="apart" mb="md">
+                <Text size="lg" weight={500}>Replication and Refresh Status</Text>
+              </Group>
+              <div style={{ width: '100%', height: '200px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={metrics}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="timestamp"
+                      type="number"
+                      domain={['dataMin', 'dataMax']}
+                      tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                      scale="time"
+                      interval="preserveStartEnd"
+                      minTickGap={50}
+                    />
+                    <YAxis />
+                    <Tooltip
+                      labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                      formatter={(value) => `${value?.toFixed(3) || 'N/A'}s`}
+                    />
+                    <Legend />
+                    {scenarios.materializeView && (
+                      <Line
+                        type="monotone"
+                        dataKey="materialized_view_freshness"
+                        name="Cached Table Refresh Age"
+                        stroke="#82ca9d"
+                        dot={false}
+                        isAnimationActive={false}
+                        connectNulls={true}
+                      />
+                    )}
+                    {scenarios.materialize && (
+                      <Line
+                        type="monotone"
+                        dataKey="materialize_freshness"
+                        name="Materialize Replication Lag"
+                        stroke="#ff7300"
+                        dot={false}
+                        isAnimationActive={false}
+                        connectNulls={true}
+                      />
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </Paper>
           )}
+
+          <Paper p="md" withBorder>
+            <Text size="lg" weight={500} mb="md">Reaction Time</Text>
+            <div style={{ width: '100%', height: '200px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={metrics}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="timestamp"
+                    type="number"
+                    domain={['dataMin', 'dataMax']}
+                    tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                    scale="time"
+                    interval="preserveStartEnd"
+                    minTickGap={50}
+                  />
+                  <YAxis />
+                  <Tooltip
+                    labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                    formatter={(value) => `${value?.toFixed(2) || 'N/A'}ms`}
+                  />
+                  <Legend />
+                  {scenarios.postgres && (
+                    <Line
+                      type="monotone"
+                      dataKey="view_end_to_end_latency"
+                      name="PostgreSQL View Reaction Time"
+                      stroke="#8884d8"
+                      dot={false}
+                      isAnimationActive={false}
+                      connectNulls={true}
+                    />
+                  )}
+                  {scenarios.materializeView && (
+                    <Line
+                      type="monotone"
+                      dataKey="materialized_view_end_to_end_latency"
+                      name="Cached Table Reaction Time"
+                      stroke="#82ca9d"
+                      dot={false}
+                      isAnimationActive={false}
+                      connectNulls={true}
+                    />
+                  )}
+                  {scenarios.materialize && (
+                    <Line
+                      type="monotone"
+                      dataKey="materialize_end_to_end_latency"
+                      name="Materialize Reaction Time"
+                      stroke="#ff7300"
+                      dot={false}
+                      isAnimationActive={false}
+                      connectNulls={true}
+                    />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Paper>
         </Stack>
+        
+        <Paper p="md" withBorder mt="md">
+          <Text size="lg" weight={500} mb="md">Compute Usage</Text>
+          <ContainersCPUChart />
+        </Paper>
+
         <Accordion defaultValue={null} mt="md">
           <Accordion.Item value="advanced">
             <Accordion.Control>Advanced</Accordion.Control>
             <Accordion.Panel>
-              <Group>
-                <Button
-                  onClick={toggleIsolation}
-                  variant="outline"
-                  color="violet"
-                  disabled={isIsolationLoading}
-                >
-                  {isIsolationLoading
-                    ? "Changing Isolation Level..."
-                    : `Switch to ${isolationLevel === 'serializable' ? 'Strict Serializable' : 'Serializable'}`
-                  }
-                </Button>
-                <div>Isolation Level: <Badge color="violet" variant="light">{isolationLevel ? isolationLevel.replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'}</Badge></div>
-              </Group>
+              <Stack spacing="md">
+                <Group>
+                  <Button
+                    onClick={toggleIsolation}
+                    variant="outline"
+                    color="violet"
+                    disabled={isIsolationLoading}
+                  >
+                    {isIsolationLoading
+                      ? "Changing Isolation Level..."
+                      : `Switch to ${isolationLevel === 'serializable' ? 'Strict Serializable' : 'Serializable'}`
+                    }
+                  </Button>
+                  <div>Isolation Level: <Badge color="violet" variant="light">{isolationLevel ? isolationLevel.replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'}</Badge></div>
+                </Group>
+                <Group>
+                  <div>Database Size: <Badge color="blue" variant="light">{databaseSize ? `${databaseSize.toFixed(2)} GB` : 'Unknown'}</Badge></div>
+                </Group>
+              </Stack>
             </Accordion.Panel>
           </Accordion.Item>
         </Accordion>

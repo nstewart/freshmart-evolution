@@ -5,9 +5,9 @@ from typing import Dict, List, Tuple
 import asyncpg
 from dotenv import load_dotenv
 import logging
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import HTTPException
 import datetime
+import subprocess
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -17,12 +17,19 @@ load_dotenv()
 # Global variables
 latest_heartbeat = {"insert_time": None, "id": None, "ts": None}
 current_isolation_level = "serializable"  # Track the desired isolation level
-refresh_interval = 30  # Default refresh interval in seconds
+refresh_interval = 60  # Default refresh interval in seconds
 mz_schema = os.getenv('MZ_SCHEMA', 'public')  # Get schema from env with default
 
 # Connection pools
 pg_pool = None
 mz_pool = None
+
+# Track active tasks per source using consistent keys
+active_tasks = {
+    'view': set(),
+    'materialized_view': set(),
+    'materialize': set()
+}
 
 # Query count tracking with rolling window
 WINDOW_SIZE = 1  # 1 second window for QPS calculation to match frontend polling
@@ -95,6 +102,14 @@ query_stats = {
             "last_updated": 0.0,
             "freshness": 0.0
         }
+    },
+    "cpu": {  # New CPU stats structure
+        "measurements": [],  # Store last 100 CPU measurements
+        "timestamps": [],    # Store corresponding timestamps
+        "current_stats": {
+            "usage": 0.0,
+            "last_updated": 0.0
+        }
     }
 }
 
@@ -104,16 +119,18 @@ pool_init_lock = asyncio.Lock()
 # Lock for stats updates
 stats_lock = asyncio.Lock()
 
-app = FastAPI()
+# Add CPU stats cache
+latest_cpu_stats = {
+    "timestamp": None,
+    "cpu_usage": None
+}
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Frontend URL
-    allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
-)
+# Add traffic control state
+traffic_enabled = {
+    "view": True,
+    "materialized_view": True,
+    "materialize": True
+}
 
 def calculate_qps(source: str) -> float:
     stats = query_stats[source]
@@ -287,9 +304,9 @@ async def init_pools():
                             password=os.getenv('DB_PASSWORD', 'postgres'),
                             database=db_name,
                             host=db_host,
-                            command_timeout=5.0
+                            command_timeout=30.0
                         ),
-                        timeout=5.0
+                        timeout=30.0
                     )
                     await test_conn.execute('SELECT 1')
                     logger.debug("Initial PostgreSQL connectivity test successful")
@@ -307,14 +324,14 @@ async def init_pools():
                         host=db_host,
                         min_size=2,  # Start with fewer connections
                         max_size=20,
-                        command_timeout=5.0,  # Shorter timeout for commands
+                        command_timeout=120.0,  # Increased from 30.0 to 120.0
                         server_settings={
                             'application_name': 'freshmart_pg',
-                            'statement_timeout': '5s',
-                            'idle_in_transaction_session_timeout': '5s'
+                            'statement_timeout': '120s',  # Increased from 30s to 120s
+                            'idle_in_transaction_session_timeout': '120s'  # Increased from 30s to 120s
                         }
                     ),
-                    timeout=10.0  # Overall timeout for pool creation
+                    timeout=120.0  # Increased from 30.0 to 120.0
                 )
                 logger.debug("PostgreSQL pool object created")
                 
@@ -391,17 +408,17 @@ async def init_pools():
                         database=mz_database,
                         host=mz_host,
                         port=mz_port,
-                        min_size=2,  # Start with fewer connections
-                        max_size=20,  # Reduced from 50 to prevent connection exhaustion
-                        command_timeout=10.0,  # Increased from 5.0
+                        min_size=2,
+                        max_size=20,
+                        command_timeout=120.0,  # Increased from 30.0 to 120.0
                         connection_class=MaterializeConnection,
                         server_settings={
                             'application_name': 'freshmart_mz',
-                            'statement_timeout': '10s',  # Increased from 5s
-                            'idle_in_transaction_session_timeout': '10s'  # Added timeout
+                            'statement_timeout': '120s',  # Increased from 30s to 120s
+                            'idle_in_transaction_session_timeout': '120s'  # Increased from 30s to 120s
                         }
                     ),
-                    timeout=20.0  # Increased from 10.0
+                    timeout=120.0  # Increased from 30.0 to 120.0
                 )
                 logger.debug("Materialize pool object created")
                 
@@ -496,7 +513,7 @@ async def get_materialize_connection():
             conn = await asyncio.wait_for(mz_pool.acquire(), timeout=300.0)
             
             # Set timeouts and isolation level
-            await conn.execute("SET statement_timeout TO '300s'")
+            await conn.execute("SET statement_timeout TO '120s'")
             await conn.execute(f"SET TRANSACTION_ISOLATION TO '{current_isolation_level}'")
             
             # Test the connection
@@ -661,6 +678,12 @@ async def auto_refresh_materialized_view():
     global refresh_interval
     while True:
         try:
+            # Skip refresh if MV traffic is disabled
+            if not traffic_enabled["materialized_view"]:
+                logger.debug("Materialized view traffic is disabled, skipping refresh")
+                await asyncio.sleep(1)  # Short sleep before next check
+                continue
+
             start_time = time.time()
             logger.debug(f"Starting materialized view refresh cycle with interval: {refresh_interval}s")
             
@@ -697,7 +720,7 @@ async def measure_query_time(query: str, params: Tuple, pool, is_materialize: bo
     start_time = time.time()
     try:
         conn = await get_connection(pool, is_materialize)
-        timeout = 180.0
+        timeout = 120.0  # Increased from 30.0 to 120.0
         result = await conn.fetchrow(query, *params, timeout=timeout)
         duration = time.time() - start_time
         
@@ -738,13 +761,18 @@ async def measure_query_time(query: str, params: Tuple, pool, is_materialize: bo
             stats["current_stats"]["qps"] = calculate_qps(stats_key)
             # Convert latency to milliseconds for UI
             stats["current_stats"]["latency"] = duration * 1000
-            if result and "adjusted_price" in result:
-                # Update price for all sources when we get a result
-                price = float(result["adjusted_price"])
-                stats["current_stats"]["price"] = price
-                logger.debug(f"Updated price for {source} to {price}")
+            
+            # Update price only if we have a valid result with adjusted_price
+            if result and "adjusted_price" in result and result["adjusted_price"] is not None:
+                try:
+                    price = float(result["adjusted_price"])
+                    stats["current_stats"]["price"] = price
+                    logger.debug(f"Updated price for {source} to {price}")
+                except (ValueError, TypeError) as e:
+                    logger.error(f"Error converting price for {source}: {str(e)}")
             else:
-                logger.debug(f"No price update for {source} - result: {result}")
+                logger.debug(f"No valid price update for {source} - result: {result}")
+            
             stats["current_stats"]["last_updated"] = current_time
         
         return duration, result
@@ -978,7 +1006,7 @@ async def toggle_promotion(product_id: int):
     finally:
         await release_connection(conn)
 
-async def toggle_view_index() -> Dict:
+async def toggle_view_index():
     try:
         conn = await get_materialize_connection()
         try:
@@ -998,7 +1026,7 @@ async def toggle_view_index() -> Dict:
     finally:
         await release_connection(conn, is_materialize=True)
 
-async def get_view_index_status() -> bool:
+async def get_view_index_status():
     conn = await get_materialize_connection()
     try:
         index_exists = await conn.fetchval("""
@@ -1010,7 +1038,7 @@ async def get_view_index_status() -> bool:
     finally:
         await release_connection(conn, is_materialize=True)
 
-async def get_isolation_level() -> str:
+async def get_isolation_level():
     conn = await get_materialize_connection()
     try:
         level = await conn.fetchval("SHOW transaction_isolation")
@@ -1018,7 +1046,7 @@ async def get_isolation_level() -> str:
     finally:
         await release_connection(conn, is_materialize=True)
 
-async def toggle_isolation_level() -> Dict:
+async def toggle_isolation_level():
     global current_isolation_level
     conn = await get_materialize_connection()
     try:
@@ -1033,38 +1061,6 @@ async def toggle_isolation_level() -> Dict:
         }
     finally:
         await release_connection(conn, is_materialize=True)
-
-# Add a route to get the current refresh interval
-@app.get("/current-refresh-interval")
-async def get_current_refresh_interval():
-    """Get the current refresh interval for the materialized view"""
-    return {
-        "status": "success",
-        "refresh_interval": refresh_interval
-    }
-
-# Add a route to configure the refresh interval
-@app.post("/configure-refresh-interval/{interval}")
-async def configure_refresh_interval(interval: int):
-    """Configure the refresh interval for the materialized view"""
-    global refresh_interval
-    
-    # Input validation
-    if interval < 1:
-        logger.error(f"Invalid refresh interval requested: {interval}s (must be >= 1)")
-        raise HTTPException(status_code=400, detail="Interval must be at least 1 second")
-    
-    # Update the interval
-    old_interval = refresh_interval
-    refresh_interval = interval
-    
-    logger.info(f"Updated materialized view refresh interval from {old_interval}s to {interval}s")
-    return {
-        "status": "success",
-        "old_interval": old_interval,
-        "new_interval": interval,
-        "message": f"Refresh interval updated from {old_interval}s to {interval}s"
-    }
 
 async def check_materialize_index_exists():
     """Check if the Materialize index exists with proper error handling and retries"""
@@ -1118,16 +1114,53 @@ async def check_materialize_index_exists():
                 except Exception as e:
                     logger.error(f"Error releasing connection during index check: {str(e)}")
 
+async def toggle_traffic(source: str) -> bool:
+    """Toggle traffic for a specific source"""
+    global traffic_enabled
+    traffic_enabled[source] = not traffic_enabled[source]
+    logger.info(f"Traffic for {source} is now {'enabled' if traffic_enabled[source] else 'disabled'}")
+    return traffic_enabled[source]
+
+async def execute_query(source_key: str, is_materialize: bool, pool, query: str, product_id: int):
+    """Execute a single query with proper delays"""
+    global active_tasks
+    try:
+        # Skip if traffic is disabled for this source
+        if not traffic_enabled[source_key]:
+            return
+            
+        # Map source key to display name using source_names mapping
+        source_display = source_names[source_key]
+        
+        # Create and track the query task
+        task = asyncio.create_task(measure_query_time(
+            query,
+            [product_id],
+            pool,
+            is_materialize,
+            source_display
+        ))
+        
+        # Track the task in active_tasks
+        active_tasks[source_key].add(task)
+        try:
+            await task
+        finally:
+            active_tasks[source_key].remove(task)
+        
+        # Get current concurrency limits
+        max_concurrent = await get_concurrency_limits()
+        
+        # Only start a new query if traffic is enabled and under limit
+        if traffic_enabled[source_key] and len(active_tasks[source_key]) < max_concurrent[source_key]:
+            asyncio.create_task(execute_query(source_key, is_materialize, pool, query, product_id))
+            
+    except Exception as e:
+        logger.error(f"Error executing query for {source_key}: {str(e)}", exc_info=True)
+
 async def continuous_query_load():
     """Continuously send queries to all sources with balanced concurrency"""
     product_id = 1
-    
-    # Track active tasks per source using consistent keys
-    active_tasks = {
-        'view': set(),
-        'materialized_view': set(),  # Changed from 'mv' to 'materialized_view'
-        'materialize': set()
-    }
     
     # Define queries with explicit column selection
     QUERIES = {
@@ -1148,57 +1181,6 @@ async def continuous_query_load():
         """
     }
     
-    async def execute_query(source_key: str, is_materialize: bool, pool, query: str):
-        """Execute a single query with proper delays"""
-        try:
-            # Map source key to display name using source_names mapping
-            source_display = source_names[source_key]
-            
-            # Add delay before query to reduce contention
-            if source_key == 'materialized_view':  # Changed from 'mv'
-                await asyncio.sleep(0.5)  # Reduced delay for MV queries
-            else:
-                await asyncio.sleep(0.1)  # Reduced delay for other queries
-            
-            # Create and track the query task
-            task = asyncio.create_task(measure_query_time(
-                query,
-                [product_id],
-                pool,
-                is_materialize,
-                source_display
-            ))
-            
-            # Track the task in active_tasks
-            active_tasks[source_key].add(task)
-            try:
-                # Actually await the task to ensure it completes
-                await task
-            except Exception as e:
-                logger.error(f"Error in query task for {source_key}: {str(e)}", exc_info=True)
-            finally:
-                # Always remove the task from active set
-                active_tasks[source_key].remove(task)
-            
-            # Get current concurrency limits
-            max_concurrent = await get_concurrency_limits()
-            
-            # Only start a new query if under limit
-            if len(active_tasks[source_key]) < max_concurrent[source_key]:
-                asyncio.create_task(execute_query(source_key, is_materialize, pool, query))
-                
-        except Exception as e:
-            logger.error(f"Error executing query for {source_key}: {str(e)}", exc_info=True)
-    
-    async def get_concurrency_limits():
-        """Get concurrency limits based on index status"""
-        has_index = await check_materialize_index_exists()
-        return {
-            'view': 5,     # PostgreSQL View - moderate concurrency
-            'materialized_view': 5,      # Changed from 'mv' - Materialized View
-            'materialize': 5 if has_index else 1  # Materialize - high concurrency with index
-        }
-    
     while True:
         try:
             # Get current concurrency limits
@@ -1210,33 +1192,42 @@ async def continuous_query_load():
                     'view',
                     False,
                     pg_pool,
-                    QUERIES['view']
+                    QUERIES['view'],
+                    product_id
                 ))
             
-            # Start MV queries if under limit
-            if len(active_tasks['materialized_view']) < max_concurrent['materialized_view']:  # Changed from 'mv'
+            if len(active_tasks['materialized_view']) < max_concurrent['materialized_view']:
                 asyncio.create_task(execute_query(
-                    'materialized_view',  # Changed from 'mv'
+                    'materialized_view',
                     False,
                     pg_pool,
-                    QUERIES['materialized_view']  # Changed from 'mv'
+                    QUERIES['materialized_view'],
+                    product_id
                 ))
             
-            # Start Materialize queries if available and under limit
             if mz_pool is not None and len(active_tasks['materialize']) < max_concurrent['materialize']:
                 asyncio.create_task(execute_query(
                     'materialize',
                     True,
                     mz_pool,
-                    QUERIES['materialize']
+                    QUERIES['materialize'],
+                    product_id
                 ))
             
-            # Brief pause between checks
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.1)  # Small delay to prevent tight loop
             
         except Exception as e:
             logger.error(f"Error in continuous query load: {str(e)}", exc_info=True)
             await asyncio.sleep(1)
+
+async def get_concurrency_limits():
+    """Get concurrency limits based on index status"""
+    has_index = await check_materialize_index_exists()
+    return {
+        'view': 1,     # PostgreSQL View - low concurrency
+        'materialized_view': 5,  # Materialized View - low concurrency
+        'materialize': 5 if has_index else 1  # Materialize - moderate concurrency with index
+    }
 
 async def update_freshness_metrics():
     """Background task to update freshness metrics for materialized views and Materialize"""
@@ -1327,95 +1318,135 @@ async def update_freshness_metrics():
             logger.error(f"Error in update_freshness_metrics: {str(e)}")
             await asyncio.sleep(1)
 
-# Update startup event to start the freshness metrics update task
-@app.on_event("startup")
-async def startup_event():
-    """Initialize the application state"""
-    global refresh_interval, pg_pool, mz_pool
-    logger.info("=== Starting Application Initialization ===")
-    refresh_interval = 60  # Default to 60 seconds
+async def collect_cpu_stats():
+    """Background task to collect CPU stats every 5 seconds for both PostgreSQL and Materialize"""
+    logger.info("Starting CPU stats collection task")
     
-    # Initialize pools first
-    try:
-        logger.info("Step 1: Initializing database pools...")
-        logger.info("1.1: About to call init_pools()")
-        await init_pools()
-        if pg_pool:
-            logger.info("1.2: PostgreSQL pool initialized successfully")
-        if mz_pool:
-            logger.info("1.3: Materialize pool initialized successfully")
-        logger.info("Step 1: Database pools initialization completed")
-    except Exception as e:
-        logger.error(f"Failed to initialize pools: {str(e)}", exc_info=True)
-        # Continue even if Materialize pool fails
-        if pg_pool is None:
-            logger.error("PostgreSQL pool initialization failed - application cannot start")
-            raise
+    # Initialize CPU stats for both containers
+    query_stats["postgres_cpu"] = {
+        "measurements": [],
+        "timestamps": [],
+        "current_stats": {
+            "usage": 0.0,
+            "last_updated": 0.0
+        }
+    }
     
-    # Force initial materialized view refresh
-    logger.info("Step 2: Performing initial materialized view refresh...")
-    try:
-        await refresh_materialized_view()
-        logger.info("Step 2: Initial materialized view refresh completed")
-    except Exception as e:
-        logger.error(f"Failed to perform initial materialized view refresh: {str(e)}", exc_info=True)
-        # Continue even if initial refresh fails
+    query_stats["materialize_cpu"] = {
+        "measurements": [],
+        "timestamps": [],
+        "current_stats": {
+            "usage": 0.0,
+            "last_updated": 0.0
+        }
+    }
     
-    # Start background tasks
-    logger.info("Step 3: Starting background tasks...")
-    background_tasks = []
-    
-    try:
-        logger.info("3.1: Starting heartbeat task")
-        heartbeat_task = asyncio.create_task(create_heartbeat(), name="heartbeat")
-        background_tasks.append(heartbeat_task)
-        logger.info("3.2: Heartbeat task created")
-        
-        logger.info("3.3: Starting materialized view refresh task")
-        mv_refresh_task = asyncio.create_task(auto_refresh_materialized_view(), name="mv_refresh")
-        background_tasks.append(mv_refresh_task)
-        logger.info("3.4: Materialized view refresh task created")
-        
-        logger.info("3.5: Starting continuous query load task")
-        query_load_task = asyncio.create_task(continuous_query_load(), name="query_load")
-        background_tasks.append(query_load_task)
-        logger.info("3.6: Continuous query load task created")
-        
-        logger.info("3.7: Starting freshness metrics task")
-        freshness_task = asyncio.create_task(update_freshness_metrics(), name="freshness_metrics")
-        background_tasks.append(freshness_task)
-        logger.info("3.8: Freshness metrics task created")
-    except Exception as e:
-        logger.error(f"Error creating background tasks: {str(e)}", exc_info=True)
-        raise
-    
-    # Wait a short time to ensure tasks have started
-    logger.info("Step 4: Waiting for tasks to initialize...")
-    try:
-        await asyncio.sleep(1)
-        logger.info("Step 4: Initial wait completed")
-    except Exception as e:
-        logger.error(f"Error during initialization wait: {str(e)}", exc_info=True)
-        raise
-    
-    # Check if tasks are running
-    logger.info("Step 5: Checking task status...")
-    try:
-        for task in background_tasks:
-            task_name = task.get_name()
-            logger.info(f"5.1: Checking status of {task_name}")
+    while True:
+        try:
+            current_time = time.time()
             
-            if task.done():
-                try:
-                    exc = task.exception()
-                    logger.error(f"5.2: Task {task_name} failed during startup: {exc}")
-                    raise exc
-                except asyncio.InvalidStateError:
-                    logger.warning(f"5.3: Task {task_name} completed unexpectedly during startup")
-            else:
-                logger.info(f"5.4: Task {task_name} is running")
-    except Exception as e:
-        logger.error(f"Error checking task status: {str(e)}", exc_info=True)
-        raise
+            # Get stats from both containers
+            containers = {
+                "postgres_cpu": "my_postgres",
+                "materialize_cpu": "my_materialize"
+            }
+            
+            for stats_key, container_name in containers.items():
+                logger.debug(f"Collecting CPU stats from {container_name}...")
+                result = subprocess.run(
+                    ['docker', 'stats', container_name, '--no-stream', '--format', '{{.CPUPerc}}'],
+                    capture_output=True,
+                    text=True
+                )
+                
+                if result.returncode != 0:
+                    logger.error(f"Error getting Docker stats for {container_name}: {result.stderr}")
+                else:
+                    # Parse the CPU percentage
+                    cpu_str = result.stdout.strip().rstrip('%')
+                    logger.debug(f"Raw CPU stats from {container_name}: {cpu_str}")
+                    if cpu_str:
+                        try:
+                            cpu_usage = float(cpu_str)
+                            
+                            async with stats_lock:
+                                stats = query_stats[stats_key]
+                                
+                                # Add new measurement
+                                stats["measurements"].append(cpu_usage)
+                                stats["timestamps"].append(current_time)
+                                
+                                # Keep only last 100 measurements
+                                if len(stats["measurements"]) > 100:
+                                    stats["measurements"].pop(0)
+                                    stats["timestamps"].pop(0)
+                                
+                                # Update current stats
+                                stats["current_stats"].update({
+                                    "usage": cpu_usage,
+                                    "last_updated": current_time
+                                })
+                                logger.debug(f"Updated {stats_key} stats: usage={cpu_usage}%, measurements={len(stats['measurements'])}")
+                                
+                        except ValueError as e:
+                            logger.error(f"Error converting CPU string '{cpu_str}' to float for {container_name}: {str(e)}")
+                    else:
+                        logger.error(f"Empty CPU percentage string for {container_name}")
+        except Exception as e:
+            logger.error(f"Error collecting CPU stats: {str(e)}")
+        
+        # Wait 5 seconds before next collection
+        await asyncio.sleep(5)
+
+async def get_cpu_stats():
+    """Get CPU usage stats for both PostgreSQL and Materialize"""
+    current_time = time.time()
+    response = {
+        "timestamp": int(current_time * 1000)
+    }
     
-    logger.info("=== Application Startup Completed Successfully ===")
+    for container_type in ["postgres_cpu", "materialize_cpu"]:
+        stats = query_stats.get(container_type)
+        if not stats:
+            response[container_type] = {
+                "cpu_usage": None,
+                "stats": None
+            }
+            continue
+            
+        # Check if data is fresh (within last 10 seconds)
+        is_fresh = current_time - stats["current_stats"]["last_updated"] <= 10.0
+        
+        if not is_fresh:
+            response[container_type] = {
+                "cpu_usage": None,
+                "stats": None
+            }
+            continue
+        
+        # Calculate statistics from measurements
+        cpu_stats = None
+        if stats["measurements"]:
+            cpu_stats = {
+                "max": max(stats["measurements"]),
+                "average": sum(stats["measurements"]) / len(stats["measurements"]),
+                "p99": sorted(stats["measurements"])[int(len(stats["measurements"]) * 0.99)] if len(stats["measurements"]) >= 100 else max(stats["measurements"])
+            }
+        
+        response[container_type] = {
+            "cpu_usage": stats["current_stats"]["usage"],
+            "stats": cpu_stats
+        }
+    
+    return response
+
+async def get_traffic_state():
+    """Get the current state of traffic toggles for all sources"""
+    logger.debug("Getting traffic state")
+    state = {
+        "view": traffic_enabled["view"],
+        "materialized_view": traffic_enabled["materialized_view"],
+        "materialize": traffic_enabled["materialize"]
+    }
+    logger.debug(f"Current traffic state: {state}")
+    return state
