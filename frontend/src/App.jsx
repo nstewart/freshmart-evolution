@@ -676,7 +676,14 @@ function App() {
             </Text>
             
             <Paper p="lg" mb="lg" style={{ backgroundColor: '#f8fafc' }}>
-              <Accordion>
+              <Accordion styles={{
+                control: {
+                  borderBottom: 'none'
+                },
+                item: {
+                  borderBottom: 'none'
+                }
+              }}>
                 <Accordion.Item value="dataflow">
                   <Accordion.Control>
                     <Text weight={500}>Data Lineage</Text>
@@ -722,70 +729,76 @@ function App() {
 
             <Group position="apart" grow>
               {scenarios.postgres && (
-                <Paper p={0} className="hover-card">
-                  <div className="product-image-container">
-                    <Image
-                      src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
-                      height={200}
-                      fit="contain"
-                      alt="Product"
-                    />
-                    <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
-                    <Group position="center" mt="md">
+                <Paper p={0} className="hover-card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ padding: '20px' }}>
+                      <Image
+                        src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
+                        height={200}
+                        fit="contain"
+                        alt="Product"
+                      />
+                      <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
+                    </div>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
                       <PriceDisplay 
                         price={currentMetric.view_price}
                         prevPrice={prevPrices.current.view}
                         reactionTime={currentMetric.view_end_to_end_latency}
                       />
-                    </Group>
+                    </div>
                   </div>
-                  <div className="price-display">
+                  <div style={{ borderTop: '1px solid #eee', padding: '15px' }}>
                     <Text weight={500} align="center" color="blue">PostgreSQL View</Text>
                   </div>
                 </Paper>
               )}
               {scenarios.materializeView && (
-                <Paper p={0} className="hover-card">
-                  <div className="product-image-container">
-                    <Image
-                      src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
-                      height={200}
-                      fit="contain"
-                      alt="Product"
-                    />
-                    <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
-                    <Group position="center" mt="md" spacing="xs">
+                <Paper p={0} className="hover-card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ padding: '20px' }}>
+                      <Image
+                        src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
+                        height={200}
+                        fit="contain"
+                        alt="Product"
+                      />
+                      <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
+                    </div>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
                       <PriceDisplay 
                         price={currentMetric.materialized_view_price}
                         prevPrice={prevPrices.current.materialized_view}
                         reactionTime={currentMetric.materialized_view_end_to_end_latency}
                       />
-                    </Group>
+                    </div>
                   </div>
-                  <div className="price-display">
+                  <div style={{ borderTop: '1px solid #eee', padding: '15px' }}>
                     <Text weight={500} align="center" color="teal">Cache</Text>
                   </div>
                 </Paper>
               )}
               {scenarios.materialize && (
-                <Paper p={0} className="hover-card">
-                  <div className="product-image-container">
-                    <Image
-                      src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
-                      height={200}
-                      fit="contain"
-                      alt="Product"
-                    />
-                    <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
-                    <Group position="center" mt="md" spacing="xs">
+                <Paper p={0} className="hover-card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ padding: '20px' }}>
+                      <Image
+                        src="https://i5.walmartimages.com/seo/Fresh-Red-Delicious-Apple-Each_7320e63a-de46-4a16-9b8c-526e15219a12_3.e557c1ad9973e1f76f512b34950243a3.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF"
+                        height={200}
+                        fit="contain"
+                        alt="Product"
+                      />
+                      <Text weight={500} align="center" size="sm" mt="md">Fresh Red Delicious Apple</Text>
+                    </div>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
                       <PriceDisplay 
                         price={currentMetric.materialize_price}
                         prevPrice={prevPrices.current.materialize}
                         reactionTime={currentMetric.materialize_end_to_end_latency}
                       />
-                    </Group>
+                    </div>
                   </div>
-                  <div className="price-display">
+                  <div style={{ borderTop: '1px solid #eee', padding: '15px' }}>
                     <Text weight={500} align="center" color="violet">Materialize</Text>
                   </div>
                 </Paper>
