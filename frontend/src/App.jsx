@@ -4,7 +4,7 @@ import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stac
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import ContainersCPUChart from './components/ContainersCPUChart.jsx';
 
-const HISTORY_WINDOW_MS = 2 * 60 * 1000; // 2 minutes in milliseconds
+const HISTORY_WINDOW_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
 
 const theme = {

@@ -22,12 +22,12 @@ ChartJS.register(
   Legend
 );
 
-const HISTORY_WINDOW_MS = 2 * 60 * 1000; // 2 minutes in milliseconds
+const HISTORY_WINDOW_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
 
 const ContainersCPUChart = () => {
   const [cpuData, setCpuData] = useState([]);
-  const maxDataPoints = 120; // 2 minutes of data points (1 per second)
+  const maxDataPoints = 300; // 5 minutes of data points (1 per second)
 
   useEffect(() => {
     const fetchCPUStats = async () => {
