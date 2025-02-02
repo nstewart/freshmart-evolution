@@ -590,12 +590,33 @@ function App() {
                   <Text size="lg" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.5rem' }}>
                     Use SQL to create live data products you can trust
                   </Text>
-                  <Text size="md" style={{ color: 'rgba(255, 255, 255, 0.8)', maxWidth: '600px', lineHeight: 1.5 }}>
-                    How can you make trustworthy, transformed data available throughout your systems and teams, while it's still fresh?
-                  </Text>
                 </Stack>
               </Grid.Col>
             </Grid>
+          </Paper>
+
+          <Paper p="xl" withBorder style={{ 
+            backgroundColor: 'white',
+            borderLeft: '4px solid #4f46e5',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+          }}>
+            <Group>
+              <div style={{ flex: 1 }}>
+                <Text 
+                  size="lg" 
+                  style={{ 
+                    color: '#1a1a1a', 
+                    lineHeight: 1.6,
+                    fontWeight: 500,
+                    maxWidth: '800px',
+                    margin: '0 auto',
+                    textAlign: 'center'
+                  }}
+                >
+                  How can you make trustworthy, transformed data available throughout your systems and teams, while it's still fresh?
+                </Text>
+              </div>
+            </Group>
           </Paper>
 
           <Paper p="xl" className="hover-card">
