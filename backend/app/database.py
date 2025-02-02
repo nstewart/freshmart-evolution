@@ -1347,8 +1347,8 @@ async def collect_cpu_stats():
             
             # Get stats from both containers
             containers = {
-                "postgres_cpu": "my_postgres",
-                "materialize_cpu": "my_materialize"
+                "postgres_cpu": "postgres",
+                "materialize_cpu": "materialize"
             }
             
             for stats_key, container_name in containers.items():

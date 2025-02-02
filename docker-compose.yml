@@ -9,6 +9,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mysecret
       POSTGRES_DB: freshmart
+      LOAD_DATA: ${LOAD_DATA:-true}
     ports:
       - "5432:5432"
     healthcheck:
@@ -62,6 +63,7 @@ services:
       - DB_NAME=freshmart
       - DB_USER=postgres
       - DB_PASSWORD=mysecret
+      - LOAD_DATA=${LOAD_DATA:-true}
     depends_on:
       postgres:
         condition: service_healthy
@@ -69,12 +71,16 @@ services:
       bash -c '
         echo "Testing PostgreSQL connection..." &&
         psql -c "SELECT version();" &&
-        psql -c "SELECT 1 FROM pg_database WHERE datname = '\''freshmart'\''" | grep -q 1 ||
-        psql -c "CREATE DATABASE freshmart;" &&
-        echo "Setting up database..." &&
-        sed -i "s/localhost/$${PGHOST}/g" setup_database.sh &&
-        sed -i "s/source backend\/.env/true/g" setup_database.sh &&
-        bash setup_database.sh postgres --reduced
+        if [ "$$LOAD_DATA" = "true" ]; then
+          psql -c "SELECT 1 FROM pg_database WHERE datname = '\''freshmart'\''" | grep -q 1 ||
+          psql -c "CREATE DATABASE freshmart;" &&
+          echo "Setting up database..." &&
+          sed -i "s/localhost/$${PGHOST}/g" setup_database.sh &&
+          sed -i "s/source backend\/.env/true/g" setup_database.sh &&
+          bash setup_database.sh postgres --reduced;
+        else
+          echo "Skipping data loading for PostgreSQL...";
+        fi
       '
 
   materialize:
@@ -100,6 +106,7 @@ services:
     volumes:
       - .:/app
       - ./mz_queries.sql:/app/mz_queries.sql
+      - ./mz_connection_setup.sql:/app/mz_connection_setup.sql
     working_dir: /app
     environment:
       - PGHOST=materialize
@@ -117,6 +124,7 @@ services:
       - MZ_USER=materialize
       - MZ_PASSWORD=materialize
       - MZ_NAME=materialize
+      - LOAD_DATA=${LOAD_DATA:-true}
     depends_on:
       materialize:
         condition: service_healthy
@@ -129,9 +137,14 @@ services:
         PGHOST=materialize PGPORT=6875 psql -c "SELECT version();" &&
         echo "Testing Postgres connection..." &&
         PGHOST=postgres PGPORT=5432 PGUSER=$${DB_USER} PGPASSWORD=$${DB_PASSWORD} psql -d freshmart -c "SELECT version();" &&
-        sed -i "s/localhost/$${MZ_HOST}/g" setup_database.sh &&
-        sed -i "s/source backend\/.env/true/g" setup_database.sh &&
-        bash setup_database.sh materialize
+        echo "Setting up Materialize connections..." &&
+        PGHOST=materialize PGPORT=6875 psql -f mz_connection_setup.sql &&
+        if [ "$$LOAD_DATA" = "true" ]; then
+          echo "Creating Materialize views..." &&
+          PGHOST=materialize PGPORT=6875 psql -f mz_queries.sql;
+        else
+          echo "Skipping view creation for Materialize...";
+        fi
       '
 
   backend:
@@ -150,6 +163,8 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/usr/src/app
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker:/var/lib/docker:ro
     depends_on:
       materialize_init:
         condition: service_completed_successfully
