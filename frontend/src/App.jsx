@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stack, Badge, LoadingOverlay, Slider, Image, Accordion, Grid } from '@mantine/core';
+import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stack, Badge, LoadingOverlay, Slider, Image, Accordion, Grid, Divider, Select } from '@mantine/core';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import ContainersCPUChart from './components/ContainersCPUChart.jsx';
 
@@ -189,18 +189,19 @@ function App() {
   });
   const [scenarios, setScenarios] = useState({
     postgres: true,
-    materializeView: true,
-    materialize: true
+    materializeView: false,
+    materialize: false
   });
   const [trafficEnabled, setTrafficEnabled] = useState({
     postgres: true,
-    materializeView: true,
-    materialize: true
+    materializeView: false,
+    materialize: false
   });
   const productId = '1';
   const [isFetching, setIsFetching] = useState(false);
   const currentMetric = metrics[metrics.length - 1] || {};
   const lagStatus = getLagStatus(currentMetric.materialize_freshness);
+  const [currentScenario, setCurrentScenario] = useState('direct'); // Options: direct, batch, materialize, cqrs
 
   // Add refs for previous prices
   const prevPrices = useRef({
@@ -225,6 +226,61 @@ function App() {
       ...prev,
       [scenario]: !prev[scenario]
     }));
+  };
+
+  const handleScenarioChange = async (scenario) => {
+    setCurrentScenario(scenario);
+    
+    // Configure scenarios and traffic based on selection
+    switch (scenario) {
+      case 'direct':
+        // Direct View Queries
+        setScenarios({
+          postgres: true,
+          materializeView: false,
+          materialize: false
+        });
+        if (!trafficEnabled.postgres) await handleTrafficToggle('postgres');
+        if (trafficEnabled.materializeView) await handleTrafficToggle('materializeView');
+        if (trafficEnabled.materialize) await handleTrafficToggle('materialize');
+        break;
+      
+      case 'batch':
+        // Offload with Batch Computation
+        setScenarios({
+          postgres: true,
+          materializeView: true,
+          materialize: false
+        });
+        if (!trafficEnabled.postgres) await handleTrafficToggle('postgres');
+        if (!trafficEnabled.materializeView) await handleTrafficToggle('materializeView');
+        if (trafficEnabled.materialize) await handleTrafficToggle('materialize');
+        break;
+      
+      case 'materialize':
+        // Add Materialize
+        setScenarios({
+          postgres: true,
+          materializeView: true,
+          materialize: true
+        });
+        if (!trafficEnabled.postgres) await handleTrafficToggle('postgres');
+        if (!trafficEnabled.materializeView) await handleTrafficToggle('materializeView');
+        if (!trafficEnabled.materialize) await handleTrafficToggle('materialize');
+        break;
+      
+      case 'cqrs':
+        // Full Query Offload (CQRS)
+        setScenarios({
+          postgres: false,
+          materializeView: false,
+          materialize: true
+        });
+        if (trafficEnabled.postgres) await handleTrafficToggle('postgres');
+        if (trafficEnabled.materializeView) await handleTrafficToggle('materializeView');
+        if (!trafficEnabled.materialize) await handleTrafficToggle('materialize');
+        break;
+    }
   };
 
   useEffect(() => {
@@ -619,74 +675,55 @@ function App() {
             </Group>
           </Paper>
 
-          <Paper p="xl" className="hover-card">
-            <Text size="lg" weight={600} mb="md" style={{ color: '#1a1a1a' }}>Scenario Selection</Text>
-            <Stack spacing="xl">
-              <Stack spacing="xs">
-                <Text size="sm" weight={500} color="dimmed">Query Source:</Text>
-                <Group position="left" spacing="md">
-                  <Button
-                    onClick={() => toggleScenario('postgres')}
-                    variant={scenarios.postgres ? "filled" : "light"}
-                    color="blue"
-                    className="button-pulse"
-                    style={{ width: '180px' }}
-                  >
-                    PostgreSQL View
-                  </Button>
-                  <Button
-                    onClick={() => toggleScenario('materializeView')}
-                    variant={scenarios.materializeView ? "filled" : "light"}
-                    color="teal"
-                    className="button-pulse"
-                    style={{ width: '180px' }}
-                  >
-                    Cached Table
-                  </Button>
-                  <Button
-                    onClick={() => toggleScenario('materialize')}
-                    variant={scenarios.materialize ? "filled" : "light"}
-                    color="violet"
-                    className="button-pulse"
-                    style={{ width: '180px' }}
-                  >
-                    Materialize Query
-                  </Button>
-                </Group>
-              </Stack>
-
-              <Stack spacing="xs">
-                <Text size="sm" weight={500} color="dimmed">Traffic Control:</Text>
-                <Group position="left" spacing="md">
-                  <Button
-                    onClick={() => handleTrafficToggle('postgres')}
-                    variant={trafficEnabled.postgres ? "light" : "subtle"}
-                    color={trafficEnabled.postgres ? "blue" : "gray"}
-                    className="button-pulse"
-                    style={{ width: '180px' }}
-                  >
-                    {trafficEnabled.postgres ? "Stop PostgreSQL" : "Start PostgreSQL"}
-                  </Button>
-                  <Button
-                    onClick={() => handleTrafficToggle('materializeView')}
-                    variant={trafficEnabled.materializeView ? "light" : "subtle"}
-                    color={trafficEnabled.materializeView ? "teal" : "gray"}
-                    className="button-pulse"
-                    style={{ width: '180px' }}
-                  >
-                    {trafficEnabled.materializeView ? "Stop Cache" : "Start Cache"}
-                  </Button>
-                  <Button
-                    onClick={() => handleTrafficToggle('materialize')}
-                    variant={trafficEnabled.materialize ? "light" : "subtle"}
-                    color={trafficEnabled.materialize ? "violet" : "gray"}
-                    className="button-pulse"
-                    style={{ width: '180px' }}
-                  >
-                    {trafficEnabled.materialize ? "Stop Materialize" : "Start Materialize"}
-                  </Button>
-                </Group>
-              </Stack>
+          <Paper p="xl" withBorder style={{ backgroundColor: 'white' }}>
+            <Stack spacing="md">
+              <Text size="lg" weight={600} style={{ color: '#1a1a1a' }}>Select a Scenario</Text>
+              <Select
+                value={currentScenario}
+                onChange={handleScenarioChange}
+                data={[
+                  { value: 'direct', label: 'Direct View Queries' },
+                  { value: 'batch', label: 'Offload with Batch Computation' },
+                  { value: 'materialize', label: 'Add Materialize' },
+                  { value: 'cqrs', label: 'Full Query Offload (CQRS)' }
+                ]}
+                style={{ maxWidth: '400px' }}
+              />
+              <Group position="left" spacing="md">
+                <Paper p="xs" style={{ backgroundColor: '#f8f9fa', minWidth: '180px' }}>
+                  <Text size="sm" weight={500} mb={5}>PostgreSQL View</Text>
+                  <Group spacing="xs">
+                    <Badge color={scenarios.postgres ? "blue" : "gray"}>
+                      {scenarios.postgres ? "Visible" : "Hidden"}
+                    </Badge>
+                    <Badge color={trafficEnabled.postgres ? "green" : "red"}>
+                      {trafficEnabled.postgres ? "Traffic On" : "Traffic Off"}
+                    </Badge>
+                  </Group>
+                </Paper>
+                <Paper p="xs" style={{ backgroundColor: '#f8f9fa', minWidth: '180px' }}>
+                  <Text size="sm" weight={500} mb={5}>Cached Table</Text>
+                  <Group spacing="xs">
+                    <Badge color={scenarios.materializeView ? "blue" : "gray"}>
+                      {scenarios.materializeView ? "Visible" : "Hidden"}
+                    </Badge>
+                    <Badge color={trafficEnabled.materializeView ? "green" : "red"}>
+                      {trafficEnabled.materializeView ? "Traffic On" : "Traffic Off"}
+                    </Badge>
+                  </Group>
+                </Paper>
+                <Paper p="xs" style={{ backgroundColor: '#f8f9fa', minWidth: '180px' }}>
+                  <Text size="sm" weight={500} mb={5}>Materialize</Text>
+                  <Group spacing="xs">
+                    <Badge color={scenarios.materialize ? "blue" : "gray"}>
+                      {scenarios.materialize ? "Visible" : "Hidden"}
+                    </Badge>
+                    <Badge color={trafficEnabled.materialize ? "green" : "red"}>
+                      {trafficEnabled.materialize ? "Traffic On" : "Traffic Off"}
+                    </Badge>
+                  </Group>
+                </Paper>
+              </Group>
             </Stack>
           </Paper>
 
@@ -1074,6 +1111,77 @@ function App() {
               <Accordion.Control>Advanced</Accordion.Control>
               <Accordion.Panel>
                 <Stack spacing="md">
+                  <Stack spacing="xl">
+                    <Text size="lg" weight={600} style={{ color: '#1a1a1a' }}>Manual Controls</Text>
+                    <Stack spacing="xs">
+                      <Text size="sm" weight={500} color="dimmed">Query Source:</Text>
+                      <Group position="left" spacing="md">
+                        <Button
+                          onClick={() => toggleScenario('postgres')}
+                          variant={scenarios.postgres ? "filled" : "light"}
+                          color="blue"
+                          className="button-pulse"
+                          style={{ width: '180px' }}
+                        >
+                          PostgreSQL View
+                        </Button>
+                        <Button
+                          onClick={() => toggleScenario('materializeView')}
+                          variant={scenarios.materializeView ? "filled" : "light"}
+                          color="teal"
+                          className="button-pulse"
+                          style={{ width: '180px' }}
+                        >
+                          Cached Table
+                        </Button>
+                        <Button
+                          onClick={() => toggleScenario('materialize')}
+                          variant={scenarios.materialize ? "filled" : "light"}
+                          color="violet"
+                          className="button-pulse"
+                          style={{ width: '180px' }}
+                        >
+                          Materialize Query
+                        </Button>
+                      </Group>
+                    </Stack>
+
+                    <Stack spacing="xs">
+                      <Text size="sm" weight={500} color="dimmed">Traffic Control:</Text>
+                      <Group position="left" spacing="md">
+                        <Button
+                          onClick={() => handleTrafficToggle('postgres')}
+                          variant={trafficEnabled.postgres ? "light" : "subtle"}
+                          color={trafficEnabled.postgres ? "blue" : "gray"}
+                          className="button-pulse"
+                          style={{ width: '180px' }}
+                        >
+                          {trafficEnabled.postgres ? "Stop PostgreSQL" : "Start PostgreSQL"}
+                        </Button>
+                        <Button
+                          onClick={() => handleTrafficToggle('materializeView')}
+                          variant={trafficEnabled.materializeView ? "light" : "subtle"}
+                          color={trafficEnabled.materializeView ? "teal" : "gray"}
+                          className="button-pulse"
+                          style={{ width: '180px' }}
+                        >
+                          {trafficEnabled.materializeView ? "Stop Cache" : "Start Cache"}
+                        </Button>
+                        <Button
+                          onClick={() => handleTrafficToggle('materialize')}
+                          variant={trafficEnabled.materialize ? "light" : "subtle"}
+                          color={trafficEnabled.materialize ? "violet" : "gray"}
+                          className="button-pulse"
+                          style={{ width: '180px' }}
+                        >
+                          {trafficEnabled.materialize ? "Stop Materialize" : "Start Materialize"}
+                        </Button>
+                      </Group>
+                    </Stack>
+                  </Stack>
+
+                  <Divider my="md" />
+
                   <Group>
                     <Button
                       onClick={toggleIsolation}
