@@ -18,7 +18,7 @@ load_dotenv()
 # Global variables
 latest_heartbeat = {"insert_time": None, "id": None, "ts": None}
 current_isolation_level = "serializable"  # Track the desired isolation level
-refresh_interval = 60  # Default refresh interval changed from 30 to 60 seconds
+refresh_interval = 30  # Default refresh interval changed from 60 to 30 seconds
 mz_schema = os.getenv('MZ_SCHEMA', 'public')  # Get schema from env with default
 
 # Connection pools
@@ -1467,7 +1467,7 @@ async def startup_event():
     """Initialize the application state"""
     global refresh_interval, pg_pool, mz_pool
     logger.info("=== Starting Application Initialization ===")
-    refresh_interval = 60  # Default to 60 seconds
+    refresh_interval = 30  # Default to 30 seconds
     
     # Initialize pools first
     try:
