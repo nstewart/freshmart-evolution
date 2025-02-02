@@ -246,7 +246,7 @@ function App() {
         break;
       
       case 'batch':
-        // Offload with Batch Computation
+        // Add Batch Computation
         setScenarios({
           postgres: true,
           materializeView: true,
@@ -683,47 +683,14 @@ function App() {
                 onChange={handleScenarioChange}
                 data={[
                   { value: 'direct', label: 'Direct View Queries' },
-                  { value: 'batch', label: 'Offload with Batch Computation' },
+                  { value: 'batch', label: 'Add Batch Computation' },
                   { value: 'materialize', label: 'Add Materialize' },
                   { value: 'cqrs', label: 'Full Query Offload (CQRS)' }
                 ]}
                 style={{ maxWidth: '400px' }}
+                required
+                clearable={false}
               />
-              <Group position="left" spacing="md">
-                <Paper p="xs" style={{ backgroundColor: '#f8f9fa', minWidth: '180px' }}>
-                  <Text size="sm" weight={500} mb={5}>PostgreSQL View</Text>
-                  <Group spacing="xs">
-                    <Badge color={scenarios.postgres ? "blue" : "gray"}>
-                      {scenarios.postgres ? "Visible" : "Hidden"}
-                    </Badge>
-                    <Badge color={trafficEnabled.postgres ? "green" : "red"}>
-                      {trafficEnabled.postgres ? "Traffic On" : "Traffic Off"}
-                    </Badge>
-                  </Group>
-                </Paper>
-                <Paper p="xs" style={{ backgroundColor: '#f8f9fa', minWidth: '180px' }}>
-                  <Text size="sm" weight={500} mb={5}>Cached Table</Text>
-                  <Group spacing="xs">
-                    <Badge color={scenarios.materializeView ? "blue" : "gray"}>
-                      {scenarios.materializeView ? "Visible" : "Hidden"}
-                    </Badge>
-                    <Badge color={trafficEnabled.materializeView ? "green" : "red"}>
-                      {trafficEnabled.materializeView ? "Traffic On" : "Traffic Off"}
-                    </Badge>
-                  </Group>
-                </Paper>
-                <Paper p="xs" style={{ backgroundColor: '#f8f9fa', minWidth: '180px' }}>
-                  <Text size="sm" weight={500} mb={5}>Materialize</Text>
-                  <Group spacing="xs">
-                    <Badge color={scenarios.materialize ? "blue" : "gray"}>
-                      {scenarios.materialize ? "Visible" : "Hidden"}
-                    </Badge>
-                    <Badge color={trafficEnabled.materialize ? "green" : "red"}>
-                      {trafficEnabled.materialize ? "Traffic On" : "Traffic Off"}
-                    </Badge>
-                  </Group>
-                </Paper>
-              </Group>
             </Stack>
           </Paper>
 
