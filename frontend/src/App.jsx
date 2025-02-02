@@ -1,11 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stack, Badge, LoadingOverlay, Slider, Image, Accordion } from '@mantine/core';
+import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stack, Badge, LoadingOverlay, Slider, Image, Accordion, Grid } from '@mantine/core';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import ContainersCPUChart from './components/ContainersCPUChart.jsx';
 
 const HISTORY_WINDOW_MS = 2 * 60 * 1000; // 2 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
+
+const theme = {
+  colorScheme: 'light',
+  fontFamily: 'Inter, sans-serif',
+  headings: {
+    fontFamily: 'Inter, sans-serif',
+  },
+};
 
 // Add CSS keyframes for the flash animation
 const flashAnimation = {
@@ -471,78 +479,84 @@ function App() {
   }
 
   return (
-    <MantineProvider>
-      <Container size="lg" py="xl" style={{ position: 'relative' }}>
-        <Stack spacing="xs" align="center" mb="xl">
-          <Text size="xl" weight={700} style={{ fontSize: '2.5rem' }}>Freshmart</Text>
-          <Text size="lg" color="dimmed">Live Data Products</Text>
-          <Text size="md" color="dimmed" align="center" mt="md" style={{ maxWidth: '800px' }}>
-            This demo shows the journey the team at Freshmart takes to deliver correct, dynamic prices to their customers while they are still engaging with their site.
-          </Text>
-        </Stack>
-        <LoadingOverlay 
-          visible={isIndexLoading || isPromotionLoading || isRefreshConfigLoading} 
-          overlayBlur={2}
-          loaderProps={{ size: 'xl', color: 'blue' }}
-          overlayOpacity={0.7}
-        />
-        {error && (
-          <Paper p="md" mb="md" style={{ backgroundColor: '#fff4f4' }}>
-            <Text color="red">Error: {error}</Text>
-          </Paper>
-        )}
+    <MantineProvider theme={theme}>
+      <Container size="xl" py="xl">
         <Stack spacing="md">
+          <Paper p="md" withBorder style={{ backgroundColor: '#ad94f4' }}>
+            <Grid>
+              <Grid.Col span={6}>
+                <Stack spacing="xs">
+                  <Text size="xl" weight={700} color="white">Materialize: Real-time Data Integration and Transformation</Text>
+                  <Text size="md" color="white">Use SQL to create live data products you can trust</Text>
+                </Stack>
+              </Grid.Col>
+              <Grid.Col span={6}>
+              </Grid.Col>
+            </Grid>
+          </Paper>
+
           <Paper p="md" withBorder>
             <Text size="lg" weight={500} mb="md">Scenario Selection</Text>
-            <Stack spacing="md">
-              <Group>
-                <Button
-                  onClick={() => toggleScenario('postgres')}
-                  variant={scenarios.postgres ? "filled" : "outline"}
-                  color="blue"
-                >
-                  PostgreSQL View
-                </Button>
-                <Button
-                  onClick={() => toggleScenario('materializeView')}
-                  variant={scenarios.materializeView ? "filled" : "outline"}
-                  color="green"
-                >
-                  Cached Table
-                </Button>
-                <Button
-                  onClick={() => toggleScenario('materialize')}
-                  variant={scenarios.materialize ? "filled" : "outline"}
-                  color="orange"
-                >
-                  Materialize Query
-                </Button>
-              </Group>
+            <Stack spacing="xl">
+              <Stack spacing="xs">
+                <Text size="sm" weight={500}>Query Source:</Text>
+                <Group position="left" spacing="md">
+                  <Button
+                    onClick={() => toggleScenario('postgres')}
+                    variant={scenarios.postgres ? "filled" : "outline"}
+                    color="blue"
+                    style={{ width: '180px' }}
+                  >
+                    PostgreSQL View
+                  </Button>
+                  <Button
+                    onClick={() => toggleScenario('materializeView')}
+                    variant={scenarios.materializeView ? "filled" : "outline"}
+                    color="green"
+                    style={{ width: '180px' }}
+                  >
+                    Cached Table
+                  </Button>
+                  <Button
+                    onClick={() => toggleScenario('materialize')}
+                    variant={scenarios.materialize ? "filled" : "outline"}
+                    color="orange"
+                    style={{ width: '180px' }}
+                  >
+                    Materialize Query
+                  </Button>
+                </Group>
+              </Stack>
 
-              <Group>
+              <Stack spacing="xs">
                 <Text size="sm" weight={500}>Traffic Control:</Text>
-                <Button
-                  onClick={() => handleTrafficToggle('postgres')}
-                  variant={trafficEnabled.postgres ? "light" : "subtle"}
-                  color={trafficEnabled.postgres ? "blue" : "gray"}
-                >
-                  {trafficEnabled.postgres ? "Stop PostgreSQL Traffic" : "Start PostgreSQL Traffic"}
-                </Button>
-                <Button
-                  onClick={() => handleTrafficToggle('materializeView')}
-                  variant={trafficEnabled.materializeView ? "light" : "subtle"}
-                  color={trafficEnabled.materializeView ? "green" : "gray"}
-                >
-                  {trafficEnabled.materializeView ? "Stop Cache Traffic" : "Start Cache Traffic"}
-                </Button>
-                <Button
-                  onClick={() => handleTrafficToggle('materialize')}
-                  variant={trafficEnabled.materialize ? "light" : "subtle"}
-                  color={trafficEnabled.materialize ? "orange" : "gray"}
-                >
-                  {trafficEnabled.materialize ? "Stop Materialize Traffic" : "Start Materialize Traffic"}
-                </Button>
-              </Group>
+                <Group position="left" spacing="md">
+                  <Button
+                    onClick={() => handleTrafficToggle('postgres')}
+                    variant={trafficEnabled.postgres ? "light" : "subtle"}
+                    color={trafficEnabled.postgres ? "blue" : "gray"}
+                    style={{ width: '180px' }}
+                  >
+                    {trafficEnabled.postgres ? "Stop PostgreSQL" : "Start PostgreSQL"}
+                  </Button>
+                  <Button
+                    onClick={() => handleTrafficToggle('materializeView')}
+                    variant={trafficEnabled.materializeView ? "light" : "subtle"}
+                    color={trafficEnabled.materializeView ? "green" : "gray"}
+                    style={{ width: '180px' }}
+                  >
+                    {trafficEnabled.materializeView ? "Stop Cache" : "Start Cache"}
+                  </Button>
+                  <Button
+                    onClick={() => handleTrafficToggle('materialize')}
+                    variant={trafficEnabled.materialize ? "light" : "subtle"}
+                    color={trafficEnabled.materialize ? "orange" : "gray"}
+                    style={{ width: '180px' }}
+                  >
+                    {trafficEnabled.materialize ? "Stop Materialize" : "Start Materialize"}
+                  </Button>
+                </Group>
+              </Stack>
             </Stack>
           </Paper>
 
@@ -586,7 +600,6 @@ function App() {
    </span>
 
 </pre>
-                    <div>Database Size: <Badge color="blue" variant="light">{databaseSize ? `${databaseSize.toFixed(2)} GB` : 'Unknown'}</Badge></div>
                   </Accordion.Panel>
                 </Accordion.Item>
               </Accordion>
@@ -895,28 +908,38 @@ function App() {
             </LineChart>
           </Paper>
         </Stack>
+        
+        <Paper p="md" withBorder mt="md">
+          <Text size="lg" weight={500} mb="md">Compute Usage</Text>
+          <ContainersCPUChart />
+        </Paper>
+
         <Accordion defaultValue={null} mt="md">
           <Accordion.Item value="advanced">
             <Accordion.Control>Advanced</Accordion.Control>
             <Accordion.Panel>
-              <Group>
-                <Button
-                  onClick={toggleIsolation}
-                  variant="outline"
-                  color="violet"
-                  disabled={isIsolationLoading}
-                >
-                  {isIsolationLoading
-                    ? "Changing Isolation Level..."
-                    : `Switch to ${isolationLevel === 'serializable' ? 'Strict Serializable' : 'Serializable'}`
-                  }
-                </Button>
-                <div>Isolation Level: <Badge color="violet" variant="light">{isolationLevel ? isolationLevel.replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'}</Badge></div>
-              </Group>
+              <Stack spacing="md">
+                <Group>
+                  <Button
+                    onClick={toggleIsolation}
+                    variant="outline"
+                    color="violet"
+                    disabled={isIsolationLoading}
+                  >
+                    {isIsolationLoading
+                      ? "Changing Isolation Level..."
+                      : `Switch to ${isolationLevel === 'serializable' ? 'Strict Serializable' : 'Serializable'}`
+                    }
+                  </Button>
+                  <div>Isolation Level: <Badge color="violet" variant="light">{isolationLevel ? isolationLevel.replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'}</Badge></div>
+                </Group>
+                <Group>
+                  <div>Database Size: <Badge color="blue" variant="light">{databaseSize ? `${databaseSize.toFixed(2)} GB` : 'Unknown'}</Badge></div>
+                </Group>
+              </Stack>
             </Accordion.Panel>
           </Accordion.Item>
         </Accordion>
-        <ContainersCPUChart />
       </Container>
     </MantineProvider>
   );
