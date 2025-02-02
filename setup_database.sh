@@ -5,7 +5,7 @@ set -e
 
 # Load environment variables
 set -a
-source backend/.env
+true
 set +a
 
 # Function to show usage
@@ -35,7 +35,7 @@ setup_postgres() {
     cp -v $DATA_DIR/*.csv data/
 
     echo "Cleaning up existing replication slots..."
-    PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d postgres << EOF
+    PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d template1 << EOF
     -- First terminate any active connections to the target database
     SELECT pg_terminate_backend(pid) 
     FROM pg_stat_activity 
@@ -165,8 +165,8 @@ setup_materialize() {
     CREATE SECRET pgpass AS '$DB_PASSWORD';
 
     CREATE CONNECTION pg_connection TO POSTGRES (
-       HOST 'host.docker.internal',
-       PORT 5432,
+       HOST '$DB_HOST',
+       PORT $DB_PORT,
        USER '$DB_USER',
        PASSWORD SECRET pgpass,
        DATABASE '$DB_NAME'
@@ -178,12 +178,12 @@ setup_materialize() {
 EOF
 
     echo "Applying Materialize setup..."
-    psql -h localhost -p 6875 -U materialize -d materialize -f mz_setup.sql
+    PGHOST=$MZ_HOST PGPORT=$MZ_PORT PGUSER=$MZ_USER PGPASSWORD=$MZ_PASSWORD PGDATABASE=$MZ_NAME psql -f mz_setup.sql
 
     echo "Loading Materialize views..."
     # Filter out the connection setup from mz_queries.sql and apply only the view definitions
     sed -n '/CREATE VIEW/,$p' mz_queries.sql > mz_views_only.sql
-    psql -h localhost -p 6875 -U materialize -d materialize -f mz_views_only.sql
+    PGHOST=$MZ_HOST PGPORT=$MZ_PORT PGUSER=$MZ_USER PGPASSWORD=$MZ_PASSWORD PGDATABASE=$MZ_NAME psql -f mz_views_only.sql
 
     echo "Cleaning up Materialize temporary files..."
     rm -f mz_setup.sql mz_views_only.sql
