@@ -1098,9 +1098,16 @@ function App() {
 `} 
                     <span 
                       onClick={togglePromotion} 
-                      style={{ color: 'blue', cursor: 'pointer', textDecoration: 'underline' }}
+                      style={{ 
+                        color: '#be4bdb', 
+                        cursor: isPromotionLoading ? 'wait' : 'pointer', 
+                        textDecoration: 'underline',
+                        '&:hover': {
+                          color: '#d0a9e5'
+                        }
+                      }}
                     >
-                      (Toggle Promotion)
+                      {isPromotionLoading ? '(Toggling promotion...)' : '(Toggle Promotion)'}
                     </span>
                   </pre>
                   </Accordion.Panel>
