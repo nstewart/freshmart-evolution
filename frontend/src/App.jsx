@@ -853,10 +853,7 @@ function App() {
                   <Stack spacing="xs">
                     <Stack spacing={0}>
                       <Text size="xl" weight={700} style={{ fontSize: '2rem', letterSpacing: '-0.02em', color: 'white', lineHeight: 1.2 }}>
-                        Real-time Data
-                      </Text>
-                      <Text size="xl" weight={700} style={{ fontSize: '2rem', letterSpacing: '-0.02em', color: 'white', lineHeight: 1.2 }}>
-                        Integration and Transformation
+                        Real-time Data Integration and Transformation
                       </Text>
                     </Stack>
                     <Text size="lg" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.5rem' }}>
@@ -876,6 +873,9 @@ function App() {
             </Paper>
 
             <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
+            <Text size="xl" weight={700} mb="xl" style={{ color: '#BCB9C0' }}>
+                  Why is this a hard problem?
+                </Text>
               <Grid>
                 <Grid.Col span={4}>
                   <Paper p="md" withBorder style={{ 
