@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { Paper, Text } from '@mantine/core';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 
-const RAGLatencyChart = ({ currentScenario, stats }) => {
+const RAGLatencyChart = ({ currentScenario, stats, includeOLTP }) => {
   // Keep track of the last valid latency value
   const lastValidLatencyRef = useRef(80);
 
@@ -66,33 +66,33 @@ const RAGLatencyChart = ({ currentScenario, stats }) => {
       start: 40,
       type: 'Sequential'
     },
-    { 
+    ...(includeOLTP ? [{
       name: 'OLTP Context Retrieval',
       spacing: 10,
       latency: getOLTPLatency(),
       start: 10,
       type: 'Parallel with Vector DB Retrieval',
       highlight: true
-    },
+    }] : []),
     { 
       name: 'Context Construction',
-      spacing: Math.max(60, 10 + getOLTPLatency()), // Start after the later of Re-Ranking (60ms) or OLTP end
+      spacing: includeOLTP ? Math.max(60, 10 + getOLTPLatency()) : 60, // Start after the later of Re-Ranking (60ms) or OLTP end
       latency: 10,
-      start: Math.max(60, 10 + getOLTPLatency()),
+      start: includeOLTP ? Math.max(60, 10 + getOLTPLatency()) : 60,
       type: 'Sequential'
     },
     { 
       name: 'LLM Inference',
-      spacing: Math.max(70, 20 + getOLTPLatency()), // Previous end + 10ms
+      spacing: includeOLTP ? Math.max(70, 20 + getOLTPLatency()) : 70, // Previous end + 10ms
       latency: 100,
-      start: Math.max(70, 20 + getOLTPLatency()),
+      start: includeOLTP ? Math.max(70, 20 + getOLTPLatency()) : 70,
       type: 'Sequential'
     },
     { 
       name: 'Post-processing & Response',
-      spacing: Math.max(170, 120 + getOLTPLatency()), // Previous end + 100ms
+      spacing: includeOLTP ? Math.max(170, 120 + getOLTPLatency()) : 170, // Previous end + 100ms
       latency: 15,
-      start: Math.max(170, 120 + getOLTPLatency()),
+      start: includeOLTP ? Math.max(170, 120 + getOLTPLatency()) : 170,
       type: 'Sequential'
     }
   ];
@@ -130,7 +130,7 @@ const RAGLatencyChart = ({ currentScenario, stats }) => {
   // Calculate the maximum X value for the domain based on the dynamic OLTP latency
   const maxX = Math.max(
     220,
-    185 + getOLTPLatency(), // End of last operation (170 + 15) relative to OLTP
+    includeOLTP ? 185 + getOLTPLatency() : 185, // End of last operation relative to OLTP
     data.reduce((max, item) => {
       const endTime = item.start + item.latency;
       return endTime > max ? endTime : max;

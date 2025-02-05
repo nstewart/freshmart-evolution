@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stack, Badge, LoadingOverlay, Slider, Image, Accordion, Grid, Divider, Select } from '@mantine/core';
+import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stack, Badge, LoadingOverlay, Slider, Image, Accordion, Grid, Divider, Select, Switch } from '@mantine/core';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import ContainersCPUChart from './components/ContainersCPUChart.jsx';
 import ContainersMemoryChart from './components/ContainersMemoryChart.jsx';
 import RAGLatencyChart from './components/RAGLatencyChart.jsx';
+import RAGPromptResponse from './components/RAGPromptResponse.jsx';
 
 const HISTORY_WINDOW_MS = 3 * 60 * 1000; // 3 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
@@ -838,6 +839,9 @@ function App() {
     return () => clearInterval(interval);
   }, [currentScenario]); // Add currentScenario as a dependency
 
+  // Add state for OLTP toggle
+  const [includeOLTP, setIncludeOLTP] = useState(false);
+
   if (error) {
     console.error('Rendering error state:', error);
   }
@@ -1344,7 +1348,53 @@ function App() {
                       This visualization shows the latency breakdown of a typical Retrieval-Augmented Generation (RAG) pipeline. 
                       Adding correct and timely structured data provides a much more relevant response to customers.
                     </Text>
-                    <RAGLatencyChart currentScenario={currentScenario} stats={stats} />
+                    
+                    <Paper p="sm" withBorder mb="lg" style={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <Group position="apart">
+                        <Text size="sm" style={{ color: '#BCB9C0' }}>
+                          Toggle to include real-time structured data in the RAG pipeline
+                        </Text>
+                        <Switch
+                          
+                          checked={includeOLTP}
+                          onChange={(event) => setIncludeOLTP(event.currentTarget.checked)}
+                          size="sm"
+                          color="blue"
+                          styles={{
+                            label: {
+                              color: '#BCB9C0',
+                              fontSize: '14px'
+                            }
+                          }}
+                        />
+                      </Group>
+                    </Paper>
+
+                    <Grid>
+                      <Grid.Col span={7}>
+                        <Paper p="md" withBorder style={{ 
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          height: '400px'
+                        }}>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Pipeline Latency</Text>
+                          <RAGLatencyChart currentScenario={currentScenario} stats={stats} includeOLTP={includeOLTP} />
+                        </Paper>
+                      </Grid.Col>
+                      <Grid.Col span={5}>
+                        <Paper p="md" withBorder style={{ 
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          height: '400px'
+                        }}>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Example Interaction</Text>
+                          <RAGPromptResponse />
+                        </Paper>
+                      </Grid.Col>
+                    </Grid>
                   </Accordion.Panel>
                 </Accordion.Item>
               </Accordion>
