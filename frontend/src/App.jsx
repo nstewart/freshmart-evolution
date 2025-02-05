@@ -1077,7 +1077,56 @@ function App() {
                     </Text>
                     
                     <Grid>
-                      <Grid.Col span={5}>
+                    <Grid.Col span={6}>
+                        <Paper p="md" withBorder style={{ 
+                          height: '100%',
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Data Product Lineage</Text>
+                          <pre style={{ 
+                            fontFamily: 'Inter, monospace',
+                            fontSize: '14px',
+                            lineHeight: '1.5',
+                            whiteSpace: 'pre',
+                            overflow: 'auto',
+                            padding: '12px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                            borderRadius: '4px',
+                            color: '#BCB9C0',
+                            margin: 0
+                          }}>
+{`
+   Categories ──┐
+                └──► Popularity Score ──┐
+      Sales ────┐                       │
+         │      └──► Recent Prices ─────┤
+         │                              │
+         └────► High Demand ────────────┤
+                                        │
+    Products ───┐                       ├──► Inventory Item
+                ├──► Inventory Status  ─┘
+                │                       │
+   Promotions ──┴──► Promotion Effect  ─┘
+   
+`} 
+                            <span 
+                              onClick={togglePromotion} 
+                              style={{ 
+                                color: '#be4bdb', 
+                                cursor: isPromotionLoading ? 'wait' : 'pointer', 
+                                textDecoration: 'underline',
+                                '&:hover': {
+                                  color: '#d0a9e5'
+                                }
+                              }}
+                            >
+                              {isPromotionLoading ? '(Toggling promotion...)' : '(Toggle Promotion)'}
+                            </span>
+                          </pre>
+                        </Paper>
+                      </Grid.Col>
+                      <Grid.Col span={6}>
                         <Paper p="md" withBorder style={{ 
                           height: '100%',
                           backgroundColor: 'rgb(13, 17, 22)',
@@ -1134,55 +1183,7 @@ function App() {
                         </Paper>
                       </Grid.Col>
 
-                      <Grid.Col span={7}>
-                        <Paper p="md" withBorder style={{ 
-                          height: '100%',
-                          backgroundColor: 'rgb(13, 17, 22)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)'
-                        }}>
-                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Data Product Lineage</Text>
-                          <pre style={{ 
-                            fontFamily: 'Inter, monospace',
-                            fontSize: '14px',
-                            lineHeight: '1.5',
-                            whiteSpace: 'pre',
-                            overflow: 'auto',
-                            padding: '12px',
-                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                            borderRadius: '4px',
-                            color: '#BCB9C0',
-                            margin: 0
-                          }}>
-{`
-   Categories ──┐
-                └──► Popularity Score ──┐
-      Sales ────┐                       │
-         │      └──► Recent Prices ─────┤
-         │                              │
-         └────► High Demand ────────────┤
-                                        │
-    Products ───┐                       ├──► Inventory Item
-                ├──► Inventory Status  ─┘
-                │                       │
-   Promotions ──┴──► Promotion Effect  ─┘
-   
-`} 
-                            <span 
-                              onClick={togglePromotion} 
-                              style={{ 
-                                color: '#be4bdb', 
-                                cursor: isPromotionLoading ? 'wait' : 'pointer', 
-                                textDecoration: 'underline',
-                                '&:hover': {
-                                  color: '#d0a9e5'
-                                }
-                              }}
-                            >
-                              {isPromotionLoading ? '(Toggling promotion...)' : '(Toggle Promotion)'}
-                            </span>
-                          </pre>
-                        </Paper>
-                      </Grid.Col>
+                      
                     </Grid>
                   </Accordion.Panel>
                 </Accordion.Item>
@@ -1401,7 +1402,7 @@ function App() {
             </Paper>
 
             <Paper p="md" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <Accordion defaultValue={[]} multiple>
+              <Accordion defaultValue={['stats', 'latency']} multiple>
                 <Accordion.Item value="stats">
                   <Accordion.Control>
                     <Text size="lg" weight={500} style={{ color: '#BCB9C0' }}>Query Statistics</Text>
@@ -1699,223 +1700,260 @@ function App() {
                 </Accordion.Item>
               </Accordion>
             </Paper>
+
             <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <Text size="xl" weight={700} mb="xl" style={{ color: '#BCB9C0' }}>
-                Materialize Architectural Patterns
-              </Text>
-              <Grid>
-                <Grid.Col span={4}>
-                  <Paper p="md" withBorder style={{ 
-                    height: '400px', 
-                    backgroundColor: 'rgb(13, 17, 22)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    }
-                  }}>
-                    <Stack align="center" spacing="md" style={{ flex: 1 }}>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                        <Image
-                          src="/images/CQRS.png"
-                          height={180}
-                          fit="contain"
-                          alt="Query Offload"
-                        />
-                      </div>
-                      <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
-                        Query Offload
-                      </Text>
-                      <Text size="sm" color="gray.3" align="center">
-                        Offload complex analytical queries from your operational database to maintain performance
-                      </Text>
-                    </Stack>
-                  </Paper>
-                </Grid.Col>
-                <Grid.Col span={4}>
-                  <Paper p="md" withBorder style={{ 
-                    height: '400px', 
-                    backgroundColor: 'rgb(13, 17, 22)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    }
-                  }}>
-                    <Stack align="center" spacing="md" style={{ flex: 1 }}>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                        <Image
-                          src="/images/ODS.png"
-                          height={180}
-                          fit="contain"
-                          alt="Integration Hub"
-                        />
-                      </div>
-                      <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
-                        Integration Hub
-                      </Text>
-                      <Text size="sm" color="gray.3" align="center">
-                        Create a real-time operational data store to integrate data from multiple sources
-                      </Text>
-                    </Stack>
-                  </Paper>
-                </Grid.Col>
-                <Grid.Col span={4}>
-                  <Paper p="md" withBorder style={{ 
-                    height: '400px', 
-                    backgroundColor: 'rgb(13, 17, 22)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    }
-                  }}>
-                    <Stack align="center" spacing="md" style={{ flex: 1 }}>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                        <Image
-                          src="/images/DM.png"
-                          height={180}
-                          fit="contain"
-                          alt="Operational Data Mesh"
-                        />
-                      </div>
-                      <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
-                        Operational Data Mesh
-                      </Text>
-                      <Text size="sm" color="gray.3" align="center">
-                        Create decentralized, domain-oriented data products with real-time consistency
-                      </Text>
-                    </Stack>
-                  </Paper>
-                </Grid.Col>
-              </Grid>
+              <Accordion defaultValue={null} styles={{
+                control: {
+                  borderBottom: 'none'
+                },
+                item: {
+                  borderBottom: 'none'
+                }
+              }}>
+                <Accordion.Item value="architecturalPatterns">
+                  <Accordion.Control>
+                    <Text size="xl" weight={700} style={{ color: '#BCB9C0' }}>
+                      Materialize Architectural Patterns
+                    </Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Grid>
+                      <Grid.Col span={4}>
+                        <Paper p="md" withBorder style={{ 
+                          height: '400px', 
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          }
+                        }}>
+                          <Stack align="center" spacing="md" style={{ flex: 1 }}>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                              <Image
+                                src="/images/CQRS.png"
+                                height={180}
+                                fit="contain"
+                                alt="Query Offload"
+                              />
+                            </div>
+                            <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
+                              Query Offload
+                            </Text>
+                            <Text size="sm" color="gray.3" align="center">
+                              Offload complex analytical queries from your operational database to maintain performance
+                            </Text>
+                          </Stack>
+                        </Paper>
+                      </Grid.Col>
+                      <Grid.Col span={4}>
+                        <Paper p="md" withBorder style={{ 
+                          height: '400px', 
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          }
+                        }}>
+                          <Stack align="center" spacing="md" style={{ flex: 1 }}>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                              <Image
+                                src="/images/ODS.png"
+                                height={180}
+                                fit="contain"
+                                alt="Integration Hub"
+                              />
+                            </div>
+                            <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
+                              Integration Hub
+                            </Text>
+                            <Text size="sm" color="gray.3" align="center">
+                              Create a real-time operational data store to integrate data from multiple sources
+                            </Text>
+                          </Stack>
+                        </Paper>
+                      </Grid.Col>
+                      <Grid.Col span={4}>
+                        <Paper p="md" withBorder style={{ 
+                          height: '400px', 
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          }
+                        }}>
+                          <Stack align="center" spacing="md" style={{ flex: 1 }}>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                              <Image
+                                src="/images/DM.png"
+                                height={180}
+                                fit="contain"
+                                alt="Operational Data Mesh"
+                              />
+                            </div>
+                            <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
+                              Operational Data Mesh
+                            </Text>
+                            <Text size="sm" color="gray.3" align="center">
+                              Create decentralized, domain-oriented data products with real-time consistency
+                            </Text>
+                          </Stack>
+                        </Paper>
+                      </Grid.Col>
+                    </Grid>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
             </Paper>
             <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <Text size="xl" weight={700} mb="xl" style={{ color: '#BCB9C0' }}>
-                Use Cases
-              </Text>
-              <Grid>
-                <Grid.Col span={3}>
-                  <Paper p="md" withBorder style={{ 
-                    height: '400px', 
-                    backgroundColor: 'rgb(13, 17, 22)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    }
-                  }}>
-                    <Stack align="center" spacing="md" style={{ flex: 1 }}>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                        <Image
-                          src="/images/usecase-customer-360.png"
-                          height={180}
-                          fit="contain"
-                          alt="Customer 360"
-                        />
-                      </div>
-                      <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
-                        Customer 360
-                      </Text>
-                      <Text size="sm" color="gray.3" align="center">
-                        Build a real-time unified view of your customers across all touchpoints
-                      </Text>
-                    </Stack>
-                  </Paper>
-                </Grid.Col>
-                <Grid.Col span={3}>
-                  <Paper p="md" withBorder style={{ 
-                    height: '400px', 
-                    backgroundColor: 'rgb(13, 17, 22)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    }
-                  }}>
-                    <Stack align="center" spacing="md" style={{ flex: 1 }}>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                        <Image
-                          src="/images/usecase-digital-twin.png"
-                          height={180}
-                          fit="contain"
-                          alt="Digital Twin"
-                        />
-                      </div>
-                      <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
-                        Digital Twin
-                      </Text>
-                      <Text size="sm" color="gray.3" align="center">
-                        Create live digital representations of physical systems and processes
-                      </Text>
-                    </Stack>
-                  </Paper>
-                </Grid.Col>
-                <Grid.Col span={3}>
-                  <Paper p="md" withBorder style={{ 
-                    height: '400px', 
-                    backgroundColor: 'rgb(13, 17, 22)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    }
-                  }}>
-                    <Stack align="center" spacing="md" style={{ flex: 1 }}>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                        <Image
-                          src="/images/usecase-agent-orchestration.png"
-                          height={180}
-                          fit="contain"
-                          alt="Agent Orchestration"
-                        />
-                      </div>
-                      <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
-                        Agent Orchestration
-                      </Text>
-                      <Text size="sm" color="gray.3" align="center">
-                        Coordinate AI agents with real-time data and state management
-                      </Text>
-                    </Stack>
-                  </Paper>
-                </Grid.Col>
-                <Grid.Col span={3}>
-                  <Paper p="md" withBorder style={{ 
-                    height: '400px', 
-                    backgroundColor: 'rgb(13, 17, 22)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    }
-                  }}>
-                    <Stack align="center" spacing="md" style={{ flex: 1 }}>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                        <Image
-                          src="/images/usecase-realtime-portfolio-analysis.png"
-                          height={180}
-                          fit="contain"
-                          alt="Real-time Portfolio Analysis"
+              <Accordion defaultValue={null} styles={{
+                control: {
+                  borderBottom: 'none'
+                },
+                item: {
+                  borderBottom: 'none'
+                }
+              }}>
+                <Accordion.Item value="useCases">
+                  <Accordion.Control>
+                    <Text size="xl" weight={700} style={{ color: '#BCB9C0' }}>
+                      Use Cases
+                    </Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Grid>
+                      <Grid.Col span={3}>
+                        <Paper p="md" withBorder style={{ 
+                          height: '400px', 
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          }
+                        }}>
+                          <Stack align="center" spacing="md" style={{ flex: 1 }}>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                              <Image
+                                src="/images/usecase-customer-360.png"
+                                height={180}
+                                fit="contain"
+                                alt="Customer 360"
+                              />
+                            </div>
+                            <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
+                              Customer 360
+                            </Text>
+                            <Text size="sm" color="gray.3" align="center">
+                              Build a real-time unified view of your customers across all touchpoints
+                            </Text>
+                          </Stack>
+                        </Paper>
+                      </Grid.Col>
+                      <Grid.Col span={3}>
+                        <Paper p="md" withBorder style={{ 
+                          height: '400px', 
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          }
+                        }}>
+                          <Stack align="center" spacing="md" style={{ flex: 1 }}>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                              <Image
+                                src="/images/usecase-digital-twin.png"
+                                height={180}
+                                fit="contain"
+                                alt="Digital Twin"
+                              />
+                            </div>
+                            <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
+                              Digital Twin
+                            </Text>
+                            <Text size="sm" color="gray.3" align="center">
+                              Create live digital representations of physical systems and processes
+                            </Text>
+                          </Stack>
+                        </Paper>
+                      </Grid.Col>
+                      <Grid.Col span={3}>
+                        <Paper p="md" withBorder style={{ 
+                          height: '400px', 
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          }
+                        }}>
+                          <Stack align="center" spacing="md" style={{ flex: 1 }}>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                              <Image
+                                src="/images/usecase-agent-orchestration.png"
+                                height={180}
+                                fit="contain"
+                                alt="Agent Orchestration"
+                              />
+                            </div>
+                            <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
+                              Agent Orchestration
+                            </Text>
+                            <Text size="sm" color="gray.3" align="center">
+                              Coordinate AI agents with real-time data and state management
+                            </Text>
+                          </Stack>
+                        </Paper>
+                      </Grid.Col>
+                      <Grid.Col span={3}>
+                        <Paper p="md" withBorder style={{ 
+                          height: '400px', 
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          }
+                        }}>
+                          <Stack align="center" spacing="md" style={{ flex: 1 }}>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                              <Image
+                                src="/images/usecase-realtime-portfolio-analysis.png"
+                                height={180}
+                                fit="contain"
+                                alt="Real-time Portfolio Analysis"
           />
-                      </div>
-                      <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
-                        Portfolio Analysis
-                      </Text>
-                      <Text size="sm" color="gray.3" align="center">
-                        Monitor and analyze investment portfolios with live market data
-                      </Text>
-                    </Stack>
-                  </Paper>
-                </Grid.Col>
-              </Grid>
+                            </div>
+                            <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
+                              Portfolio Analysis
+                            </Text>
+                            <Text size="sm" color="gray.3" align="center">
+                              Monitor and analyze investment portfolios with live market data
+                            </Text>
+                          </Stack>
+                        </Paper>
+                      </Grid.Col>
+                    </Grid>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
             </Paper>
+
+            
+
+            
+
+            
 
             
 
