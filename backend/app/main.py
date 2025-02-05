@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
+
 from . import database
 import logging
 
@@ -30,6 +31,8 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
+    await database.init_pools()
+
     # Start the heartbeat task
     asyncio.create_task(database.create_heartbeat())
     # Start the auto-refresh task
@@ -38,6 +41,8 @@ async def startup_event():
     asyncio.create_task(database.continuous_query_load())
     # Start the container stats collection task
     asyncio.create_task(database.collect_container_stats())
+    asyncio.create_task(database.reload_pool())
+
     logger.info("Started background tasks: heartbeat, materialized view auto-refresh, continuous query load, and container stats collection")
 
 
