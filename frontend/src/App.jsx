@@ -1185,16 +1185,7 @@ function App() {
               </Accordion>
             </Paper>
 
-            <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
-              <Text size="xl" weight={700} mb="md" style={{ color: '#BCB9C0' }}>
-                RAG Pipeline Latency Breakdown
-              </Text>
-              <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
-                This visualization shows the latency breakdown of a typical Retrieval-Augmented Generation (RAG) pipeline. 
-                Adding correct and timely structured data provides a much more relevant response to customers.
-              </Text>
-              <RAGLatencyChart currentScenario={currentScenario} stats={stats} />
-            </Paper>
+            
 
             <Paper p="xl" className="hover-card" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
               <Text size="lg" weight={600} mb="md" style={{ color: '#BCB9C0' }}>Data Product Price Comparison</Text>
@@ -1319,6 +1310,30 @@ function App() {
                 )}
               </Group>
           </Paper>
+
+          <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
+              <Accordion defaultValue={null} styles={{
+                control: {
+                  borderBottom: 'none'
+                },
+                item: {
+                  borderBottom: 'none'
+                }
+              }}>
+                <Accordion.Item value="ragLatency">
+                  <Accordion.Control>
+                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>RAG Pipeline Latency Breakdown</Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
+                      This visualization shows the latency breakdown of a typical Retrieval-Augmented Generation (RAG) pipeline. 
+                      Adding correct and timely structured data provides a much more relevant response to customers.
+                    </Text>
+                    <RAGLatencyChart currentScenario={currentScenario} stats={stats} />
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
+            </Paper>
 
             <Paper p="md" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
               <Accordion defaultValue={[]} multiple>
