@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Paper, Text } from '@mantine/core';
 
 // Custom hook for typewriter effect
@@ -30,29 +30,70 @@ const useTypewriter = (text, speed = 30) => {
   return { displayText, isTyping };
 };
 
-const RAGPromptResponse = ({ includeOLTP, currentMetric }) => {
+const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
   const prompt = "When am I eligible for the next membership status?";
-  
+  const [totalLatency, setTotalLatency] = useState(185);
+  const lastValidLatencyRef = useRef(80);
+
+  useEffect(() => {
+    if (!includeOLTP) {
+      setTotalLatency(185);
+      return;
+    }
+
+    // Get the OLTP latency based on the current scenario
+    let oltpLatency;
+    
+    // Use the appropriate latency based on the current scenario
+    switch (currentScenario) {
+      case 'direct':
+        oltpLatency = currentMetric?.view_latency !== null ? currentMetric.view_latency : lastValidLatencyRef.current;
+        break;
+      case 'batch':
+        oltpLatency = currentMetric?.materialized_view_latency !== null ? currentMetric.materialized_view_latency : lastValidLatencyRef.current;
+        break;
+      case 'materialize':
+      case 'cqrs':
+        oltpLatency = currentMetric?.materialize_latency !== null ? currentMetric.materialize_latency : lastValidLatencyRef.current;
+        break;
+      default:
+        oltpLatency = lastValidLatencyRef.current;
+    }
+
+    // Update the last valid latency reference if we got a real value
+    if (oltpLatency !== null && oltpLatency !== undefined && !isNaN(oltpLatency)) {
+      lastValidLatencyRef.current = oltpLatency;
+    }
+    
+    // Calculate when LLM starts (must wait for both base operations and OLTP)
+    const llmStart = Math.max(70, 20 + oltpLatency);
+    
+    // Total is when LLM finishes plus post-processing
+    const newTotalLatency = llmStart + 100 + 15; // LLM (100ms) + post-processing (15ms)
+    
+    console.log('Current scenario:', currentScenario);
+    console.log('Selected OLTP latency:', oltpLatency);
+    console.log('Total latency:', newTotalLatency);
+    
+    setTotalLatency(newTotalLatency);
+  }, [currentMetric, includeOLTP, currentScenario]);
+
   const getResponse = () => {
-    if (includeOLTP) {
-      const latency = currentMetric?.materialize_end_to_end_latency 
-        ? (currentMetric.materialize_end_to_end_latency / 1000).toFixed(1)
-        : '0.1';
-      
-      return {
-        parts: [
-          'Based on your purchase history, you\'ve spent $892 this year and need just $108 more to reach Gold status. With the ',
-          { text: 'current items in your cart', color: '#228be6' },
-          ', you\'re going to reach Gold status at checkout!'
-        ]
-      };
-    } else {
+    if (!includeOLTP) {
       return {
         parts: [
           'Based on our membership program guidelines, Gold status is achieved when you spend $1,000 or more within a calendar year. For your specific progress towards Gold status, I recommend checking your account dashboard for the most up-to-date information.'
         ]
       };
     }
+
+    return {
+      parts: [
+        'Based on your purchase history, you\'ve spent $892 this year and need just $108 more to reach Gold status. With the ',
+        { text: 'current items in your cart', color: '#228be6' },
+        ', you\'re going to reach Gold status at checkout!'
+      ]
+    };
   };
 
   const response = getResponse();
@@ -120,6 +161,18 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric }) => {
             {isTyping && <span style={{ borderRight: '2px solid #BCB9C0', animation: 'blink 1s step-end infinite' }} />}
           </Text>
         </Paper>
+      </div>
+
+      <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '8px', marginTop: '4px' }}>
+        <Text size="xs" style={{ color: '#BCB9C0' }}>
+          Total Pipeline Latency:{' '}
+          <span style={{ 
+            color: totalLatency <= 200 ? '#40c057' : '#fa5252',
+            fontWeight: 500 
+          }}>
+            {`${totalLatency.toFixed(1)}ms`}
+          </span>
+        </Text>
       </div>
 
       <style>

@@ -1391,7 +1391,7 @@ function App() {
                       <Grid.Col span={5}>
                         <Paper p="md" withBorder style={{ backgroundColor: 'rgb(13, 17, 22)', border: '1px solid rgba(255, 255, 255, 0.1)', height: '400px' }}>
                           <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Example Interaction</Text>
-                          <RAGPromptResponse includeOLTP={includeOLTP} currentMetric={currentScenario} />
+                          <RAGPromptResponse includeOLTP={includeOLTP} currentMetric={metrics[metrics.length - 1]} currentScenario={currentScenario} />
                         </Paper>
                       </Grid.Col>
                     </Grid>
