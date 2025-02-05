@@ -1,6 +1,6 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Paper, Text } from '@mantine/core';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 
 const RAGLatencyChart = ({ currentScenario, stats, includeOLTP }) => {
   // Keep track of the last valid latency value
@@ -131,74 +131,78 @@ const RAGLatencyChart = ({ currentScenario, stats, includeOLTP }) => {
   const maxX = Math.max(
     220,
     includeOLTP ? 185 + getOLTPLatency() : 185, // End of last operation relative to OLTP
-    data.reduce((max, item) => {
-      const endTime = item.start + item.latency;
-      return endTime > max ? endTime : max;
-    }, 0)
+    data.reduce((max, item) => Math.max(max, item.start + item.latency), 0)
   );
 
   return (
     <div style={{ 
-      width: '100%', 
-      height: '400px'
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      width: '100%',
+      position: 'relative',
+      padding: '0 8px'
     }}>
-      <ResponsiveContainer>
-        <BarChart
-          data={data}
-          layout="vertical"
-          margin={{ top: 20, right: 30, left: 30, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-          <ReferenceLine
-            x={200}
-            stroke="#ff4d4f"
-            strokeDasharray="3 3"
-            label={{
-              value: "Latency Budget (200ms)",
-              position: "top",
-              fill: "#ff4d4f",
-              fontSize: 12
-            }}
-          />
-          <XAxis 
-            type="number" 
-            domain={[0, maxX]}
-            stroke="#BCB9C0"
-            tickFormatter={(value) => `${value}ms`}
-          />
-          <YAxis 
-            type="category" 
-            dataKey="name" 
-            stroke="#BCB9C0"
-            width={130}
-            style={{
-              fontSize: '12px',
-              fill: '#BCB9C0',
-            }}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          <Bar 
-            dataKey="spacing" 
-            stackId="a" 
-            fill="transparent" 
-          />
-          <Bar 
-            dataKey="latency" 
-            stackId="a" 
-            background={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+      <div style={{
+        flex: 1,
+        minHeight: 0,
+        width: '100%'
+      }}>
+        <ResponsiveContainer>
+          <BarChart
+            data={data}
+            layout="vertical"
+            barSize={12}
+            margin={{ top: 25, right: 25, bottom: 0, left: 0 }}
           >
-            {
-              data.map((entry, index) => (
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+            <ReferenceLine
+              x={200}
+              stroke="#ff4d4f"
+              strokeDasharray="3 3"
+              label={{
+                value: "Latency Budget (200ms)",
+                position: "top",
+                fill: "#ff4d4f",
+                fontSize: 11,
+                offset: -15
+              }}
+            />
+            <XAxis 
+              type="number" 
+              domain={[0, maxX]}
+              stroke="#BCB9C0"
+              tickFormatter={(value) => `${value}ms`}
+              tick={{ fontSize: 11 }}
+            />
+            <YAxis 
+              type="category" 
+              dataKey="name" 
+              stroke="#BCB9C0"
+              tick={{ fontSize: 11 }}
+              width={120}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar 
+              dataKey="spacing" 
+              stackId="a" 
+              fill="transparent" 
+            />
+            <Bar 
+              dataKey="latency" 
+              stackId="a" 
+              background={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+            >
+              {data.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
                   fill={entry.highlight ? '#ff7300' : 'rgba(136, 132, 216, 0.6)'} 
                 />
-              ))
-            }
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };
