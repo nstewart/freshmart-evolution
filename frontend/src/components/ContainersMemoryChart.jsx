@@ -120,7 +120,8 @@ const ContainersMemoryChart = ({ scenarios }) => {
         tension: 0.1,
         fill: false,
         dot: false,
-        borderWidth: 2
+        borderWidth: 2,
+        spanGaps: true
       },
       ...(scenarios?.materialize ? [{
         label: 'Materialize Memory Usage (GB)',
@@ -129,7 +130,8 @@ const ContainersMemoryChart = ({ scenarios }) => {
         tension: 0.1,
         fill: false,
         dot: false,
-        borderWidth: 2
+        borderWidth: 2,
+        spanGaps: true
       }] : [])
     ],
   };
