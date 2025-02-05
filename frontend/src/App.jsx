@@ -1105,16 +1105,16 @@ function App() {
                                   name: "Fresh Red Delicious Apple",
                                   category: "Fresh Produce",
                                   current_price: (useMaterialize ? currentMetric.materialize_price :
-                                               scenarios.postgres ? currentMetric.view_price :
-                                               scenarios.materializeView ? currentMetric.materialized_view_price :
+                                               currentScenario === 'batch' ? currentMetric.materialized_view_price :
+                                               currentScenario === 'direct' ? currentMetric.view_price :
                                                currentMetric.materialize_price)?.toFixed(2),                                
                                   last_update: useMaterialize ? 
                                              new Date(Date.now() - (currentMetric.materialize_end_to_end_latency || 0)).toISOString() :
                                              new Date().toISOString(),
                                   inventory_status: "IN_STOCK",
                                   source: useMaterialize ? "Materialize" :
-                                         scenarios.postgres ? "PostgreSQL View" :
-                                         scenarios.materializeView ? "Batch (Cache) Table" :
+                                         currentScenario === 'batch' ? "Batch (Cache) Table" :
+                                         currentScenario === 'direct' ? "PostgreSQL View" :
                                          "Materialize",
                                   
                                   metadata: {
