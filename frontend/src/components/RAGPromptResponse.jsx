@@ -55,7 +55,7 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
     // Get the OLTP latency based on the current scenario
     let oltpLatency;
     let isWaiting = false;
-    
+
     // Use the appropriate latency based on the current scenario
     switch (currentScenario) {
       case 'direct':
@@ -102,17 +102,17 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
         lastValidLatenciesRef.current.cqrs = oltpLatency; // Share values between materialize and cqrs
       }
     }
-    
+
     // Calculate when LLM starts (must wait for both base operations and OLTP)
     const llmStart = Math.max(70, 20 + oltpLatency);
-    
+
     // Total is when LLM finishes plus post-processing
     const newTotalLatency = llmStart + 100 + 15; // LLM (100ms) + post-processing (15ms)
-    
+
     console.log('Current scenario:', currentScenario);
     console.log('Selected OLTP latency:', oltpLatency);
     console.log('Total latency:', newTotalLatency);
-    
+
     setTotalLatency(newTotalLatency);
   }, [currentMetric, includeOLTP, currentScenario]);
 
@@ -123,6 +123,14 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
           'Based on our membership program guidelines, Gold status is achieved when you spend $1,000 or more within a calendar year. For your specific progress towards Gold status, I recommend checking your account dashboard for the most up-to-date information.'
         ]
       };
+    }
+
+    if (currentScenario == 'batch') {
+      return {
+        parts: [
+          'Based on your purchase history, you\'ve spent $892 this year and need just $108 more to reach Gold status.'
+        ]
+      }
     }
 
     return {
@@ -141,7 +149,7 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
   const renderColoredText = (text) => {
     let currentPosition = 0;
     const result = [];
-    
+
     response.parts.forEach((part, index) => {
       if (typeof part === 'string') {
         const partLength = part.length;
@@ -160,16 +168,16 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
   };
 
   return (
-    <div style={{ 
+    <div style={{
       height: '300px',
-      display: 'flex', 
-      flexDirection: 'column', 
+      display: 'flex',
+      flexDirection: 'column',
       gap: '0.5rem',
       overflow: 'hidden'
     }}>
       <div style={{ flex: '0 0 auto' }}>
         <Text size="sm" weight={500} mb="xs" style={{ color: '#BCB9C0' }}>User Prompt</Text>
-        <Paper p="xs" withBorder style={{ 
+        <Paper p="xs" withBorder style={{
           backgroundColor: 'rgb(13, 17, 22)',
           border: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
@@ -179,16 +187,16 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
         </Paper>
       </div>
 
-      <div style={{ 
+      <div style={{
         flex: 1,
-        display: 'flex', 
+        display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden'
       }}>
         <Text size="sm" weight={500} mb="xs" style={{ color: '#BCB9C0' }}>
           LLM Response {includeOLTP ? '(with real-time data)' : '(from knowledge base)'}{isTyping && ' ...'}
         </Text>
-        <Paper p="xs" withBorder style={{ 
+        <Paper p="xs" withBorder style={{
           backgroundColor: 'rgb(13, 17, 22)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           flex: 1,
@@ -207,9 +215,9 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
           {totalLatency === null ? (
             <span style={{ color: '#BCB9C0', fontStyle: 'italic' }}>waiting...</span>
           ) : (
-            <span style={{ 
+            <span style={{
               color: totalLatency <= 200 ? '#40c057' : '#fa5252',
-              fontWeight: 500 
+              fontWeight: 500
             }}>
               {`${totalLatency.toFixed(1)}ms`}
             </span>
