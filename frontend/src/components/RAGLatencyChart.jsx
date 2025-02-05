@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Paper, Text } from '@mantine/core';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 
 const RAGLatencyChart = ({ currentScenario, stats }) => {
   // Keep track of the last valid latency value
@@ -149,6 +149,17 @@ const RAGLatencyChart = ({ currentScenario, stats }) => {
           margin={{ top: 20, right: 30, left: 30, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+          <ReferenceLine
+            x={200}
+            stroke="#ff4d4f"
+            strokeDasharray="3 3"
+            label={{
+              value: "Latency Budget (200ms)",
+              position: "top",
+              fill: "#ff4d4f",
+              fontSize: 12
+            }}
+          />
           <XAxis 
             type="number" 
             domain={[0, maxX]}
