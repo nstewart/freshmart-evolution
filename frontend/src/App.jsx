@@ -1071,18 +1071,73 @@ function App() {
                       The inventory item data product combines data from multiple sources to calculate dynamic prices. Here's how the data flows through the system:
                     </Text>
                     
-                    <pre style={{ 
-                      fontFamily: 'Inter, monospace',
-                      fontSize: '14px',
-                      lineHeight: '1.5',
-                      whiteSpace: 'pre',
-                      overflow: 'auto',
-                      padding: '20px',
-                      backgroundColor: 'rgb(13, 17, 22)',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: '#BCB9C0'
-                    }}>
+                    <Grid>
+                      <Grid.Col span={5}>
+                        <Paper p="md" withBorder style={{ 
+                          height: '100%',
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Live Product Data</Text>
+                          <pre style={{ 
+                            fontFamily: 'Inter, monospace',
+                            fontSize: '14px',
+                            lineHeight: '1.5',
+                            whiteSpace: 'pre',
+                            overflow: 'auto',
+                            margin: 0,
+                            padding: '12px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                            borderRadius: '4px',
+                            color: '#BCB9C0'
+                          }}>
+{JSON.stringify({
+  product_id: "1",
+  name: "Fresh Red Delicious Apple",
+  category: "Fresh Produce",
+  current_price: (scenarios.postgres ? currentMetric.view_price :
+                 scenarios.materializeView ? currentMetric.materialized_view_price :
+                 currentMetric.materialize_price)?.toFixed(2),
+  price_formatted: `$${(scenarios.postgres ? currentMetric.view_price :
+                      scenarios.materializeView ? currentMetric.materialized_view_price :
+                      currentMetric.materialize_price)?.toFixed(2)}`,
+  last_update: new Date().toISOString(),
+  inventory_status: "IN_STOCK",
+  source: scenarios.postgres ? "PostgreSQL View" :
+          scenarios.materializeView ? "Batch (Cache) Table" :
+          "Materialize",
+  freshness_ms: scenarios.postgres ? currentMetric.view_end_to_end_latency :
+                scenarios.materializeView ? currentMetric.materialized_view_end_to_end_latency :
+                currentMetric.materialize_end_to_end_latency,
+  metadata: {
+    organic: true,
+    origin: "Washington State",
+    unit: "per pound"
+  }
+}, null, 2)}
+                          </pre>
+                        </Paper>
+                      </Grid.Col>
+
+                      <Grid.Col span={7}>
+                        <Paper p="md" withBorder style={{ 
+                          height: '100%',
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Data Lineage</Text>
+                          <pre style={{ 
+                            fontFamily: 'Inter, monospace',
+                            fontSize: '14px',
+                            lineHeight: '1.5',
+                            whiteSpace: 'pre',
+                            overflow: 'auto',
+                            padding: '12px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                            borderRadius: '4px',
+                            color: '#BCB9C0',
+                            margin: 0
+                          }}>
 {`
    Categories ──┐
                 └──► Popularity Score ──┐
@@ -1097,20 +1152,23 @@ function App() {
    Promotions ──┴──► Promotion Effect  ─┘
    
 `} 
-                    <span 
-                      onClick={togglePromotion} 
-                      style={{ 
-                        color: '#be4bdb', 
-                        cursor: isPromotionLoading ? 'wait' : 'pointer', 
-                        textDecoration: 'underline',
-                        '&:hover': {
-                          color: '#d0a9e5'
-                        }
-                      }}
-                    >
-                      {isPromotionLoading ? '(Toggling promotion...)' : '(Toggle Promotion)'}
-                    </span>
-                  </pre>
+                            <span 
+                              onClick={togglePromotion} 
+                              style={{ 
+                                color: '#be4bdb', 
+                                cursor: isPromotionLoading ? 'wait' : 'pointer', 
+                                textDecoration: 'underline',
+                                '&:hover': {
+                                  color: '#d0a9e5'
+                                }
+                              }}
+                            >
+                              {isPromotionLoading ? '(Toggling promotion...)' : '(Toggle Promotion)'}
+                            </span>
+                          </pre>
+                        </Paper>
+                      </Grid.Col>
+                    </Grid>
                   </Accordion.Panel>
                 </Accordion.Item>
               </Accordion>
