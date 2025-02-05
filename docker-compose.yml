@@ -82,7 +82,7 @@ services:
           echo "Setting up database..." &&
           sed -i "s/localhost/$${PGHOST}/g" setup_database.sh &&
           sed -i "s/source backend\/.env/true/g" setup_database.sh &&
-          bash setup_database.sh postgres --reduced;
+          bash setup_database.sh postgres;
         else
           echo "Skipping data loading for PostgreSQL...";
         fi
