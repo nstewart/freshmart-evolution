@@ -86,7 +86,7 @@ const theme = {
           '&:hover': {
             backgroundColor: 'rgba(255, 255, 255, 0.05)',
           },
-          '&[data-active]': {
+          '&[data-active="true"]': {
             backgroundColor: 'transparent',
           }
         },
@@ -342,6 +342,7 @@ function App() {
   const [isolationLevel, setIsolationLevel] = useState('');
   const [isIsolationLoading, setIsIsolationLoading] = useState(false);
   const [isRefreshConfigLoading, setIsRefreshConfigLoading] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState(60);
   const [databaseSize, setDatabaseSize] = useState(null);
   const [showTTCA, setShowTTCA] = useState(false);
   const [stats, setStats] = useState({
@@ -1136,7 +1137,7 @@ function App() {
                   }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <div style={{ padding: '20px', display: 'flex' }}>
-                        <Group position="left" spacing="sm" noWrap style={{ width: '100%' }}>
+                        <Group position="left" spacing="sm" style={{ width: '100%' }} nowrap>
                           <Image
                             src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
                             height={40}
@@ -1174,7 +1175,7 @@ function App() {
                   }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <div style={{ padding: '20px', display: 'flex' }}>
-                        <Group position="left" spacing="sm" noWrap style={{ width: '100%' }}>
+                        <Group position="left" spacing="sm" style={{ width: '100%' }} nowrap>
                           <Image
                             src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
                             height={40}
@@ -1212,7 +1213,7 @@ function App() {
                   }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <div style={{ padding: '20px', display: 'flex' }}>
-                        <Group position="left" spacing="sm" noWrap style={{ width: '100%' }}>
+                        <Group position="left" spacing="sm" style={{ width: '100%' }} nowrap>
                           <Image
                             src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
                             height={40}
