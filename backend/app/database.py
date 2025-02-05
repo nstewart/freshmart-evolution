@@ -43,7 +43,7 @@ source_to_stats = {
 response_mapping = {
     'view': 'view',
     'materialized_view': 'mv',  # Maps to UI's "Cached Table"
-    'materialize': 'mz'         # Maps to UI's "Materialize"
+    'materialize': 'mz'  # Maps to UI's "Materialize"
 }
 
 source_names = {
@@ -166,50 +166,63 @@ def calculate_stats(latencies: List[float]) -> Dict:
 # Pool initialization and connection context managers
 # ============================================================================
 
+async def new_postgres_pool():
+    return await asyncpg.create_pool(
+        user=os.getenv('DB_USER', 'postgres'),
+        password=os.getenv('DB_PASSWORD', 'postgres'),
+        database=os.getenv('DB_NAME', 'postgres'),
+        host=os.getenv('DB_HOST', 'localhost'),
+        command_timeout=120.0,
+        min_size=2,
+        max_size=20,
+        server_settings={
+            'application_name': 'freshmart_pg',
+            'statement_timeout': '120s',
+            'idle_in_transaction_session_timeout': '120s'
+        }
+    )
+
+
+async def new_materialize_pool():
+    logger.info("Initializing Materialize pool...")
+    return await asyncpg.create_pool(
+        user=os.getenv('MZ_USER', 'materialize'),
+        password=os.getenv('MZ_PASSWORD', 'materialize'),
+        database=os.getenv('MZ_NAME', 'materialize'),
+        host=os.getenv('MZ_HOST', 'localhost'),
+        port=int(os.getenv('MZ_PORT', '6875')),
+        command_timeout=120.0,
+        connection_class=MaterializeConnection,
+        min_size=2,
+        max_size=20,
+        server_settings={
+            'application_name': 'freshmart_mz',
+            'statement_timeout': '120s',
+            'idle_in_transaction_session_timeout': '120s'
+        }
+    )
+
+
 async def init_pools():
     """Initialize the global connection pools for PostgreSQL and Materialize."""
     global postgres_pool, materialize_pool
-    if postgres_pool is None:
-        logger.info("Initializing PostgreSQL pool...")
-        postgres_pool = await asyncpg.create_pool(
-            user=os.getenv('DB_USER', 'postgres'),
-            password=os.getenv('DB_PASSWORD', 'postgres'),
-            database=os.getenv('DB_NAME', 'postgres'),
-            host=os.getenv('DB_HOST', 'localhost'),
-            command_timeout=120.0,
-            min_size=2,
-            max_size=20,
-            server_settings={
-                'application_name': 'freshmart_pg',
-                'statement_timeout': '120s',
-                'idle_in_transaction_session_timeout': '120s'
-            }
-        )
-    if materialize_pool is None:
-        logger.info("Initializing Materialize pool...")
-        materialize_pool = await asyncpg.create_pool(
-            user=os.getenv('MZ_USER', 'materialize'),
-            password=os.getenv('MZ_PASSWORD', 'materialize'),
-            database=os.getenv('MZ_NAME', 'materialize'),
-            host=os.getenv('MZ_HOST', 'localhost'),
-            port=int(os.getenv('MZ_PORT', '6875')),
-            command_timeout=120.0,
-            connection_class=MaterializeConnection,
-            min_size=2,
-            max_size=20,
-            server_settings={
-                'application_name': 'freshmart_mz',
-                'statement_timeout': '120s',
-                'idle_in_transaction_session_timeout': '120s'
-            }
-        )
+    postgres_pool = await new_postgres_pool()
+    materialize_pool = await new_materialize_pool()
+
+async def reload_pool():
+    global materialize_pool
+
+    while True:
+        await asyncio.sleep(60)
+        new_pool = await new_materialize_pool()
+        old_pool = materialize_pool
+        materialize_pool = new_pool
+        await asyncio.wait_for(old_pool.close(), timeout=10)
 
 
 @asynccontextmanager
 async def postgres_connection():
     """Acquire a PostgreSQL connection from the pool."""
-    if postgres_pool is None:
-        await init_pools()
     async with postgres_pool.acquire() as conn:
         await conn.execute("SET statement_timeout TO '120s'")
         await conn.execute(f"SET TRANSACTION_ISOLATION TO '{current_isolation_level}'")
@@ -219,8 +232,6 @@ async def postgres_connection():
 @asynccontextmanager
 async def materialize_connection():
     """Acquire a Materialize connection from the pool."""
-    if materialize_pool is None:
-        await init_pools()
     async with materialize_pool.acquire() as conn:
         await conn.execute("SET statement_timeout TO '120s'")
         await conn.execute(f"SET TRANSACTION_ISOLATION TO '{current_isolation_level}'")
@@ -478,7 +489,8 @@ async def get_query_metrics(product_id: int) -> Dict:
                 f"{source}_price": stats["price"] if is_fresh else None,
                 f"{source}_qps": stats["qps"] if is_fresh else None,
                 f"{source}_stats": calculate_stats(query_stats[source]["latencies"]) if is_fresh else None,
-                f"{source}_end_to_end_stats": calculate_stats(query_stats[source]["end_to_end_latencies"]) if is_fresh else None
+                f"{source}_end_to_end_stats": calculate_stats(
+                    query_stats[source]["end_to_end_latencies"]) if is_fresh else None
             })
             if source == 'materialized_view':
                 refresh_durations = query_stats[source]["refresh_durations"]
@@ -487,13 +499,14 @@ async def get_query_metrics(product_id: int) -> Dict:
                         'max': max(refresh_durations),
                         'average': sum(refresh_durations) / len(refresh_durations),
                         'p99': sorted(refresh_durations)[int(len(refresh_durations) * 0.99)]
-                                  if len(refresh_durations) >= 100 else max(refresh_durations)
+                        if len(refresh_durations) >= 100 else max(refresh_durations)
                     }
                 else:
                     refresh_stats = None
                 response.update({
                     'materialized_view_freshness': float(mv_freshness['age']) if mv_freshness and is_fresh else None,
-                    'materialized_view_refresh_duration': float(mv_freshness['refresh_duration']) if mv_freshness and is_fresh else None,
+                    'materialized_view_refresh_duration': float(
+                        mv_freshness['refresh_duration']) if mv_freshness and is_fresh else None,
                     'materialized_view_refresh_stats': refresh_stats
                 })
             elif source == 'materialize':
@@ -527,7 +540,8 @@ async def toggle_view_index():
                 await conn.execute(f"DROP INDEX {mz_schema}.dynamic_pricing_product_id_idx")
                 return {"message": "Index dropped successfully", "index_exists": False}
             else:
-                await conn.execute(f"CREATE INDEX dynamic_pricing_product_id_idx ON {mz_schema}.dynamic_pricing (product_id)")
+                await conn.execute(
+                    f"CREATE INDEX dynamic_pricing_product_id_idx ON {mz_schema}.dynamic_pricing (product_id)")
                 return {"message": "Index created successfully", "index_exists": True}
     except Exception as e:
         logger.error(f"Error toggling index: {str(e)}")
@@ -655,8 +669,9 @@ async def update_freshness_metrics():
     while True:
         try:
             async with postgres_connection() as conn:
-                logger.info(f"Current Freshness Values:\n  - MV: {query_stats['materialized_view']['current_stats']['freshness']:.2f}s"
-                            f"\n  - Materialize: {query_stats['materialize']['current_stats']['freshness']:.2f}s")
+                logger.info(
+                    f"Current Freshness Values:\n  - MV: {query_stats['materialized_view']['current_stats']['freshness']:.2f}s"
+                    f"\n  - Materialize: {query_stats['materialize']['current_stats']['freshness']:.2f}s")
                 try:
                     mv_stats = await conn.fetchrow("""
                         SELECT last_refresh, refresh_duration,
@@ -708,7 +723,8 @@ async def update_freshness_metrics():
                         else:
                             stats["freshness"] = 0.0
                         stats["last_updated"] = time.time()
-                    logger.debug(f"Updated Materialize freshness: {stats['freshness']:.2f}s (PG ID: {pg_id}, MZ ID: {mz_id})")
+                    logger.debug(
+                        f"Updated Materialize freshness: {stats['freshness']:.2f}s (PG ID: {pg_id}, MZ ID: {mz_id})")
             except Exception as e:
                 logger.error(f"Error updating Materialize freshness: {str(e)}")
             await asyncio.sleep(1)
@@ -785,11 +801,13 @@ async def get_container_stats():
     for container_type in ["postgres_stats", "materialize_stats"]:
         stats = query_stats.get(container_type)
         if not stats:
-            response[container_type] = {"cpu_usage": None, "memory_usage": None, "cpu_stats": None, "memory_stats": None}
+            response[container_type] = {"cpu_usage": None, "memory_usage": None, "cpu_stats": None,
+                                        "memory_stats": None}
             continue
         is_fresh = current_time - stats["current_stats"]["last_updated"] <= 10.0
         if not is_fresh:
-            response[container_type] = {"cpu_usage": None, "memory_usage": None, "cpu_stats": None, "memory_stats": None}
+            response[container_type] = {"cpu_usage": None, "memory_usage": None, "cpu_stats": None,
+                                        "memory_stats": None}
             continue
         cpu_stats = None
         memory_stats = None
@@ -797,13 +815,15 @@ async def get_container_stats():
             cpu_stats = {
                 "max": max(stats["cpu_measurements"]),
                 "average": sum(stats["cpu_measurements"]) / len(stats["cpu_measurements"]),
-                "p99": sorted(stats["cpu_measurements"])[int(len(stats["cpu_measurements"]) * 0.99)] if len(stats["cpu_measurements"]) >= 100 else max(stats["cpu_measurements"])
+                "p99": sorted(stats["cpu_measurements"])[int(len(stats["cpu_measurements"]) * 0.99)] if len(
+                    stats["cpu_measurements"]) >= 100 else max(stats["cpu_measurements"])
             }
         if stats["memory_measurements"]:
             memory_stats = {
                 "max": max(stats["memory_measurements"]),
                 "average": sum(stats["memory_measurements"]) / len(stats["memory_measurements"]),
-                "p99": sorted(stats["memory_measurements"])[int(len(stats["memory_measurements"]) * 0.99)] if len(stats["memory_measurements"]) >= 100 else max(stats["memory_measurements"])
+                "p99": sorted(stats["memory_measurements"])[int(len(stats["memory_measurements"]) * 0.99)] if len(
+                    stats["memory_measurements"]) >= 100 else max(stats["memory_measurements"])
             }
         response[container_type] = {
             "cpu_usage": stats["current_stats"]["cpu_usage"],
