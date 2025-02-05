@@ -1,26 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const HISTORY_WINDOW_MS = 3 * 60 * 1000; // 3 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
@@ -76,151 +56,92 @@ const ContainersCPUChart = ({ scenarios }) => {
     return () => clearInterval(interval);
   }, []);
 
-  const formatTime = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { 
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true 
-    });
-  };
-
-  const chartData = {
-    labels: cpuData.map(d => formatTime(d.timestamp)),
-    datasets: [
-      {
-        label: 'PostgreSQL CPU Usage (%)',
-        data: cpuData.map(d => d.postgres_cpu_usage),
-        borderColor: '#ff7300',
-        tension: 0.1,
-        fill: false,
-        dot: false,
-        borderWidth: 2,
-        pointRadius: 0
-      },
-      ...(scenarios?.materialize ? [{
-        label: 'Materialize CPU Usage (%)',
-        data: cpuData.map(d => d.materialize_cpu_usage),
-        borderColor: '#8884d8',
-        tension: 0.1,
-        fill: false,
-        dot: false,
-        borderWidth: 2,
-        pointRadius: 0
-      }] : [])
-    ],
-  };
-
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    layout: {
-      padding: {
-        left: 60,
-        right: 30,
-        top: 10,
-        bottom: 10
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        suggestedMax: 400,
-        title: {
-          display: false
-        },
-        ticks: {
-          callback: (value) => `${value}%`,
-          color: '#BCB9C0',
-          font: {
-            size: 14
-          }
-        },
-        grid: {
-          color: '#323135',
-          drawBorder: false
-        }
-      },
-      x: {
-        title: {
-          display: false
-        },
-        ticks: {
-          maxRotation: 0,
-          autoSkip: true,
-          maxTicksLimit: 10,
-          color: '#BCB9C0',
-          font: {
-            size: 14
-          }
-        },
-        grid: {
-          color: '#323135',
-          drawBorder: false
-        }
-      },
-    },
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          color: '#BCB9C0',
-          usePointStyle: true,
-          pointStyle: 'line',
-          font: {
-            size: 14,
-            family: 'Inter, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
-          },
-          padding: 20
-        }
-      },
-      title: {
-        display: false
-      },
-      tooltip: {
-        backgroundColor: 'rgb(13, 17, 22)',
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        titleColor: '#BCB9C0',
-        bodyColor: '#BCB9C0',
-        padding: 12,
-        cornerRadius: 4,
-        titleFont: {
-          size: 14,
-          family: 'Inter, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
-        },
-        bodyFont: {
-          size: 14,
-          family: 'Inter, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
-        },
-        callbacks: {
-          title: (context) => {
-            return formatTime(cpuData[context[0].dataIndex].timestamp);
-          },
-          label: (context) => {
-            const datapoint = cpuData[context.dataIndex];
-            const containerType = context.dataset.label.includes('PostgreSQL') ? 'postgres' : 'materialize';
-            const usage = datapoint[`${containerType}_cpu_usage`];
-            const stats = datapoint[`${containerType}_cpu_stats`];
-            
-            if (usage !== null && usage !== undefined) {
-              return [
-                `Current: ${usage?.toFixed(1)}%`,
-                stats ? `Average: ${stats.average?.toFixed(1)}%` : null,
-                stats ? `Max: ${stats.max?.toFixed(1)}%` : null,
-                stats ? `P99: ${stats.p99?.toFixed(1)}%` : null
-              ].filter(Boolean);
-            }
-            return null;
-          }
-        }
-      }
-    },
-  };
-
   return (
-    <div style={{ height: '400px', width: '100%', marginBottom: '20px' }}>
-      <Line data={chartData} options={options} />
+    <div style={{ width: '100%', height: '400px' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={cpuData}
+          margin={{ left: 60, right: 30, top: 10, bottom: 10 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#323135" />
+          <XAxis
+            dataKey="timestamp"
+            type="number"
+            domain={['dataMin', 'dataMax']}
+            tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+            scale="time"
+            interval="preserveStartEnd"
+            minTickGap={50}
+            stroke="#BCB9C0"
+          />
+          <YAxis
+            stroke="#BCB9C0"
+            domain={[0, dataMax => Math.max(400, Math.ceil(dataMax * 1.1))]}
+            tickFormatter={(value) => `${value}%`}
+            allowDataOverflow={true}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: 'rgb(13, 17, 22)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '4px',
+              color: '#BCB9C0',
+              padding: '12px',
+              fontSize: '14px',
+              fontFamily: 'Inter, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
+            }}
+            labelStyle={{ color: '#BCB9C0' }}
+            labelFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+            formatter={(value, name) => {
+              if (value === null || value === undefined) return ['N/A'];
+              const containerType = name.includes('PostgreSQL') ? 'postgres' : 'materialize';
+              const dataPoint = cpuData.find(d => d[`${containerType}_cpu_usage`] === value);
+              const stats = dataPoint?.[`${containerType}_cpu_stats`];
+              
+              return [
+                [`Current: ${value.toFixed(1)}%`],
+                stats && [
+                  `Average: ${stats.average?.toFixed(1)}%`,
+                  `Max: ${stats.max?.toFixed(1)}%`,
+                  `P99: ${stats.p99?.toFixed(1)}%`
+                ]
+              ].flat().filter(Boolean);
+            }}
+          />
+          <Legend
+            wrapperStyle={{
+              color: '#BCB9C0',
+              fontFamily: 'Inter, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+              fontSize: '14px',
+              paddingTop: '20px'
+            }}
+            verticalAlign="bottom"
+            height={36}
+          />
+          <Line
+            type="monotone"
+            dataKey="postgres_cpu_usage"
+            name="PostgreSQL CPU Usage"
+            stroke="#ff7300"
+            dot={false}
+            isAnimationActive={false}
+            connectNulls={true}
+            strokeWidth={2}
+          />
+          {scenarios?.materialize && (
+            <Line
+              type="monotone"
+              dataKey="materialize_cpu_usage"
+              name="Materialize CPU Usage"
+              stroke="#8884d8"
+              dot={false}
+              isAnimationActive={false}
+              connectNulls={true}
+              strokeWidth={2}
+            />
+          )}
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 };
