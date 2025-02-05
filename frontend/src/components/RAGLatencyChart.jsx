@@ -1,23 +1,39 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Paper, Text } from '@mantine/core';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 
 const RAGLatencyChart = ({ currentScenario, stats }) => {
+  // Keep track of the last valid latency value
+  const lastValidLatencyRef = useRef(80);
+
   // Get the appropriate latency based on the current scenario
   const getOLTPLatency = () => {
-    if (!stats) return 80; // Default fallback value
+    if (!stats) return lastValidLatencyRef.current;
     
+    let latency;
     switch (currentScenario) {
       case 'direct':
-        return stats.view.avg;
+        latency = stats.view?.avg;
+        break;
       case 'batch':
-        return stats.materializeView.avg;
+        latency = stats.materializeView?.avg;
+        break;
       case 'materialize':
       case 'cqrs':
-        return stats.materialize.avg;
+        latency = stats.materialize?.avg;
+        break;
       default:
-        return 80; // Default fallback value
+        latency = null;
     }
+
+    // If we got a valid latency, update our reference and return it
+    if (latency != null && !isNaN(latency)) {
+      lastValidLatencyRef.current = latency;
+      return latency;
+    }
+
+    // Otherwise return the last known good value
+    return lastValidLatencyRef.current;
   };
 
   // Data for the waterfall chart with proper start times for parallel execution
@@ -60,23 +76,23 @@ const RAGLatencyChart = ({ currentScenario, stats }) => {
     },
     { 
       name: 'Context Construction',
-      spacing: Math.max(90, 10 + getOLTPLatency(), 60), // Start after both OLTP & Re-Ranking complete
+      spacing: Math.max(60, 10 + getOLTPLatency()), // Start after the later of Re-Ranking (60ms) or OLTP end
       latency: 10,
-      start: Math.max(90, 10 + getOLTPLatency(), 60),
+      start: Math.max(60, 10 + getOLTPLatency()),
       type: 'Sequential'
     },
     { 
       name: 'LLM Inference',
-      spacing: Math.max(100, 20 + getOLTPLatency(), 70), // Start after Context Construction
+      spacing: Math.max(70, 20 + getOLTPLatency()), // Previous end + 10ms
       latency: 100,
-      start: Math.max(100, 20 + getOLTPLatency(), 70),
+      start: Math.max(70, 20 + getOLTPLatency()),
       type: 'Sequential'
     },
     { 
       name: 'Post-processing & Response',
-      spacing: Math.max(200, 120 + getOLTPLatency(), 170), // Start after LLM Inference
+      spacing: Math.max(170, 120 + getOLTPLatency()), // Previous end + 100ms
       latency: 15,
-      start: Math.max(200, 120 + getOLTPLatency(), 170),
+      start: Math.max(170, 120 + getOLTPLatency()),
       type: 'Sequential'
     }
   ];
@@ -114,7 +130,7 @@ const RAGLatencyChart = ({ currentScenario, stats }) => {
   // Calculate the maximum X value for the domain based on the dynamic OLTP latency
   const maxX = Math.max(
     220,
-    Math.max(215, 135 + getOLTPLatency(), 185), // End of last operation
+    185 + getOLTPLatency(), // End of last operation (170 + 15) relative to OLTP
     data.reduce((max, item) => {
       const endTime = item.start + item.latency;
       return endTime > max ? endTime : max;
