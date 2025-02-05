@@ -108,6 +108,15 @@ The application maintains separate connection pools for:
 
 ## Quick Start
 
+> ⚠️ **Hardware Requirements**
+> - CPU: 8+ cores recommended
+> - RAM: 8GB+ recommended
+>
+> For systems with limited resources, you can use the reduced dataset option:
+> ```bash
+> REDUCED_DATA=true docker compose up
+> ```
+
 The easiest way to run the application is using Docker Compose:
 
 ```bash

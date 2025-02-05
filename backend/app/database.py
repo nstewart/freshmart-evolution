@@ -515,7 +515,8 @@ async def get_materialize_connection():
             # Set timeouts and isolation level
             await conn.execute("SET statement_timeout TO '120s'")
             await conn.execute(f"SET TRANSACTION_ISOLATION TO '{current_isolation_level}'")
-            
+            await conn.execute(f"SET statement_logging_sample_rate TO 0")
+
             # Test the connection
             await conn.execute("SELECT 1")
             
@@ -1357,17 +1358,18 @@ async def collect_container_stats():
             
             for stats_key, container_name in containers.items():
                 logger.debug(f"Collecting container stats from {container_name}...")
-                result = subprocess.run(
-                    ['docker', 'stats', container_name, '--no-stream', '--format', '{{.CPUPerc}}\t{{.MemPerc}}'],
-                    capture_output=True,
-                    text=True
+                process = await asyncio.create_subprocess_exec(
+                    'docker', 'stats', container_name, '--no-stream', '--format', '{{.CPUPerc}}\t{{.MemPerc}}',
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
                 )
+                returncode = await process.wait()
                 
-                if result.returncode != 0:
-                    logger.error(f"Error getting Docker stats for {container_name}: {result.stderr}")
+                if returncode != 0:
+                    logger.error(f"Error getting Docker stats for {container_name}: {process.stderr.read()}")
                 else:
                     # Parse the CPU and memory percentages
-                    stats_str = result.stdout.strip().split('\t')
+                    stats_str = (await process.stdout.read()).decode("utf-8").strip().split('\t')
                     if len(stats_str) == 2:
                         cpu_str = stats_str[0].rstrip('%')
                         mem_str = stats_str[1].rstrip('%')
