@@ -1064,11 +1064,11 @@ function App() {
               }}>
                 <Accordion.Item value="dataLineage">
                   <Accordion.Control>
-                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>Data Lineage</Text>
+                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>Anatomy of a Data Product</Text>
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
-                      The inventory item data product combines data from multiple sources to calculate dynamic prices. Here's how the data flows through the system:
+                      The inventory item data product combines data from multiple sources to calculate dynamic prices.
                     </Text>
                     
                     <Grid>
@@ -1078,7 +1078,7 @@ function App() {
                           backgroundColor: 'rgb(13, 17, 22)',
                           border: '1px solid rgba(255, 255, 255, 0.1)'
                         }}>
-                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Live Product Data</Text>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Inventory Data Product</Text>
                           <pre style={{ 
                             fontFamily: 'Inter, monospace',
                             fontSize: '14px',
@@ -1125,7 +1125,7 @@ function App() {
                           backgroundColor: 'rgb(13, 17, 22)',
                           border: '1px solid rgba(255, 255, 255, 0.1)'
                         }}>
-                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Data Lineage</Text>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Data Product Lineage</Text>
                           <pre style={{ 
                             fontFamily: 'Inter, monospace',
                             fontSize: '14px',
