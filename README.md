@@ -34,6 +34,11 @@ This project demonstrates different approaches to implementing real-time data in
   - Query latency charts
   - CPU and Memory usage charts
   - Comprehensive statistics table
+  - Interactive RAG response component:
+    - Real-time latency display
+    - Dynamic response updates based on OLTP data
+    - Scenario-aware latency tracking
+    - Smooth transitions between query modes
 
 ## Architectural Patterns
 
