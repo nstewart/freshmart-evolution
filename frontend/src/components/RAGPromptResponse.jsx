@@ -34,6 +34,13 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
   const prompt = "When am I eligible for the next membership status?";
   const [totalLatency, setTotalLatency] = useState(185);
   const lastValidLatencyRef = useRef(80);
+  const lastScenarioRef = useRef(currentScenario);
+  const lastValidLatenciesRef = useRef({
+    direct: null,
+    batch: null,
+    materialize: null,
+    cqrs: null
+  });
 
   useEffect(() => {
     if (!includeOLTP) {
@@ -41,28 +48,59 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
       return;
     }
 
+    // Check if we just switched scenarios
+    const isScenarioChange = lastScenarioRef.current !== currentScenario;
+    lastScenarioRef.current = currentScenario;
+
     // Get the OLTP latency based on the current scenario
     let oltpLatency;
+    let isWaiting = false;
     
     // Use the appropriate latency based on the current scenario
     switch (currentScenario) {
       case 'direct':
-        oltpLatency = currentMetric?.view_latency !== null ? currentMetric.view_latency : lastValidLatencyRef.current;
+        oltpLatency = currentMetric?.view_latency;
+        // Only show waiting if we just switched to this scenario and have no valid value yet
+        if (isScenarioChange && lastValidLatenciesRef.current.direct === null) {
+          isWaiting = true;
+        }
         break;
       case 'batch':
-        oltpLatency = currentMetric?.materialized_view_latency !== null ? currentMetric.materialized_view_latency : lastValidLatencyRef.current;
+        oltpLatency = currentMetric?.materialized_view_latency;
+        if (isScenarioChange && lastValidLatenciesRef.current.batch === null) {
+          isWaiting = true;
+        }
         break;
       case 'materialize':
       case 'cqrs':
-        oltpLatency = currentMetric?.materialize_latency !== null ? currentMetric.materialize_latency : lastValidLatencyRef.current;
+        oltpLatency = currentMetric?.materialize_latency;
+        if (isScenarioChange && lastValidLatenciesRef.current.materialize === null) {
+          isWaiting = true;
+        }
         break;
       default:
-        oltpLatency = lastValidLatencyRef.current;
+        isWaiting = true;
     }
 
-    // Update the last valid latency reference if we got a real value
-    if (oltpLatency !== null && oltpLatency !== undefined && !isNaN(oltpLatency)) {
-      lastValidLatencyRef.current = oltpLatency;
+    // If we're waiting for initial data after a scenario change, show waiting state
+    if (isWaiting) {
+      setTotalLatency(null);
+      return;
+    }
+
+    // If we don't have a current value, use the last valid one for this scenario
+    if (oltpLatency === null || oltpLatency === undefined || isNaN(oltpLatency)) {
+      oltpLatency = lastValidLatenciesRef.current[currentScenario];
+      if (oltpLatency === null) {
+        // If we still don't have a value, use the default
+        oltpLatency = 80;
+      }
+    } else {
+      // Update the last valid latency for this scenario
+      lastValidLatenciesRef.current[currentScenario] = oltpLatency;
+      if (currentScenario === 'materialize') {
+        lastValidLatenciesRef.current.cqrs = oltpLatency; // Share values between materialize and cqrs
+      }
     }
     
     // Calculate when LLM starts (must wait for both base operations and OLTP)
@@ -166,12 +204,16 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
       <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '8px', marginTop: '4px' }}>
         <Text size="xs" style={{ color: '#BCB9C0' }}>
           Total Pipeline Latency:{' '}
-          <span style={{ 
-            color: totalLatency <= 200 ? '#40c057' : '#fa5252',
-            fontWeight: 500 
-          }}>
-            {`${totalLatency.toFixed(1)}ms`}
-          </span>
+          {totalLatency === null ? (
+            <span style={{ color: '#BCB9C0', fontStyle: 'italic' }}>waiting...</span>
+          ) : (
+            <span style={{ 
+              color: totalLatency <= 200 ? '#40c057' : '#fa5252',
+              fontWeight: 500 
+            }}>
+              {`${totalLatency.toFixed(1)}ms`}
+            </span>
+          )}
         </Text>
       </div>
 
