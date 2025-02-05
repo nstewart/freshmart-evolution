@@ -138,12 +138,15 @@ const RAGLatencyChart = ({ currentScenario, stats }) => {
   );
 
   return (
-    <div style={{ width: '100%', height: '400px' }}>
+    <div style={{ 
+      width: '100%', 
+      height: '400px'
+    }}>
       <ResponsiveContainer>
         <BarChart
           data={data}
           layout="vertical"
-          margin={{ top: 20, right: 30, left: 200, bottom: 5 }}
+          margin={{ top: 20, right: 30, left: 30, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
           <XAxis 
@@ -156,7 +159,7 @@ const RAGLatencyChart = ({ currentScenario, stats }) => {
             type="category" 
             dataKey="name" 
             stroke="#BCB9C0"
-            width={180}
+            width={130}
             style={{
               fontSize: '12px',
               fill: '#BCB9C0',

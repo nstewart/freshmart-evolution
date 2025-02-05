@@ -846,9 +846,7 @@ function App() {
       <div style={{ backgroundColor: 'rgb(13, 17, 22)', minHeight: '100vh' }}>
       <Container size="xl" py="xl">
         <Stack spacing="lg">
-            <Paper p="xl" withBorder={false} style={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.05)'
-            }}>
+        <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
               <Grid>
                 <Grid.Col span={8}>
                   <Stack spacing="xs">
@@ -873,17 +871,7 @@ function App() {
               </Grid>
             </Paper>
           
-            <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
-              <Text size="xl" weight={700} mb="md" style={{ color: '#BCB9C0' }}>
-                RAG Pipeline Latency Breakdown
-              </Text>
-              <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
-                This visualization shows the latency breakdown of a typical Retrieval-Augmented Generation (RAG) pipeline. 
-                Note how some operations execute in parallel to optimize total response time. The chart represents start 
-                times and durations for each component, with parallel operations aligned horizontally.
-              </Text>
-              <RAGLatencyChart currentScenario={currentScenario} stats={stats} />
-            </Paper>
+            
 
             <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
               <Text size="xl" weight={700} mb="xl" style={{ color: '#BCB9C0' }}>
@@ -1126,6 +1114,17 @@ function App() {
                   </Accordion.Panel>
                 </Accordion.Item>
               </Accordion>
+            </Paper>
+
+            <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
+              <Text size="xl" weight={700} mb="md" style={{ color: '#BCB9C0' }}>
+                RAG Pipeline Latency Breakdown
+              </Text>
+              <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
+                This visualization shows the latency breakdown of a typical Retrieval-Augmented Generation (RAG) pipeline. 
+                Adding correct and timely structured data provides a much more relevant response to customers.
+              </Text>
+              <RAGLatencyChart currentScenario={currentScenario} stats={stats} />
             </Paper>
 
             <Paper p="xl" className="hover-card" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
