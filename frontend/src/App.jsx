@@ -882,7 +882,7 @@ function App() {
                 Note how some operations execute in parallel to optimize total response time. The chart represents start 
                 times and durations for each component, with parallel operations aligned horizontally.
               </Text>
-              <RAGLatencyChart />
+              <RAGLatencyChart currentScenario={currentScenario} stats={stats} />
             </Paper>
 
             <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
