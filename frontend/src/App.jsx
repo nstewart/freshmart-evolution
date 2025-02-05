@@ -1095,16 +1095,21 @@ function App() {
                             }}
                             dangerouslySetInnerHTML={{
                               __html: (() => {
+                                const useMaterialize = currentScenario === 'materialize' || currentScenario === 'cqrs';
                                 const data = {
                                   product_id: "1",
                                   name: "Fresh Red Delicious Apple",
                                   category: "Fresh Produce",
-                                  current_price: (scenarios.postgres ? currentMetric.view_price :
+                                  current_price: (useMaterialize ? currentMetric.materialize_price :
+                                               scenarios.postgres ? currentMetric.view_price :
                                                scenarios.materializeView ? currentMetric.materialized_view_price :
                                                currentMetric.materialize_price)?.toFixed(2),                                
-                                  last_update: new Date().toISOString(),
+                                  last_update: useMaterialize ? 
+                                             new Date(Date.now() - (currentMetric.materialize_end_to_end_latency || 0)).toISOString() :
+                                             new Date().toISOString(),
                                   inventory_status: "IN_STOCK",
-                                  source: scenarios.postgres ? "PostgreSQL View" :
+                                  source: useMaterialize ? "Materialize" :
+                                         scenarios.postgres ? "PostgreSQL View" :
                                          scenarios.materializeView ? "Batch (Cache) Table" :
                                          "Materialize",
                                   
