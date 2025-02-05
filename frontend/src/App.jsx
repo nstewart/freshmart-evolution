@@ -86,7 +86,7 @@ const theme = {
           '&:hover': {
             backgroundColor: 'rgba(255, 255, 255, 0.05)',
           },
-          '&[data-active="true"]': {
+          '&[dataActive="true"]': {
             backgroundColor: 'transparent',
           }
         },
@@ -1137,7 +1137,7 @@ function App() {
                   }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <div style={{ padding: '20px', display: 'flex' }}>
-                        <Group position="left" spacing="sm" style={{ width: '100%' }} nowrap>
+                        <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
                           <Image
                             src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
                             height={40}
@@ -1175,7 +1175,7 @@ function App() {
                   }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <div style={{ padding: '20px', display: 'flex' }}>
-                        <Group position="left" spacing="sm" style={{ width: '100%' }} nowrap>
+                        <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
                           <Image
                             src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
                             height={40}
@@ -1213,7 +1213,7 @@ function App() {
                   }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <div style={{ padding: '20px', display: 'flex' }}>
-                        <Group position="left" spacing="sm" style={{ width: '100%' }} nowrap>
+                        <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
                           <Image
                             src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
                             height={40}
