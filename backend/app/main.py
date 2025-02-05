@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 from . import database
 import logging
-import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -12,6 +11,7 @@ logger = logging.getLogger(__name__)
 # Configure uvicorn access logger
 uvicorn_access_logger = logging.getLogger("uvicorn.access")
 uvicorn_access_logger.setLevel(logging.WARNING)
+
 
 app = FastAPI()
 
@@ -27,6 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.on_event("startup")
 async def startup_event():
     # Start the heartbeat task
@@ -37,17 +38,18 @@ async def startup_event():
     asyncio.create_task(database.continuous_query_load())
     # Start the container stats collection task
     asyncio.create_task(database.collect_container_stats())
-    print("Started background tasks: heartbeat, materialized view auto-refresh, continuous query load, and container stats collection")
+    logger.info("Started background tasks: heartbeat, materialized view auto-refresh, continuous query load, and container stats collection")
+
 
 @app.post("/configure-refresh-interval/{interval}")
 async def configure_refresh_interval(interval: int):
     global refresh_task
     if interval < 1:
         raise HTTPException(status_code=400, detail="Interval must be at least 1 second")
-    
+
     # Update the global refresh interval in the database module
     await database.configure_refresh_interval(interval)
-    
+
     # Cancel the existing refresh task
     if refresh_task:
         refresh_task.cancel()
@@ -55,10 +57,11 @@ async def configure_refresh_interval(interval: int):
             await refresh_task
         except asyncio.CancelledError:
             pass
-    
+
     # Start a new refresh task
     refresh_task = asyncio.create_task(database.auto_refresh_materialized_view())
     return {"status": "success", "refresh_interval": interval}
+
 
 @app.get("/metrics/{product_id}")
 async def get_metrics(product_id: int):
@@ -84,6 +87,7 @@ async def get_metrics(product_id: int):
             detail=str(e)
         )
 
+
 @app.post("/refresh")
 async def refresh_materialized_view():
     try:
@@ -92,6 +96,7 @@ async def refresh_materialized_view():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/toggle-promotion/{product_id}")
 async def toggle_promotion(product_id: int):
     try:
@@ -99,13 +104,16 @@ async def toggle_promotion(product_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/toggle-view-index")
 async def api_toggle_view_index():
     return await database.toggle_view_index()
 
+
 @app.post("/toggle-isolation")
 async def api_toggle_isolation():
     return await database.toggle_isolation_level()
+
 
 @app.get("/view-index-status")
 async def get_view_index_status():
@@ -114,6 +122,7 @@ async def get_view_index_status():
         return {"index_exists": exists}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/database-size")
 async def get_database_size_endpoint():
@@ -127,6 +136,7 @@ async def get_database_size_endpoint():
             status_code=500,
             detail="Failed to get database size"
         )
+
 
 @app.get("/current-refresh-interval")
 async def get_current_refresh_interval():
@@ -143,6 +153,7 @@ async def get_current_refresh_interval():
             detail="Failed to get refresh interval"
         )
 
+
 # Add traffic-related endpoints
 @app.get("/api/traffic-state")
 async def get_traffic_state():
@@ -155,6 +166,7 @@ async def get_traffic_state():
     except Exception as e:
         logger.error(f"Error getting traffic state: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/api/toggle-traffic/{source}")
 async def toggle_traffic_endpoint(source: str):
@@ -171,6 +183,7 @@ async def toggle_traffic_endpoint(source: str):
         logger.error(f"Error toggling traffic: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/api/container-stats")
 async def get_containers_stats():
     """Get CPU and memory usage stats for PostgreSQL and Materialize"""
@@ -183,6 +196,7 @@ async def get_containers_stats():
         logger.error(f"Error getting container stats: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/api/database-size")
 async def get_database_size_endpoint():
     """Get the current database size in GB"""
@@ -192,6 +206,7 @@ async def get_database_size_endpoint():
     except Exception as e:
         logger.error(f"Error getting database size: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/api/current-refresh-interval")
 async def get_current_refresh_interval():
@@ -205,6 +220,7 @@ async def get_current_refresh_interval():
         logger.error(f"Error getting refresh interval: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/api/configure-refresh-interval/{interval}")
 async def configure_refresh_interval(interval: int):
     """Configure the refresh interval for the materialized view"""
@@ -217,6 +233,8 @@ async def configure_refresh_interval(interval: int):
         logger.error(f"Error configuring refresh interval: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug", access_log=False)

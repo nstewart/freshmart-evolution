@@ -104,6 +104,6 @@ SELECT
 FROM dynamic_pricing dp
 JOIN products p ON dp.product_id = p.product_id;
 
-CREATE INDEX IF NOT EXISTS dynamic_pricing_idx ON dynamic_pricing (product_id);
+CREATE INDEX IF NOT EXISTS dynamic_pricing_product_id_idx ON dynamic_pricing (product_id);
 
 CREATE INDEX IF NOT EXISTS heartbeats_idx ON heartbeats (id DESC);
