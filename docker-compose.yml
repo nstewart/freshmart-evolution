@@ -19,6 +19,11 @@ services:
       retries: 5
       # Data generation takes a while.
       start_period: 120s
+    deploy:
+        resources:
+          limits:
+            cpus: "4"
+            memory: 4G
     command: 
       - "postgres"
       - "-c"
@@ -99,6 +104,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 4G
 
   materialize_init:
     image: postgres:latest
