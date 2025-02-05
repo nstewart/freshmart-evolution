@@ -1188,128 +1188,143 @@ function App() {
             
 
             <Paper p="xl" className="hover-card" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <Text size="lg" weight={600} mb="md" style={{ color: '#BCB9C0' }}>Data Product Price Comparison</Text>
-              <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
-                Each data product is composed by joining data from multiple sources, these could be separate tables or separate databases entirely. Data products are made available to consumers ranging from web services to inventory systems.
-              </Text>
-              
-              <Group position="center" spacing="xl">
-                {scenarios.postgres && (
-                  <Paper p={0} className="hover-card" style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    height: '100%',
-                    width: '300px',
-                    backgroundColor: 'rgb(13, 17, 22)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    }
-                  }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ padding: '20px', display: 'flex' }}>
-                        <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
-                          <Image
-                            src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
-                            height={40}
-                            width={40}
-                            fit="contain"
-                            alt="Product"
-                          />
-                          <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
-                        </Group>
-                      </div>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
-                        <PriceDisplay 
-                          price={currentMetric.view_price}
-                          prevPrice={prevPrices.current.view}
-                          reactionTime={currentMetric.view_end_to_end_latency}
-                        />
-                      </div>
-                    </div>
-                    <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: '15px' }}>
-                      <Text weight={500} align="center" color="blue" style={{ color: '#BCB9C0' }}>PostgreSQL View</Text>
-                    </div>
-                  </Paper>
-                )}
-                {scenarios.materializeView && (
-                  <Paper p={0} className="hover-card" style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    height: '100%',
-                    width: '300px',
-                    backgroundColor: 'rgb(13, 17, 22)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    }
-                  }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ padding: '20px', display: 'flex' }}>
-                        <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
-                          <Image
-                            src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
-                            height={40}
-                            width={40}
-                            fit="contain"
-                            alt="Product"
-                          />
-                          <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
-                        </Group>
-                      </div>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
-                        <PriceDisplay 
-                          price={currentMetric.materialized_view_price}
-                          prevPrice={prevPrices.current.materialized_view}
-                          reactionTime={currentMetric.materialized_view_end_to_end_latency}
-                        />
-                      </div>
-                    </div>
-                    <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: '15px' }}>
-                      <Text weight={500} align="center" color="teal" style={{ color: '#BCB9C0' }}>Batch (Cache) Table</Text>
-                    </div>
-                  </Paper>
-                )}
-                {scenarios.materialize && (
-                  <Paper p={0} className="hover-card" style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    height: '100%',
-                    width: '300px',
-                    backgroundColor: 'rgb(13, 17, 22)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    }
-                  }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ padding: '20px', display: 'flex' }}>
-                        <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
-                          <Image
-                            src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
-                            height={40}
-                            width={40}
-                            fit="contain"
-                            alt="Product"
-                          />
-                          <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
-                        </Group>
-                      </div>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
+              <Accordion defaultValue="priceComparison" styles={{
+                control: {
+                  borderBottom: 'none'
+                },
+                item: {
+                  borderBottom: 'none'
+                }
+              }}>
+                <Accordion.Item value="priceComparison">
+                  <Accordion.Control>
+                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>Data Product Price Comparison</Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
+                      Each data product is composed by joining data from multiple sources, these could be separate tables or separate databases entirely. Data products are made available to consumers ranging from web services to inventory systems.
+                    </Text>
+                    
+                    <Group position="center" spacing="xl">
+                      {scenarios.postgres && (
+                        <Paper p={0} className="hover-card" style={{ 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          height: '100%',
+                          width: '300px',
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          }
+                        }}>
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ padding: '20px', display: 'flex' }}>
+                              <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
+                                <Image
+                                  src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
+                                  height={40}
+                                  width={40}
+                                  fit="contain"
+                                  alt="Product"
+                                />
+                                <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
+                              </Group>
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
+                              <PriceDisplay 
+                                price={currentMetric.view_price}
+                                prevPrice={prevPrices.current.view}
+                                reactionTime={currentMetric.view_end_to_end_latency}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: '15px' }}>
+                            <Text weight={500} align="center" color="blue" style={{ color: '#BCB9C0' }}>PostgreSQL View</Text>
+                          </div>
+                        </Paper>
+                      )}
+                      {scenarios.materializeView && (
+                        <Paper p={0} className="hover-card" style={{ 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          height: '100%',
+                          width: '300px',
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          }
+                        }}>
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ padding: '20px', display: 'flex' }}>
+                              <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
+                                <Image
+                                  src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
+                                  height={40}
+                                  width={40}
+                                  fit="contain"
+                                  alt="Product"
+                                />
+                                <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
+                              </Group>
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
+                              <PriceDisplay 
+                                price={currentMetric.materialized_view_price}
+                                prevPrice={prevPrices.current.materialized_view}
+                                reactionTime={currentMetric.materialized_view_end_to_end_latency}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: '15px' }}>
+                            <Text weight={500} align="center" color="teal" style={{ color: '#BCB9C0' }}>Batch (Cache) Table</Text>
+                          </div>
+                        </Paper>
+                      )}
+                      {scenarios.materialize && (
+                        <Paper p={0} className="hover-card" style={{ 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          height: '100%',
+                          width: '300px',
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          }
+                        }}>
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ padding: '20px', display: 'flex' }}>
+                              <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
+                                <Image
+                                  src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
+                                  height={40}
+                                  width={40}
+                                  fit="contain"
+                                  alt="Product"
+                                />
+                                <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
+                              </Group>
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
             <PriceDisplay
                           price={currentMetric.materialize_price}
                           prevPrice={prevPrices.current.materialize}
                           reactionTime={currentMetric.materialize_end_to_end_latency}
             />
-                      </div>
-                    </div>
-                    <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: '15px' }}>
-                      <Text weight={500} align="center" color="violet" style={{ color: '#BCB9C0' }}>Materialize</Text>
-                    </div>
-                  </Paper>
-                )}
-              </Group>
-          </Paper>
+                            </div>
+                          </div>
+                          <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: '15px' }}>
+                            <Text weight={500} align="center" color="violet" style={{ color: '#BCB9C0' }}>Materialize</Text>
+                          </div>
+                        </Paper>
+                      )}
+                    </Group>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
+            </Paper>
 
           <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
               <Accordion defaultValue={null} styles={{
