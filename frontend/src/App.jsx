@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stack, Badge, LoadingOverlay, Slider, Image, Accordion, Grid, Divider, Select } from '@mantine/core';
+import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stack, Badge, LoadingOverlay, Slider, Image, Accordion, Grid, Divider, Select, Switch } from '@mantine/core';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import ContainersCPUChart from './components/ContainersCPUChart.jsx';
 import ContainersMemoryChart from './components/ContainersMemoryChart.jsx';
+import RAGLatencyChart from './components/RAGLatencyChart.jsx';
+import RAGPromptResponse from './components/RAGPromptResponse.jsx';
 
 const HISTORY_WINDOW_MS = 3 * 60 * 1000; // 3 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
@@ -681,14 +683,14 @@ function App() {
   }, [metrics]);
 
   // Add function to fetch database size
-  const fetchDatabaseSize = async () => {
-    try {
+    const fetchDatabaseSize = async () => {
+      try {
       const response = await axios.get(`${API_URL}/database-size`);
       setDatabaseSize(response.data.size_gb);
     } catch (err) {
       console.error('Error fetching database size:', err);
-    }
-  };
+      }
+    };
 
   // Add useEffect to fetch database size periodically
   useEffect(() => {
@@ -704,18 +706,18 @@ function App() {
   // Add useEffect to fetch initial refresh interval
   useEffect(() => {
     const fetchRefreshInterval = async () => {
-      try {
+    try {
         const response = await axios.get(`${API_URL}/current-refresh-interval`);
         if (response.data.status === 'success') {
           setRefreshInterval(response.data.refresh_interval);
           console.debug(`Initialized refresh interval to ${response.data.refresh_interval} seconds`);
-        }
+    }
       } catch (err) {
         console.error('Error fetching initial refresh interval:', err);
         // Keep the default value of 60 if fetch fails
       }
-    };
-    
+  };
+
     fetchRefreshInterval();
   }, []);  // Empty dependency array means this runs once on mount
 
@@ -775,7 +777,7 @@ function App() {
   // Add useEffect to fetch initial traffic state and set up periodic refresh
   useEffect(() => {
     const fetchTrafficState = async () => {
-      try {
+    try {
         const response = await axios.get(`${API_URL}/api/traffic-state`);
         console.debug('Traffic state response:', response.data);
         
@@ -792,7 +794,7 @@ function App() {
             postgres: true,
             materializeView: true,
             materialize: true
-          });
+      });
         } else {
           // For subsequent refreshes, check if the state matches the current scenario
           const expectedState = {
@@ -822,10 +824,10 @@ function App() {
             materialize: response.data.materialize
           });
         }
-      } catch (error) {
+    } catch (error) {
         console.error('Error fetching traffic state:', error);
-      }
-    };
+    }
+  };
 
     // Fetch initial state
     fetchTrafficState();
@@ -837,6 +839,9 @@ function App() {
     return () => clearInterval(interval);
   }, [currentScenario]); // Add currentScenario as a dependency
 
+  // Add state for OLTP toggle
+  const [includeOLTP, setIncludeOLTP] = useState(false);
+
   if (error) {
     console.error('Rendering error state:', error);
   }
@@ -844,11 +849,9 @@ function App() {
   return (
     <MantineProvider theme={theme} styles={globalStyles}>
       <div style={{ backgroundColor: 'rgb(13, 17, 22)', minHeight: '100vh' }}>
-        <Container size="xl" py="xl">
-          <Stack spacing="lg">
-            <Paper p="xl" withBorder={false} style={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.05)'
-            }}>
+      <Container size="xl" py="xl">
+        <Stack spacing="lg">
+        <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
               <Grid>
                 <Grid.Col span={8}>
                   <Stack spacing="xs">
@@ -872,11 +875,13 @@ function App() {
                 </Grid.Col>
               </Grid>
             </Paper>
+          
+            
 
             <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
-            <Text size="xl" weight={700} mb="xl" style={{ color: '#BCB9C0' }}>
-                  Why is this a hard problem?
-                </Text>
+              <Text size="xl" weight={700} mb="xl" style={{ color: '#BCB9C0' }}>
+                Why is this a hard problem?
+              </Text>
               <Grid>
                 <Grid.Col span={4}>
                   <Paper p="md" withBorder style={{ 
@@ -1064,25 +1069,90 @@ function App() {
               }}>
                 <Accordion.Item value="dataLineage">
                   <Accordion.Control>
-                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>Data Lineage</Text>
+                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>Anatomy of a Data Product</Text>
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
-                      The inventory item data product combines data from multiple sources to calculate dynamic prices. Here's how the data flows through the system:
+                      The inventory item data product combines data from multiple sources to calculate dynamic prices.
                     </Text>
                     
-                    <pre style={{ 
-                      fontFamily: 'Inter, monospace',
-                      fontSize: '14px',
-                      lineHeight: '1.5',
-                      whiteSpace: 'pre',
-                      overflow: 'auto',
-                      padding: '20px',
-                      backgroundColor: 'rgb(13, 17, 22)',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: '#BCB9C0'
-                    }}>
+                    <Grid>
+                      <Grid.Col span={5}>
+                        <Paper p="md" withBorder style={{ 
+                          height: '100%',
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Inventory Data Product</Text>
+                          <pre 
+                            style={{ 
+                              fontFamily: 'Inter, monospace',
+                              fontSize: '14px',
+                              lineHeight: '1.5',
+                              whiteSpace: 'pre',
+                              overflow: 'auto',
+                              margin: 0,
+                              padding: '12px',
+                              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                              borderRadius: '4px',
+                              color: '#BCB9C0'
+                            }}
+                            dangerouslySetInnerHTML={{
+                              __html: (() => {
+                                const useMaterialize = currentScenario === 'materialize' || currentScenario === 'cqrs';
+                                const data = {
+                                  product_id: "1",
+                                  name: "Fresh Red Delicious Apple",
+                                  category: "Fresh Produce",
+                                  current_price: (useMaterialize ? currentMetric.materialize_price :
+                                               currentScenario === 'batch' ? currentMetric.materialized_view_price :
+                                               currentScenario === 'direct' ? currentMetric.view_price :
+                                               currentMetric.materialize_price)?.toFixed(2),                                
+                                  last_update: useMaterialize ? 
+                                             new Date(Date.now() - (currentMetric.materialize_end_to_end_latency || 0)).toISOString() :
+                                             new Date().toISOString(),
+                                  inventory_status: "IN_STOCK",
+                                  source: useMaterialize ? "Materialize" :
+                                         currentScenario === 'batch' ? "Batch (Cache) Table" :
+                                         currentScenario === 'direct' ? "PostgreSQL View" :
+                                         "Materialize",
+                                  
+                                  metadata: {
+                                    organic: true,
+                                    origin: "Washington State",
+                                    unit: "per pound"
+                                  }
+                                };
+                                
+                                return JSON.stringify(data, null, 2)
+                                  .replace(/"current_price": "([^"]+)"/, '"current_price": "<span style="color: #228be6; font-weight: 600">$1</span>"')
+                                  .replace(/"last_update": "([^"]+)"/, '"last_update": "<span style="color: #228be6; font-weight: 600">$1</span>"')
+                                  .replace(/"source": "([^"]+)"/, '"source": "<span style="color: #228be6; font-weight: 600">$1</span>"');
+                              })()
+                            }}
+                          />
+                        </Paper>
+                      </Grid.Col>
+
+                      <Grid.Col span={7}>
+                        <Paper p="md" withBorder style={{ 
+                          height: '100%',
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Data Product Lineage</Text>
+                          <pre style={{ 
+                            fontFamily: 'Inter, monospace',
+                            fontSize: '14px',
+                            lineHeight: '1.5',
+                            whiteSpace: 'pre',
+                            overflow: 'auto',
+                            padding: '12px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                            borderRadius: '4px',
+                            color: '#BCB9C0',
+                            margin: 0
+                          }}>
 {`
    Categories ──┐
                 └──► Popularity Score ──┐
@@ -1097,147 +1167,237 @@ function App() {
    Promotions ──┴──► Promotion Effect  ─┘
    
 `} 
-                    <span 
-                      onClick={togglePromotion} 
-                      style={{ 
-                        color: '#be4bdb', 
-                        cursor: isPromotionLoading ? 'wait' : 'pointer', 
-                        textDecoration: 'underline',
-                        '&:hover': {
-                          color: '#d0a9e5'
-                        }
-                      }}
-                    >
-                      {isPromotionLoading ? '(Toggling promotion...)' : '(Toggle Promotion)'}
-                    </span>
-                  </pre>
+                            <span 
+                              onClick={togglePromotion} 
+                              style={{ 
+                                color: '#be4bdb', 
+                                cursor: isPromotionLoading ? 'wait' : 'pointer', 
+                                textDecoration: 'underline',
+                                '&:hover': {
+                                  color: '#d0a9e5'
+                                }
+                              }}
+                            >
+                              {isPromotionLoading ? '(Toggling promotion...)' : '(Toggle Promotion)'}
+                            </span>
+                          </pre>
+                        </Paper>
+                      </Grid.Col>
+                    </Grid>
                   </Accordion.Panel>
                 </Accordion.Item>
               </Accordion>
             </Paper>
 
+            
+
             <Paper p="xl" className="hover-card" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <Text size="lg" weight={600} mb="md" style={{ color: '#BCB9C0' }}>Data Product Price Comparison</Text>
-              <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
-                Each data product is composed by joining data from multiple sources, these could be separate tables or separate databases entirely. Data products are made available to consumers ranging from web services to inventory systems.
-              </Text>
-              
-              <Group position="center" spacing="xl">
-                {scenarios.postgres && (
-                  <Paper p={0} className="hover-card" style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    height: '100%',
-                    width: '300px',
-                    backgroundColor: 'rgb(13, 17, 22)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    }
-                  }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ padding: '20px', display: 'flex' }}>
-                        <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
-                          <Image
-                            src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
-                            height={40}
-                            width={40}
-                            fit="contain"
-                            alt="Product"
-                          />
-                          <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
-                        </Group>
-                      </div>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
-                        <PriceDisplay 
-                          price={currentMetric.view_price}
-                          prevPrice={prevPrices.current.view}
-                          reactionTime={currentMetric.view_end_to_end_latency}
-                        />
-                      </div>
-                    </div>
-                    <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: '15px' }}>
-                      <Text weight={500} align="center" color="blue" style={{ color: '#BCB9C0' }}>PostgreSQL View</Text>
-                    </div>
-                  </Paper>
-                )}
-                {scenarios.materializeView && (
-                  <Paper p={0} className="hover-card" style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    height: '100%',
-                    width: '300px',
-                    backgroundColor: 'rgb(13, 17, 22)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    }
-                  }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ padding: '20px', display: 'flex' }}>
-                        <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
-                          <Image
-                            src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
-                            height={40}
-                            width={40}
-                            fit="contain"
-                            alt="Product"
-                          />
-                          <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
-                        </Group>
-                      </div>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
-                        <PriceDisplay 
-                          price={currentMetric.materialized_view_price}
-                          prevPrice={prevPrices.current.materialized_view}
-                          reactionTime={currentMetric.materialized_view_end_to_end_latency}
-                        />
-                      </div>
-                    </div>
-                    <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: '15px' }}>
-                      <Text weight={500} align="center" color="teal" style={{ color: '#BCB9C0' }}>Batch (Cache) Table</Text>
-                    </div>
-                  </Paper>
-                )}
-                {scenarios.materialize && (
-                  <Paper p={0} className="hover-card" style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    height: '100%',
-                    width: '300px',
-                    backgroundColor: 'rgb(13, 17, 22)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    }
-                  }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ padding: '20px', display: 'flex' }}>
-                        <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
-                          <Image
-                            src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
-                            height={40}
-                            width={40}
-                            fit="contain"
-                            alt="Product"
-                          />
-                          <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
-                        </Group>
-                      </div>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
-                        <PriceDisplay 
+              <Accordion defaultValue="priceComparison" styles={{
+                control: {
+                  borderBottom: 'none'
+                },
+                item: {
+                  borderBottom: 'none'
+                }
+              }}>
+                <Accordion.Item value="priceComparison">
+                  <Accordion.Control>
+                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>Data Product Price Comparison</Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
+                      Each data product is composed by joining data from multiple sources, these could be separate tables or separate databases entirely. Data products are made available to consumers ranging from web services to inventory systems.
+                    </Text>
+                    
+                    <Group position="center" spacing="xl">
+                      {scenarios.postgres && (
+                        <Paper p={0} className="hover-card" style={{ 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          height: '100%',
+                          width: '300px',
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          }
+                        }}>
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ padding: '20px', display: 'flex' }}>
+                              <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
+                                <Image
+                                  src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
+                                  height={40}
+                                  width={40}
+                                  fit="contain"
+                                  alt="Product"
+                                />
+                                <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
+                              </Group>
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
+                              <PriceDisplay 
+                                price={currentMetric.view_price}
+                                prevPrice={prevPrices.current.view}
+                                reactionTime={currentMetric.view_end_to_end_latency}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: '15px' }}>
+                            <Text weight={500} align="center" color="blue" style={{ color: '#BCB9C0' }}>PostgreSQL View</Text>
+                          </div>
+                        </Paper>
+                      )}
+                      {scenarios.materializeView && (
+                        <Paper p={0} className="hover-card" style={{ 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          height: '100%',
+                          width: '300px',
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          }
+                        }}>
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ padding: '20px', display: 'flex' }}>
+                              <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
+                                <Image
+                                  src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
+                                  height={40}
+                                  width={40}
+                                  fit="contain"
+                                  alt="Product"
+                                />
+                                <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
+                              </Group>
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
+                              <PriceDisplay 
+                                price={currentMetric.materialized_view_price}
+                                prevPrice={prevPrices.current.materialized_view}
+                                reactionTime={currentMetric.materialized_view_end_to_end_latency}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: '15px' }}>
+                            <Text weight={500} align="center" color="teal" style={{ color: '#BCB9C0' }}>Batch (Cache) Table</Text>
+                          </div>
+                        </Paper>
+                      )}
+                      {scenarios.materialize && (
+                        <Paper p={0} className="hover-card" style={{ 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          height: '100%',
+                          width: '300px',
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          }
+                        }}>
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ padding: '20px', display: 'flex' }}>
+                              <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
+                                <Image
+                                  src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
+                                  height={40}
+                                  width={40}
+                                  fit="contain"
+                                  alt="Product"
+                                />
+                                <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
+                              </Group>
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
+            <PriceDisplay
                           price={currentMetric.materialize_price}
                           prevPrice={prevPrices.current.materialize}
                           reactionTime={currentMetric.materialize_end_to_end_latency}
+            />
+                            </div>
+                          </div>
+                          <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: '15px' }}>
+                            <Text weight={500} align="center" color="violet" style={{ color: '#BCB9C0' }}>Materialize</Text>
+                          </div>
+                        </Paper>
+                      )}
+                    </Group>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
+            </Paper>
+
+          <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
+              <Accordion defaultValue={null} styles={{
+                control: {
+                  borderBottom: 'none'
+                },
+                item: {
+                  borderBottom: 'none'
+                }
+              }}>
+                <Accordion.Item value="ragLatency">
+                  <Accordion.Control>
+                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>RAG Pipeline Latency Breakdown</Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
+                      This visualization shows the latency breakdown of a typical Retrieval-Augmented Generation (RAG) pipeline. 
+                      Adding correct and timely structured data provides a much more relevant response to customers.
+                    </Text>
+                    
+                    <Paper p="sm" withBorder mb="lg" style={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <Group position="apart">
+                        <Text size="sm" style={{ color: '#BCB9C0' }}>
+                          Toggle to include real-time structured data in the RAG pipeline
+                        </Text>
+                        <Switch
+                          
+                          checked={includeOLTP}
+                          onChange={(event) => setIncludeOLTP(event.currentTarget.checked)}
+                          size="sm"
+                          color="blue"
+                          styles={{
+                            label: {
+                              color: '#BCB9C0',
+                              fontSize: '14px'
+                            }
+                          }}
                         />
-                      </div>
-                    </div>
-                    <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: '15px' }}>
-                      <Text weight={500} align="center" color="violet" style={{ color: '#BCB9C0' }}>Materialize</Text>
-                    </div>
-                  </Paper>
-                )}
-              </Group>
+                      </Group>
+                    </Paper>
+
+                    <Grid>
+                      <Grid.Col span={7}>
+                        <Paper p="md" withBorder style={{ 
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          height: '400px',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Pipeline Latency</Text>
+                          <div style={{ flex: 1, minHeight: 0 }}>
+                            <RAGLatencyChart currentScenario={currentScenario} stats={stats} includeOLTP={includeOLTP} />
+                          </div>
+                        </Paper>
+                      </Grid.Col>
+                      <Grid.Col span={5}>
+                        <Paper p="md" withBorder style={{ backgroundColor: 'rgb(13, 17, 22)', border: '1px solid rgba(255, 255, 255, 0.1)', height: '400px' }}>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Example Interaction</Text>
+                          <RAGPromptResponse includeOLTP={includeOLTP} currentMetric={metrics[metrics.length - 1]} currentScenario={currentScenario} />
+                        </Paper>
+                      </Grid.Col>
+                    </Grid>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
             </Paper>
 
             <Paper p="md" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
@@ -1466,7 +1626,7 @@ function App() {
                               isAnimationActive={false}
                               connectNulls={true}
                               strokeWidth={2}
-                            />
+          />
                           )}
                         </LineChart>
                       </ResponsiveContainer>
@@ -1743,7 +1903,7 @@ function App() {
                           height={180}
                           fit="contain"
                           alt="Real-time Portfolio Analysis"
-                        />
+          />
                       </div>
                       <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
                         Portfolio Analysis
@@ -1868,13 +2028,13 @@ function App() {
                         }
                       </Button>
                       <div>Isolation Level: <Badge color="violet" variant="light">{isolationLevel ? isolationLevel.replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'}</Badge></div>
-                    </Group>
-                  </Stack>
+          </Group>
+        </Stack>
                 </Accordion.Panel>
               </Accordion.Item>
             </Accordion>
           </Stack>
-        </Container>
+      </Container>
       </div>
     </MantineProvider>
   );
