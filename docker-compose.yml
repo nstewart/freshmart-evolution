@@ -69,6 +69,7 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=mysecret
       - LOAD_DATA=${LOAD_DATA:-true}
+      - REDUCED_DATA=${REDUCED_DATA:-false}
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,7 +83,11 @@ services:
           echo "Setting up database..." &&
           sed -i "s/localhost/$${PGHOST}/g" setup_database.sh &&
           sed -i "s/source backend\/.env/true/g" setup_database.sh &&
-          bash setup_database.sh postgres;
+          if [ "$$REDUCED_DATA" = "true" ]; then
+            bash setup_database.sh postgres --reduced;
+          else
+            bash setup_database.sh postgres;
+          fi
         else
           echo "Skipping data loading for PostgreSQL...";
         fi
