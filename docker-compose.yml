@@ -113,7 +113,7 @@ services:
       resources:
         limits:
           cpus: "4"
-          memory: 4G
+          memory: 8G
 
   materialize_init:
     image: postgres:latest
