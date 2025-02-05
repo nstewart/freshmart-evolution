@@ -4,6 +4,7 @@ import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stac
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import ContainersCPUChart from './components/ContainersCPUChart.jsx';
 import ContainersMemoryChart from './components/ContainersMemoryChart.jsx';
+import RAGLatencyChart from './components/RAGLatencyChart.jsx';
 
 const HISTORY_WINDOW_MS = 3 * 60 * 1000; // 3 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
@@ -680,14 +681,14 @@ function App() {
   }, [metrics]);
 
   // Add function to fetch database size
-  const fetchDatabaseSize = async () => {
-    try {
+    const fetchDatabaseSize = async () => {
+      try {
       const response = await axios.get(`${API_URL}/database-size`);
       setDatabaseSize(response.data.size_gb);
     } catch (err) {
       console.error('Error fetching database size:', err);
-    }
-  };
+      }
+    };
 
   // Add useEffect to fetch database size periodically
   useEffect(() => {
@@ -703,18 +704,18 @@ function App() {
   // Add useEffect to fetch initial refresh interval
   useEffect(() => {
     const fetchRefreshInterval = async () => {
-      try {
+    try {
         const response = await axios.get(`${API_URL}/current-refresh-interval`);
         if (response.data.status === 'success') {
           setRefreshInterval(response.data.refresh_interval);
           console.debug(`Initialized refresh interval to ${response.data.refresh_interval} seconds`);
-        }
+    }
       } catch (err) {
         console.error('Error fetching initial refresh interval:', err);
         // Keep the default value of 60 if fetch fails
       }
-    };
-    
+  };
+
     fetchRefreshInterval();
   }, []);  // Empty dependency array means this runs once on mount
 
@@ -774,7 +775,7 @@ function App() {
   // Add useEffect to fetch initial traffic state and set up periodic refresh
   useEffect(() => {
     const fetchTrafficState = async () => {
-      try {
+    try {
         const response = await axios.get(`${API_URL}/api/traffic-state`);
         console.debug('Traffic state response:', response.data);
         
@@ -791,7 +792,7 @@ function App() {
             postgres: true,
             materializeView: true,
             materialize: true
-          });
+      });
         } else {
           // For subsequent refreshes, check if the state matches the current scenario
           const expectedState = {
@@ -821,10 +822,10 @@ function App() {
             materialize: response.data.materialize
           });
         }
-      } catch (error) {
+    } catch (error) {
         console.error('Error fetching traffic state:', error);
-      }
-    };
+    }
+  };
 
     // Fetch initial state
     fetchTrafficState();
@@ -843,8 +844,8 @@ function App() {
   return (
     <MantineProvider theme={theme} styles={globalStyles}>
       <div style={{ backgroundColor: 'rgb(13, 17, 22)', minHeight: '100vh' }}>
-        <Container size="xl" py="xl">
-          <Stack spacing="lg">
+      <Container size="xl" py="xl">
+        <Stack spacing="lg">
             <Paper p="xl" withBorder={false} style={{ 
               backgroundColor: 'rgba(255, 255, 255, 0.05)'
             }}>
@@ -871,11 +872,23 @@ function App() {
                 </Grid.Col>
               </Grid>
             </Paper>
+          
+            <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
+              <Text size="xl" weight={700} mb="md" style={{ color: '#BCB9C0' }}>
+                RAG Pipeline Latency Breakdown
+              </Text>
+              <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
+                This visualization shows the latency breakdown of a typical Retrieval-Augmented Generation (RAG) pipeline. 
+                Note how some operations execute in parallel to optimize total response time. The chart represents start 
+                times and durations for each component, with parallel operations aligned horizontally.
+              </Text>
+              <RAGLatencyChart />
+            </Paper>
 
             <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
-            <Text size="xl" weight={700} mb="xl" style={{ color: '#BCB9C0' }}>
-                  Why is this a hard problem?
-                </Text>
+              <Text size="xl" weight={700} mb="xl" style={{ color: '#BCB9C0' }}>
+                Why is this a hard problem?
+              </Text>
               <Grid>
                 <Grid.Col span={4}>
                   <Paper p="md" withBorder style={{ 
@@ -1224,11 +1237,11 @@ function App() {
                         </Group>
                       </div>
                       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
-                        <PriceDisplay 
+            <PriceDisplay
                           price={currentMetric.materialize_price}
                           prevPrice={prevPrices.current.materialize}
                           reactionTime={currentMetric.materialize_end_to_end_latency}
-                        />
+            />
                       </div>
                     </div>
                     <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: '15px' }}>
@@ -1237,7 +1250,7 @@ function App() {
                   </Paper>
                 )}
               </Group>
-            </Paper>
+          </Paper>
 
             <Paper p="md" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
               <Accordion defaultValue={[]} multiple>
@@ -1465,7 +1478,7 @@ function App() {
                               isAnimationActive={false}
                               connectNulls={true}
                               strokeWidth={2}
-                            />
+          />
                           )}
                         </LineChart>
                       </ResponsiveContainer>
@@ -1742,7 +1755,7 @@ function App() {
                           height={180}
                           fit="contain"
                           alt="Real-time Portfolio Analysis"
-                        />
+          />
                       </div>
                       <Text size="lg" weight={600} align="center" style={{ color: 'white' }}>
                         Portfolio Analysis
@@ -1867,13 +1880,13 @@ function App() {
                         }
                       </Button>
                       <div>Isolation Level: <Badge color="violet" variant="light">{isolationLevel ? isolationLevel.replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'}</Badge></div>
-                    </Group>
-                  </Stack>
+          </Group>
+        </Stack>
                 </Accordion.Panel>
               </Accordion.Item>
             </Accordion>
           </Stack>
-        </Container>
+      </Container>
       </div>
     </MantineProvider>
   );
