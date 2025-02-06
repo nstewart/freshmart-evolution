@@ -23,7 +23,8 @@ CREATE TABLE products (
 
 CREATE TABLE categories (
 	category_id SERIAL PRIMARY KEY,
-	category_name VARCHAR(255) NOT NULL
+	category_name VARCHAR(255) NOT NULL,
+	parent_id INT
 );
 
 CREATE TABLE suppliers (
@@ -55,6 +56,14 @@ CREATE TABLE promotions (
 	end_date TIMESTAMP NOT NULL,
 	active BOOLEAN NOT NULL,
 	updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE shopping_cart (
+    product_id INT NOT NULL,
+	product_name TEXT NOT NULL,
+	category_id INT NOT NULL,
+	price NUMERIC(10, 2) NOT NULL,
+    ts TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 ALTER TABLE public.inventory ADD CONSTRAINT inventory_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products (product_id);
@@ -267,6 +276,7 @@ ALTER TABLE products REPLICA IDENTITY FULL;
 ALTER TABLE promotions REPLICA IDENTITY FULL;
 ALTER TABLE sales REPLICA IDENTITY FULL;
 ALTER TABLE suppliers REPLICA IDENTITY FULL;
+ALTER TABLE shopping_cart REPLICA IDENTITY FULL;
 ALTER TABLE heartbeats REPLICA IDENTITY FULL;
 
-CREATE PUBLICATION mz_source FOR TABLE categories, inventory, materialized_view_refresh_log, products, promotions, sales, suppliers, heartbeats;
+CREATE PUBLICATION mz_source FOR TABLE categories, inventory, materialized_view_refresh_log, products, promotions, sales, suppliers, heartbeats, shopping_cart;

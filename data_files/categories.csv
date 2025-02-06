@@ -1,11 +1,67 @@
-category_id,category_name
-1,Electronics
-2,Home Appliances
-3,Furniture
-4,Clothing
-5,Books
-6,Category_1
-7,Category_2
-8,Category_3
-9,Category_4
-10,Category_5
+category_id,category_name,parent_id
+1,Fruits & Vegetables,
+2,Fruits,1
+3,Berries,2
+4,Citrus Fruits,2
+5,Leafy Greens,1
+6,Root Vegetables,1
+7,Herbs & Spices,1
+8,Dairy & Eggs,
+9,Milk & Cream,8
+10,Cheese,8
+11,Yogurt,8
+12,Butter & Margarine,8
+13,Eggs,8
+14,Bakery & Grains,
+15,Bread,14
+16,Pastries,14
+17,Cookies & Crackers,14
+18,Cereals & Granola,14
+19,Pasta & Rice,14
+20,Beverages,
+21,Juices,20
+22,Soda,20
+23,Coffee & Tea,20
+24,Energy & Sports Drinks,20
+25,Alcoholic Beverages,20
+26,Snacks,
+27,Chips & Pretzels,26
+28,Nuts & Seeds,26
+29,Candy & Chocolate,26
+30,Granola Bars,26
+31,Popcorn,26
+32,Meat & Seafood,
+33,Fresh Meat,32
+34,Poultry,32
+35,Seafood,32
+36,Deli Meats,32
+37,Plant-Based Meat,32
+38,Health & Wellness,
+39,Medicine,38
+40,Pain Relief,39
+41,Cold & Flu,39
+42,Digestive Health,39
+43,Allergy Relief,39
+44,Vitamins & Supplements,38
+45,Multivitamins,44
+46,Omega-3 & Fish Oil,44
+47,Probiotics,44
+48,Protein Powders,44
+49,Personal Care,
+50,Skincare,49
+51,Hair Care,49
+52,Oral Care,49
+53,Deodorants,49
+54,Feminine Hygiene,49
+55,Household Essentials,
+56,Cleaning Supplies,55
+57,Laundry Detergents,56
+58,Disinfectants,56
+59,Sponges & Scrubbers,56
+60,Paper Products,55
+61,Toilet Paper,60
+62,Paper Towels,60
+63,Storage & Organization,55
+64,Trash Bags,63
+65,Plastic Wrap & Foil,63
+66,Reusable Bags,63
