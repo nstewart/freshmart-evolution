@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Paper, Text } from '@mantine/core';
 
 // Custom hook for typewriter effect
-const useTypewriter = (text, speed = 30) => {
+const useTypewriter = (text, speed = 10) => {
   const [displayText, setDisplayText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);

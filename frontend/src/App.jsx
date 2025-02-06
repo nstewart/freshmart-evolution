@@ -258,6 +258,7 @@ function PriceDisplay({ price, prevPrice, reactionTime, weight = 700, size = "xl
   const priceRef = useRef(null);
   const lastReactionTimeRef = useRef(reactionTime);
   const lastUpdateTimeRef = useRef(Date.now());
+  const [dots, setDots] = useState('');
 
   useEffect(() => {
     if (price !== prevPrice && priceRef.current) {
@@ -274,6 +275,17 @@ function PriceDisplay({ price, prevPrice, reactionTime, weight = 700, size = "xl
       lastUpdateTimeRef.current = Date.now();
     }
   }, [reactionTime]);
+
+  // Add dots animation effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => {
+        if (prev === '...') return '';
+        return prev + '.';
+      });
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
 
   // Calculate the extrapolated reaction time
   const getExtrapolatedReactionTime = () => {
@@ -303,11 +315,11 @@ function PriceDisplay({ price, prevPrice, reactionTime, weight = 700, size = "xl
       >
         ${price?.toFixed(2) || 'N/A'}
       </Text>
-      {displayReactionTime !== null && (
-        <Text size="xs" color="dimmed">
-          as of {(displayReactionTime / 1000).toFixed(1)} seconds ago
-        </Text>
-      )}
+      <Text size="xs" color="dimmed" style={{ minHeight: '20px', opacity: displayReactionTime === null ? 0.7 : 1 }}>
+        {displayReactionTime !== null ? 
+          `As of ${(displayReactionTime / 1000).toFixed(1)} seconds ago` :
+          `Waiting for first response${dots}`}
+      </Text>
     </Stack>
   );
 }
@@ -1224,8 +1236,8 @@ function App() {
                           }
                         }}>
                           <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ padding: '20px', display: 'flex' }}>
-                              <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
+                            <div style={{ padding: '20px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <Image
                                   src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
                                   height={40}
@@ -1233,8 +1245,8 @@ function App() {
                                   fit="contain"
                                   alt="Product"
                                 />
-                                <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
-                              </Group>
+                                <Text weight={500} size="sm" style={{ color: '#BCB9C0' }}>Fresh Red Delicious Apple</Text>
+                              </div>
                             </div>
                             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
                               <PriceDisplay 
@@ -1262,8 +1274,8 @@ function App() {
                           }
                         }}>
                           <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ padding: '20px', display: 'flex' }}>
-                              <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
+                            <div style={{ padding: '20px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <Image
                                   src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
                                   height={40}
@@ -1271,8 +1283,8 @@ function App() {
                                   fit="contain"
                                   alt="Product"
                                 />
-                                <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
-                              </Group>
+                                <Text weight={500} size="sm" style={{ color: '#BCB9C0' }}>Fresh Red Delicious Apple</Text>
+                              </div>
                             </div>
                             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
                               <PriceDisplay 
@@ -1300,8 +1312,8 @@ function App() {
                           }
                         }}>
                           <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ padding: '20px', display: 'flex' }}>
-                              <Group position="left" spacing="sm" style={{ width: '100%', whiteSpace: 'nowrap' }}>
+                            <div style={{ padding: '20px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <Image
                                   src="https://static.vecteezy.com/system/resources/previews/029/881/894/non_2x/isolated-apple-fruit-on-transparent-background-free-png.png"
                                   height={40}
@@ -1309,8 +1321,8 @@ function App() {
                                   fit="contain"
                                   alt="Product"
                                 />
-                                <Text weight={500} size="sm" style={{ color: '#BCB9C0', flex: 1 }}>Fresh Red Delicious Apple</Text>
-                              </Group>
+                                <Text weight={500} size="sm" style={{ color: '#BCB9C0' }}>Fresh Red Delicious Apple</Text>
+                              </div>
                             </div>
                             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
             <PriceDisplay
@@ -1454,7 +1466,7 @@ function App() {
 
                 <Accordion.Item value="latency">
                   <Accordion.Control>
-                    <Text size="lg" weight={500} style={{ color: '#BCB9C0' }}>Query Latency (ms)</Text>
+                    <Text size="lg" weight={500} style={{ color: '#BCB9C0' }}>Query Latency (ms, log scale)</Text>
                   </Accordion.Control>
                   <Accordion.Panel>
                     <div style={{ width: '100%', height: '200px' }}>
@@ -1477,7 +1489,8 @@ function App() {
                           />
                           <YAxis 
                             stroke="#BCB9C0" 
-                            domain={[0, 'dataMax']}
+                            scale="log"
+                            domain={[0.1, 'dataMax']}
                             tickFormatter={(value) => `${value.toFixed(1)}`}
                             allowDataOverflow={true}
                           />
