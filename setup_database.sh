@@ -79,7 +79,7 @@ EOF
 
     echo "Loading initial data..."
     PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $DB_NAME << EOF
-\COPY categories(category_id,category_name) FROM 'data/categories.csv' WITH CSV HEADER;
+\COPY categories(category_id,category_name,parent_id) FROM 'data/categories.csv' WITH CSV HEADER;
 \COPY suppliers(supplier_id,supplier_name) FROM 'data/suppliers.csv' WITH CSV HEADER;
 \COPY products(product_id,product_name,base_price,category_id,supplier_id,available,last_update_time) FROM 'data/products.csv' WITH CSV HEADER;
 \COPY inventory(inventory_id,product_id,stock,warehouse_id,restock_date) FROM 'data/inventory.csv' WITH CSV HEADER;
@@ -140,6 +140,7 @@ EOF
     ALTER TABLE sales REPLICA IDENTITY FULL;
     ALTER TABLE inventory REPLICA IDENTITY FULL;
     ALTER TABLE promotions REPLICA IDENTITY FULL;
+    ALTER TABLE shopping_cart REPLICA IDENTITY FULL;
     ALTER TABLE heartbeats REPLICA IDENTITY FULL;
     ALTER TABLE materialized_view_refresh_log REPLICA IDENTITY FULL;
 EOF

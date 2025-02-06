@@ -338,6 +338,27 @@ async def auto_refresh_materialized_view():
             logger.error(f"Error in auto-refresh cycle: {str(e)}", exc_info=True)
             await asyncio.sleep(1)
 
+async def add_to_cart():
+    """Automatically adds a new item to a shopping cart at a fixed internal"""
+    async def insert_item():
+        try:
+            async with postgres_connection() as conn:
+                await conn.execute("""
+                    INSERT INTO shopping_cart (category_id, price)
+                    SELECT category_id, base_price FROM products
+                    ORDER BY RANDOM()
+                    LIMIT 1;
+                """)
+        except Exception as e:
+            logger.error(f"Error adding item to shopping cart: {str(e)}", exc_info=True)
+            raise
+
+    for _ in range(10):
+        await insert_item()
+
+    while True:
+        await insert_item()
+        await asyncio.sleep(1)
 
 async def measure_query_time(query: str, params: Tuple, is_materialize: bool, source: str) -> Tuple[float, any]:
     start_time = time.time()

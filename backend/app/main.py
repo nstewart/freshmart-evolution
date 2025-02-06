@@ -41,9 +41,11 @@ async def startup_event():
     asyncio.create_task(database.continuous_query_load())
     # Start the container stats collection task
     asyncio.create_task(database.collect_container_stats())
+    # Start the continuous shopping cart task
+    asyncio.create_task(database.add_to_cart())
     asyncio.create_task(database.reload_pool())
 
-    logger.info("Started background tasks: heartbeat, materialized view auto-refresh, continuous query load, and container stats collection")
+    logger.info("Started background tasks: heartbeat, materialized view auto-refresh, continuous query load, shopping cart, and container stats collection")
 
 
 @app.post("/configure-refresh-interval/{interval}")
