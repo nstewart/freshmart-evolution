@@ -344,8 +344,8 @@ async def add_to_cart():
         try:
             async with postgres_connection() as conn:
                 await conn.execute("""
-                    INSERT INTO shopping_cart (category_id, price)
-                    SELECT category_id, base_price FROM products
+                    INSERT INTO shopping_cart (product_id, product_name, category_id, price)
+                    SELECT product_id, product_name, category_id, base_price FROM products
                     ORDER BY RANDOM()
                     LIMIT 1;
                 """)
@@ -353,12 +353,24 @@ async def add_to_cart():
             logger.error(f"Error adding item to shopping cart: {str(e)}", exc_info=True)
             raise
 
+    async def delete_item():
+        try:
+            async with postgres_connection() as conn:
+                await conn.execute("""
+                    DELETE FROM shopping_cart
+                    WHERE ts < NOW() - INTERVAL '1 minute';
+                """)
+        except Exception as e:
+            logger.error(f"Error removing items to shopping cart: {str(e)}", exc_info=True)
+            raise
+
     for _ in range(10):
         await insert_item()
 
     while True:
         await insert_item()
-        await asyncio.sleep(1)
+        await delete_item()
+        await asyncio.sleep(3.0)
 
 async def measure_query_time(query: str, params: Tuple, is_materialize: bool, source: str) -> Tuple[float, any]:
     start_time = time.time()

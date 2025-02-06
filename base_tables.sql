@@ -59,7 +59,9 @@ CREATE TABLE promotions (
 );
 
 CREATE TABLE shopping_cart (
-    category_id INT NOT NULL,
+    product_id INT NOT NULL,
+	product_name TEXT NOT NULL,
+	category_id INT NOT NULL,
 	price NUMERIC(10, 2) NOT NULL,
     ts TIMESTAMP NOT NULL DEFAULT NOW()
 );
