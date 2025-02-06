@@ -1477,8 +1477,7 @@ function App() {
                           />
                           <YAxis 
                             stroke="#BCB9C0" 
-                            scale="log"
-                            domain={[0.1, 'dataMax']}
+                            domain={[0, 'dataMax']}
                             tickFormatter={(value) => `${value.toFixed(1)}`}
                             allowDataOverflow={true}
                           />
@@ -1564,8 +1563,7 @@ function App() {
                           <YAxis 
                             stroke="#BCB9C0" 
                             tick={{ fill: '#BCB9C0', fontSize: 14 }}
-                            scale="log"
-                            domain={[0.1, 'dataMax']}
+                            domain={[0, 'dataMax']}
                             tickFormatter={(value) => `${value.toFixed(1)}`}
                             allowDataOverflow={true}
                           />

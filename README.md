@@ -115,7 +115,7 @@ The application maintains separate connection pools for:
 
 > ⚠️ **Hardware Requirements**
 > - CPU: 8+ cores recommended
-> - RAM: 8GB+ recommended
+> - RAM: 12GB+ recommended (Make sure docker has access to at least this amount of memory)
 >
 > For systems with limited resources, you can use the reduced dataset option:
 > ```bash
