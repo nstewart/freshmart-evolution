@@ -252,16 +252,13 @@ async def get_shopping_cart():
                 # Get cart items
                 cart_items = await conn.fetch("SELECT * FROM dynamic_price_shopping_cart")
                 
-                # Get category subtotals
+                # Get category subtotals from the view
                 subtotals = await conn.fetch("""
                     SELECT 
-                        c.category_name,
-                        COUNT(*) as item_count,
-                        SUM(sc.price) as subtotal
-                    FROM dynamic_price_shopping_cart sc
-                    JOIN categories c ON sc.category_id = c.category_id
-                    GROUP BY c.category_name
-                    ORDER BY c.category_name
+                        category_name,
+                        item_count,
+                        total as subtotal
+                    FROM category_totals
                 """)
                 
                 return {

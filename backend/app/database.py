@@ -1036,7 +1036,10 @@ async def get_category_subtotals():
     try:
         async with materialize_connection() as conn:
             subtotals = await conn.fetch("""
-                SELECT category_name, item_count, total
+                SELECT 
+                    category_name,
+                    item_count,
+                    total as subtotal
                 FROM category_totals
                 ORDER BY category_name
             """)
