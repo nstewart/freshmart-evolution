@@ -1207,7 +1207,7 @@ function App() {
             
 
             <Paper p="xl" className="hover-card" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <Accordion defaultValue="priceComparison" styles={{
+              <Accordion defaultValue={null} styles={{
                 control: {
                   borderBottom: 'none'
                 },
@@ -1343,6 +1343,18 @@ function App() {
                   </Accordion.Panel>
                 </Accordion.Item>
               </Accordion>
+            </Paper>
+
+            <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+              <Text size="lg" weight={600} mb="xl" style={{ color: '#BCB9C0' }}>Shopping Cart</Text>
+              <Grid>
+                <Grid.Col span={6}>
+                  <ShoppingCart />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <AddProduct />
+                </Grid.Col>
+              </Grid>
             </Paper>
 
           <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
@@ -1970,17 +1982,7 @@ function App() {
 
             
 
-            <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <Text size="lg" weight={600} mb="xl" style={{ color: '#BCB9C0' }}>Shopping Cart & Product Management</Text>
-              <Grid>
-                <Grid.Col span={6}>
-                  <ShoppingCart />
-                </Grid.Col>
-                <Grid.Col span={6}>
-                  <AddProduct />
-                </Grid.Col>
-              </Grid>
-            </Paper>
+            
 
             <Accordion defaultValue={null} mt="md">
               <Accordion.Item value="advanced">

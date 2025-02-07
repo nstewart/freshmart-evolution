@@ -376,11 +376,16 @@ async def add_to_cart():
             async with postgres_connection() as conn:
                 await conn.execute("""
                     DELETE FROM shopping_cart
-                    WHERE ts < NOW() - INTERVAL '30 seconds'
-                    AND product_id != 1;
+                    WHERE ts IN (
+                        SELECT ts 
+                        FROM shopping_cart 
+                        WHERE product_id != 1
+                        ORDER BY RANDOM() 
+                        LIMIT 1
+                    )
                 """)
         except Exception as e:
-            logger.error(f"Error removing items from shopping cart: {str(e)}", exc_info=True)
+            logger.error(f"Error removing item from shopping cart: {str(e)}", exc_info=True)
             raise
 
     # Initialize cart with 10 random items (product 1 will be included)
@@ -1031,14 +1036,9 @@ async def get_category_subtotals():
     try:
         async with materialize_connection() as conn:
             subtotals = await conn.fetch("""
-                SELECT 
-                    c.category_name,
-                    COUNT(*) as item_count,
-                    SUM(sc.price) as subtotal
-                FROM dynamic_price_shopping_cart sc
-                JOIN categories c ON sc.category_id = c.category_id
-                GROUP BY c.category_name
-                ORDER BY c.category_name
+                SELECT category_name, item_count, total
+                FROM category_totals
+                ORDER BY category_name
             """)
             return [dict(row) for row in subtotals]
     except Exception as e:

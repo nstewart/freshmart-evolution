@@ -121,29 +121,78 @@ dynamic_pricing dp ON p.product_id = dp.product_id
 ;
 
 
-WITH MUTUALLY RECURSIVE rollup (category_id int, total numeric(30, 2)) AS (
-    SELECT category_id, sum(price) AS total
-    FROM shopping_cart
-    GROUP BY category_id
-            
-    UNION ALL
-    
-    SELECT parent_id AS category_id, sum(total) AS total
-    FROM rollup AS r
-    JOIN categories AS c ON r.category_id = c.parent_id
-    GROUP BY parent_id
-)
+CREATE VIEW category_totals AS
+WITH MUTUALLY RECURSIVE
+  rollup(category_id int, total numeric(39,2), item_count int) AS (
+    -- Base: calculate each category's direct total and item count
+    SELECT
+      c.category_id,
+      COALESCE(SUM(d.price), 0)::numeric(39,2),
+      COUNT(d.price)
+    FROM categories c
+    LEFT JOIN dynamic_price_shopping_cart d
+      ON c.category_id = d.category_id
+    GROUP BY c.category_id
 
-SELECT category_id, category_name, total
-FROM rollup
-INNER JOIN categories USING (category_id)
-WHERE total::text <> 'Infinity';
+    UNION ALL
+
+    -- Recursive: bubble each category's totals upward to its parent
+    SELECT
+      c.parent_id,
+      r.total,
+      r.item_count
+    FROM rollup r
+    JOIN categories c
+      ON r.category_id = c.category_id
+    WHERE c.parent_id IS NOT NULL
+  ),
+
+  totals(category_id int, total numeric(39,2), item_count int) AS (
+    SELECT
+      c.category_id,
+      SUM(r.total)::numeric(39,2) AS total,
+      SUM(r.item_count) AS item_count
+    FROM categories c
+    JOIN rollup r
+      ON c.category_id = r.category_id
+    GROUP BY c.category_id
+    HAVING SUM(r.item_count) > 0  -- only include categories with items
+  ),
+
+  category_paths(category_id int, full_path text) AS (
+    -- Base: root categories (no parent)
+    SELECT
+      category_id,
+      category_name::text
+    FROM categories
+    WHERE parent_id IS NULL
+
+    UNION ALL
+
+    -- Recursive: prepend parent's full path to build the ancestry string
+    SELECT
+      c.category_id,
+      cp.full_path || ' > ' || c.category_name
+    FROM category_paths cp
+    JOIN categories c
+      ON cp.category_id = c.parent_id
+  )
+  
+SELECT
+  t.category_id,
+  cp.full_path AS category_name,
+  t.total,
+  t.item_count
+FROM totals t
+JOIN category_paths cp
+  ON t.category_id = cp.category_id
+ORDER BY t.category_id;
 
 CREATE INDEX IF NOT EXISTS dynamic_pricing_product_id_idx ON dynamic_pricing (product_id);
 
 CREATE INDEX IF NOT EXISTS hierarchical_totals_category_id_idx ON hierarchical_totals (category_id);
 
 CREATE DEFAULT INDEX IF NOT EXISTS dynamic_price_shopping_cart_idx ON dynamic_price_shopping_cart;
-
+CREATE DEFAULT INDEX IF NOT EXISTS category_totals_category_id_idx ON category_totals;
 
 CREATE INDEX IF NOT EXISTS heartbeats_idx ON heartbeats (id DESC);
