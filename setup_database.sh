@@ -81,7 +81,36 @@ EOF
     PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $DB_NAME << EOF
 \COPY categories(category_id,category_name,parent_id) FROM 'data/categories.csv' WITH CSV HEADER;
 \COPY suppliers(supplier_id,supplier_name) FROM 'data/suppliers.csv' WITH CSV HEADER;
-\COPY products(product_id,product_name,base_price,category_id,supplier_id,available,last_update_time) FROM 'data/products.csv' WITH CSV HEADER;
+
+-- Create temporary table without constraints
+CREATE TEMP TABLE temp_products (
+    product_id INTEGER,
+    product_name TEXT,
+    base_price DECIMAL,
+    category_id INTEGER,
+    supplier_id INTEGER,
+    available BOOLEAN,
+    last_update_time TIMESTAMP
+);
+
+-- Load all data into temp table
+\COPY temp_products(product_id,product_name,base_price,category_id,supplier_id,available,last_update_time) FROM 'data/products.csv' WITH CSV HEADER;
+
+-- Insert deduplicated data into products table
+INSERT INTO products 
+SELECT DISTINCT ON (product_id) 
+    product_id,
+    product_name,
+    base_price,
+    category_id,
+    supplier_id,
+    available,
+    last_update_time
+FROM temp_products
+ORDER BY product_id, last_update_time DESC;
+
+DROP TABLE temp_products;
+
 \COPY inventory(inventory_id,product_id,stock,warehouse_id,restock_date) FROM 'data/inventory.csv' WITH CSV HEADER;
 \COPY promotions(promotion_id,product_id,promotion_discount,start_date,end_date,active,updated_at) FROM 'data/promotions.csv' WITH CSV HEADER;
 EOF
