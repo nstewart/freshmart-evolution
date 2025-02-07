@@ -154,7 +154,8 @@ EOF
     ANALYZE sales;
 
     -- Update product name for product_id=1
-    UPDATE products SET product_name = 'Fresh Red Delicious Apple' WHERE product_id = 1;
+    UPDATE products SET product_name = 'Fresh Red Delicious Apple', base_price = 0.75 WHERE product_id = 1;
+
 EOF
 
     echo "Setting up PostgreSQL for Materialize..."
