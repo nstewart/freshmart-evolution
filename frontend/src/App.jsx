@@ -856,6 +856,13 @@ function App() {
   // Add state for OLTP toggle
   const [includeOLTP, setIncludeOLTP] = useState(false);
 
+  // Force includeOLTP to false when not in materialize or cqrs scenarios
+  useEffect(() => {
+    if (!(currentScenario === 'materialize' || currentScenario === 'cqrs')) {
+      setIncludeOLTP(false);
+    }
+  }, [currentScenario]);
+
   if (error) {
     console.error('Rendering error state:', error);
   }
@@ -1630,7 +1637,7 @@ function App() {
               </Accordion>
             </Paper>
 
-          <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
+          <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
               <Accordion defaultValue={null} styles={{
                 control: {
                   borderBottom: 'none'
@@ -1658,7 +1665,7 @@ function App() {
                           Toggle to include real-time structured data in the RAG pipeline
                         </Text>
                         <Switch
-                          
+                          disabled={!(currentScenario === 'materialize' || currentScenario === 'cqrs')}
                           checked={includeOLTP}
                           onChange={(event) => setIncludeOLTP(event.currentTarget.checked)}
                           size="sm"
@@ -1667,6 +1674,10 @@ function App() {
                             label: {
                               color: '#BCB9C0',
                               fontSize: '14px'
+                            },
+                            track: {
+                              cursor: (currentScenario === 'materialize' || currentScenario === 'cqrs') ? 'pointer' : 'not-allowed',
+                              opacity: (currentScenario === 'materialize' || currentScenario === 'cqrs') ? 1 : 0.5
                             }
                           }}
                         />

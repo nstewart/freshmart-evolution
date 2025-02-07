@@ -164,8 +164,8 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
 
     return {
       parts: [
-        'Based on your purchase history, you\'ve spent $995 this year and need just $5 more to reach Gold status. With the ',
-        { text: `current items in your cart (${cartItemCount} items totaling $${cartTotal.toFixed(2)})`, color: '#228be6' },
+        'Based on your purchase history, you\'ve spent $995 this year and need just $5 more to reach Gold status. With the',
+        { text: ` current items in your cart (${cartItemCount} items totaling $${cartTotal.toFixed(2)})`, color: '#228be6' },
         ', you\'re going to reach Gold status at checkout!'
       ]
     };
