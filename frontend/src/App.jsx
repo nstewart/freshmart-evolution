@@ -1611,35 +1611,37 @@ function App() {
               </Accordion>
             </Paper>
 
-            <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <Accordion defaultValue={null} styles={{
-                control: {
-                  borderBottom: 'none'
-                },
-                item: {
-                  borderBottom: 'none'
-                }
-              }}>
-                <Accordion.Item value="shoppingCart">
-                  <Accordion.Control>
-                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>Shopping Cart</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Grid>
-                      <Grid.Col span={7}>
-                        <ShoppingCart onLatencyUpdate={setShoppingCartLatency} />
-                      </Grid.Col>
-                      <Grid.Col span={5}>
-                        <Stack>
-                          <AddProduct />
-                          <TogglePromotion />
-                        </Stack>
-                      </Grid.Col>
-                    </Grid>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              </Accordion>
-            </Paper>
+            {(currentScenario === 'materialize' || currentScenario === 'cqrs') && (
+              <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+                <Accordion defaultValue={null} styles={{
+                  control: {
+                    borderBottom: 'none'
+                  },
+                  item: {
+                    borderBottom: 'none'
+                  }
+                }}>
+                  <Accordion.Item value="shoppingCart">
+                    <Accordion.Control>
+                      <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>Shopping Cart</Text>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Grid>
+                        <Grid.Col span={7}>
+                          <ShoppingCart onLatencyUpdate={setShoppingCartLatency} />
+                        </Grid.Col>
+                        <Grid.Col span={5}>
+                          <Stack>
+                            <AddProduct />
+                            <TogglePromotion />
+                          </Stack>
+                        </Grid.Col>
+                      </Grid>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                </Accordion>
+              </Paper>
+            )}
 
           <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
               <Accordion defaultValue={null} styles={{
