@@ -1345,102 +1345,7 @@ function App() {
               </Accordion>
             </Paper>
 
-            <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <Accordion defaultValue={null} styles={{
-                control: {
-                  borderBottom: 'none'
-                },
-                item: {
-                  borderBottom: 'none'
-                }
-              }}>
-                <Accordion.Item value="shoppingCart">
-                  <Accordion.Control>
-                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>Shopping Cart</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Grid>
-                      <Grid.Col span={6}>
-                        <ShoppingCart />
-                      </Grid.Col>
-                      <Grid.Col span={6}>
-                        <AddProduct />
-                      </Grid.Col>
-                    </Grid>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              </Accordion>
-            </Paper>
-
-          <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
-              <Accordion defaultValue={null} styles={{
-                control: {
-                  borderBottom: 'none'
-                },
-                item: {
-                  borderBottom: 'none'
-                }
-              }}>
-                <Accordion.Item value="ragLatency">
-                  <Accordion.Control>
-                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>RAG Pipeline Latency Breakdown</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
-                      This visualization shows the latency breakdown of a typical Retrieval-Augmented Generation (RAG) pipeline. 
-                      Adding correct and timely structured data provides a much more relevant response to customers.
-                    </Text>
-                    
-                    <Paper p="sm" withBorder mb="lg" style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
-                      <Group position="apart">
-                        <Text size="sm" style={{ color: '#BCB9C0' }}>
-                          Toggle to include real-time structured data in the RAG pipeline
-                        </Text>
-                        <Switch
-                          
-                          checked={includeOLTP}
-                          onChange={(event) => setIncludeOLTP(event.currentTarget.checked)}
-                          size="sm"
-                          color="blue"
-                          styles={{
-                            label: {
-                              color: '#BCB9C0',
-                              fontSize: '14px'
-                            }
-                          }}
-                        />
-                      </Group>
-                    </Paper>
-
-                    <Grid>
-                      <Grid.Col span={7}>
-                        <Paper p="md" withBorder style={{ 
-                          backgroundColor: 'rgb(13, 17, 22)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                          height: '400px',
-                          display: 'flex',
-                          flexDirection: 'column'
-                        }}>
-                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Pipeline Latency</Text>
-                          <div style={{ flex: 1, minHeight: 0 }}>
-                            <RAGLatencyChart currentScenario={currentScenario} stats={stats} includeOLTP={includeOLTP} />
-                          </div>
-                        </Paper>
-                      </Grid.Col>
-                      <Grid.Col span={5}>
-                        <Paper p="md" withBorder style={{ backgroundColor: 'rgb(13, 17, 22)', border: '1px solid rgba(255, 255, 255, 0.1)', height: '400px' }}>
-                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Example Interaction</Text>
-                          <RAGPromptResponse includeOLTP={includeOLTP} currentMetric={metrics[metrics.length - 1]} currentScenario={currentScenario} />
-                        </Paper>
-                      </Grid.Col>
-                    </Grid>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              </Accordion>
-            </Paper>
+            
 
             <Paper p="md" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
               <Accordion defaultValue={['stats', 'latency']} multiple>
@@ -1698,6 +1603,103 @@ function App() {
               </Accordion>
             </Paper>
 
+            <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+              <Accordion defaultValue={null} styles={{
+                control: {
+                  borderBottom: 'none'
+                },
+                item: {
+                  borderBottom: 'none'
+                }
+              }}>
+                <Accordion.Item value="shoppingCart">
+                  <Accordion.Control>
+                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>Shopping Cart</Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Grid>
+                      <Grid.Col span={6}>
+                        <ShoppingCart />
+                      </Grid.Col>
+                      <Grid.Col span={6}>
+                        <AddProduct />
+                      </Grid.Col>
+                    </Grid>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
+            </Paper>
+
+          <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
+              <Accordion defaultValue={null} styles={{
+                control: {
+                  borderBottom: 'none'
+                },
+                item: {
+                  borderBottom: 'none'
+                }
+              }}>
+                <Accordion.Item value="ragLatency">
+                  <Accordion.Control>
+                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>RAG Pipeline Latency Breakdown</Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
+                      This visualization shows the latency breakdown of a typical Retrieval-Augmented Generation (RAG) pipeline. 
+                      Adding correct and timely structured data provides a much more relevant response to customers.
+                    </Text>
+                    
+                    <Paper p="sm" withBorder mb="lg" style={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <Group position="apart">
+                        <Text size="sm" style={{ color: '#BCB9C0' }}>
+                          Toggle to include real-time structured data in the RAG pipeline
+                        </Text>
+                        <Switch
+                          
+                          checked={includeOLTP}
+                          onChange={(event) => setIncludeOLTP(event.currentTarget.checked)}
+                          size="sm"
+                          color="blue"
+                          styles={{
+                            label: {
+                              color: '#BCB9C0',
+                              fontSize: '14px'
+                            }
+                          }}
+                        />
+                      </Group>
+                    </Paper>
+
+                    <Grid>
+                      <Grid.Col span={7}>
+                        <Paper p="md" withBorder style={{ 
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          height: '400px',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Pipeline Latency</Text>
+                          <div style={{ flex: 1, minHeight: 0 }}>
+                            <RAGLatencyChart currentScenario={currentScenario} stats={stats} includeOLTP={includeOLTP} />
+                          </div>
+                        </Paper>
+                      </Grid.Col>
+                      <Grid.Col span={5}>
+                        <Paper p="md" withBorder style={{ backgroundColor: 'rgb(13, 17, 22)', border: '1px solid rgba(255, 255, 255, 0.1)', height: '400px' }}>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Example Interaction</Text>
+                          <RAGPromptResponse includeOLTP={includeOLTP} currentMetric={metrics[metrics.length - 1]} currentScenario={currentScenario} />
+                        </Paper>
+                      </Grid.Col>
+                    </Grid>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
+            </Paper>
+            
             <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
               <Accordion styles={{
                 control: {

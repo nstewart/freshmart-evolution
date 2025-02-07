@@ -249,8 +249,11 @@ async def get_shopping_cart():
         try:
             # Start a transaction
             async with conn.transaction():
-                # Get cart items
-                cart_items = await conn.fetch("SELECT * FROM dynamic_price_shopping_cart")
+                # Get cart items, sorted by price descending
+                cart_items = await conn.fetch("""
+                    SELECT * FROM dynamic_price_shopping_cart
+                    ORDER BY price DESC
+                """)
                 
                 # Get category subtotals from the view
                 subtotals = await conn.fetch("""
@@ -259,6 +262,7 @@ async def get_shopping_cart():
                         item_count,
                         total as subtotal
                     FROM category_totals
+                    ORDER BY category_name ASC
                 """)
                 
                 return {

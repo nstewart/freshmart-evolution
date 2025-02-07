@@ -41,6 +41,8 @@ services:
       - "-c"
       - "max_wal_size=10GB"
       - "-c"
+      - "max_slot_wal_keep_size=2GB"
+      - "-c"
       - "wal_level=logical"
       - "-c"
       - "statement_timeout=0"  # Disable statement timeout at instance level

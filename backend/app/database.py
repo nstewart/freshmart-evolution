@@ -1041,7 +1041,7 @@ async def get_category_subtotals():
                     item_count,
                     total as subtotal
                 FROM category_totals
-                ORDER BY category_name
+                ORDER BY category_name ASC
             """)
             return [dict(row) for row in subtotals]
     except Exception as e:
