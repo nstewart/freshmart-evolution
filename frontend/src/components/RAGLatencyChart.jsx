@@ -10,6 +10,12 @@ const RAGLatencyChart = ({ currentScenario, stats, includeOLTP }) => {
   const getOLTPLatency = () => {
     if (!stats) return lastValidLatencyRef.current;
     
+    // Use shopping cart latency if available
+    if (stats.shoppingCart?.avg != null) {
+      lastValidLatencyRef.current = stats.shoppingCart.avg;
+      return stats.shoppingCart.avg;
+    }
+    
     let latency;
     switch (currentScenario) {
       case 'direct':

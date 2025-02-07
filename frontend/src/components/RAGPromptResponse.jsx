@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Paper, Text } from '@mantine/core';
+import axios from 'axios';
 
 // Custom hook for typewriter effect
 const useTypewriter = (text, speed = 10) => {
@@ -41,6 +42,26 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
     materialize: null,
     cqrs: null
   });
+  const [cartData, setCartData] = useState(null);
+
+  // Fetch cart data
+  useEffect(() => {
+    const fetchCartData = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/api/shopping-cart');
+        setCartData(response.data);
+      } catch (error) {
+        console.error('Error fetching cart data:', error);
+      }
+    };
+
+    // Only fetch if we're in Materialize scenario and includeOLTP is true
+    if ((currentScenario === 'materialize' || currentScenario === 'cqrs') && includeOLTP) {
+      fetchCartData();
+      const interval = setInterval(fetchCartData, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [currentScenario, includeOLTP]);
 
   useEffect(() => {
     if (!includeOLTP) {
@@ -133,10 +154,18 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
       }
     }
 
+    // Calculate cart totals if we have cart data
+    let cartItemCount = 0;
+    let cartTotal = 0;
+    if (cartData && cartData.cart_items) {
+      cartItemCount = cartData.cart_items.length;
+      cartTotal = cartData.cart_items.reduce((sum, item) => sum + Number(item.price), 0);
+    }
+
     return {
       parts: [
-        'Based on your purchase history, you\'ve spent $892 this year and need just $108 more to reach Gold status. With the ',
-        { text: 'current items in your cart', color: '#228be6' },
+        'Based on your purchase history, you\'ve spent $995 this year and need just $5 more to reach Gold status. With the',
+        { text: ` current items in your cart (${cartItemCount} items totaling $${cartTotal.toFixed(2)})`, color: '#228be6' },
         ', you\'re going to reach Gold status at checkout!'
       ]
     };

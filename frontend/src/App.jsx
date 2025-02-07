@@ -6,6 +6,9 @@ import ContainersCPUChart from './components/ContainersCPUChart.jsx';
 import ContainersMemoryChart from './components/ContainersMemoryChart.jsx';
 import RAGLatencyChart from './components/RAGLatencyChart.jsx';
 import RAGPromptResponse from './components/RAGPromptResponse.jsx';
+import ShoppingCart from './components/ShoppingCart.jsx';
+import AddProduct from './components/AddProduct.jsx';
+import TogglePromotion from './components/TogglePromotion.jsx';
 
 const HISTORY_WINDOW_MS = 3 * 60 * 1000; // 3 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
@@ -359,6 +362,7 @@ function App() {
   const [refreshInterval, setRefreshInterval] = useState(60);
   const [databaseSize, setDatabaseSize] = useState(null);
   const [showTTCA, setShowTTCA] = useState(false);
+  const [shoppingCartLatency, setShoppingCartLatency] = useState(null);
   const [stats, setStats] = useState({
     view: { max: 0, avg: 0, p99: 0 },
     materializeView: { max: 0, avg: 0, p99: 0 },
@@ -854,6 +858,13 @@ function App() {
   // Add state for OLTP toggle
   const [includeOLTP, setIncludeOLTP] = useState(false);
 
+  // Force includeOLTP to false when not in materialize or cqrs scenarios
+  useEffect(() => {
+    if (!(currentScenario === 'materialize' || currentScenario === 'cqrs')) {
+      setIncludeOLTP(false);
+    }
+  }, [currentScenario]);
+
   if (error) {
     console.error('Rendering error state:', error);
   }
@@ -1163,8 +1174,7 @@ function App() {
                                 const useMaterialize = currentScenario === 'materialize' || currentScenario === 'cqrs';
                                 const data = {
                                   product_id: "1",
-                                  name: "Fresh Red Delicious Apple",
-                                  category: "Fresh Produce",
+                                  name: "Fresh Red Delicious Apple",                                  
                                   current_price: (useMaterialize ? currentMetric.materialize_price :
                                                currentScenario === 'batch' ? currentMetric.materialized_view_price :
                                                currentScenario === 'direct' ? currentMetric.view_price :
@@ -1205,7 +1215,7 @@ function App() {
             
 
             <Paper p="xl" className="hover-card" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <Accordion defaultValue="priceComparison" styles={{
+              <Accordion defaultValue={null} styles={{
                 control: {
                   borderBottom: 'none'
                 },
@@ -1343,75 +1353,7 @@ function App() {
               </Accordion>
             </Paper>
 
-          <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
-              <Accordion defaultValue={null} styles={{
-                control: {
-                  borderBottom: 'none'
-                },
-                item: {
-                  borderBottom: 'none'
-                }
-              }}>
-                <Accordion.Item value="ragLatency">
-                  <Accordion.Control>
-                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>RAG Pipeline Latency Breakdown</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
-                      This visualization shows the latency breakdown of a typical Retrieval-Augmented Generation (RAG) pipeline. 
-                      Adding correct and timely structured data provides a much more relevant response to customers.
-                    </Text>
-                    
-                    <Paper p="sm" withBorder mb="lg" style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
-                      <Group position="apart">
-                        <Text size="sm" style={{ color: '#BCB9C0' }}>
-                          Toggle to include real-time structured data in the RAG pipeline
-                        </Text>
-                        <Switch
-                          
-                          checked={includeOLTP}
-                          onChange={(event) => setIncludeOLTP(event.currentTarget.checked)}
-                          size="sm"
-                          color="blue"
-                          styles={{
-                            label: {
-                              color: '#BCB9C0',
-                              fontSize: '14px'
-                            }
-                          }}
-                        />
-                      </Group>
-                    </Paper>
-
-                    <Grid>
-                      <Grid.Col span={7}>
-                        <Paper p="md" withBorder style={{ 
-                          backgroundColor: 'rgb(13, 17, 22)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                          height: '400px',
-                          display: 'flex',
-                          flexDirection: 'column'
-                        }}>
-                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Pipeline Latency</Text>
-                          <div style={{ flex: 1, minHeight: 0 }}>
-                            <RAGLatencyChart currentScenario={currentScenario} stats={stats} includeOLTP={includeOLTP} />
-                          </div>
-                        </Paper>
-                      </Grid.Col>
-                      <Grid.Col span={5}>
-                        <Paper p="md" withBorder style={{ backgroundColor: 'rgb(13, 17, 22)', border: '1px solid rgba(255, 255, 255, 0.1)', height: '400px' }}>
-                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Example Interaction</Text>
-                          <RAGPromptResponse includeOLTP={includeOLTP} currentMetric={metrics[metrics.length - 1]} currentScenario={currentScenario} />
-                        </Paper>
-                      </Grid.Col>
-                    </Grid>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              </Accordion>
-            </Paper>
+            
 
             <Paper p="md" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
               <Accordion defaultValue={['stats', 'latency']} multiple>
@@ -1669,6 +1611,119 @@ function App() {
               </Accordion>
             </Paper>
 
+            {(currentScenario === 'materialize' || currentScenario === 'cqrs') && (
+              <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+                <Accordion defaultValue={null} styles={{
+                  control: {
+                    borderBottom: 'none'
+                  },
+                  item: {
+                    borderBottom: 'none'
+                  }
+                }}>
+                  <Accordion.Item value="shoppingCart">
+                    <Accordion.Control>
+                      <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>Shopping Cart</Text>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Grid>
+                        <Grid.Col span={7}>
+                          <ShoppingCart onLatencyUpdate={setShoppingCartLatency} />
+                        </Grid.Col>
+                        <Grid.Col span={5}>
+                          <Stack>
+                            <AddProduct />
+                            <TogglePromotion />
+                          </Stack>
+                        </Grid.Col>
+                      </Grid>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                </Accordion>
+              </Paper>
+            )}
+
+          <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+              <Accordion defaultValue={null} styles={{
+                control: {
+                  borderBottom: 'none'
+                },
+                item: {
+                  borderBottom: 'none'
+                }
+              }}>
+                <Accordion.Item value="ragLatency">
+                  <Accordion.Control>
+                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>RAG Pipeline Latency Breakdown</Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
+                      This visualization shows the latency breakdown of a typical Retrieval-Augmented Generation (RAG) pipeline. 
+                      Adding correct and timely structured data provides a much more relevant response to customers.
+                    </Text>
+                    
+                    <Paper p="sm" withBorder mb="lg" style={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <Group position="apart">
+                        <Text size="sm" style={{ color: '#BCB9C0' }}>
+                          Toggle to include real-time structured data in the RAG pipeline
+                        </Text>
+                        <Switch
+                          disabled={!(currentScenario === 'materialize' || currentScenario === 'cqrs')}
+                          checked={includeOLTP}
+                          onChange={(event) => setIncludeOLTP(event.currentTarget.checked)}
+                          size="sm"
+                          color="blue"
+                          styles={{
+                            label: {
+                              color: '#BCB9C0',
+                              fontSize: '14px'
+                            },
+                            track: {
+                              cursor: (currentScenario === 'materialize' || currentScenario === 'cqrs') ? 'pointer' : 'not-allowed',
+                              opacity: (currentScenario === 'materialize' || currentScenario === 'cqrs') ? 1 : 0.5
+                            }
+                          }}
+                        />
+                      </Group>
+                    </Paper>
+
+                    <Grid>
+                      <Grid.Col span={7}>
+                        <Paper p="md" withBorder style={{ 
+                          backgroundColor: 'rgb(13, 17, 22)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          height: '400px',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Pipeline Latency</Text>
+                          <div style={{ flex: 1, minHeight: 0 }}>
+                            <RAGLatencyChart 
+                              currentScenario={currentScenario} 
+                              stats={{
+                                ...stats,
+                                shoppingCart: { avg: shoppingCartLatency }
+                              }} 
+                              includeOLTP={includeOLTP} 
+                            />
+                          </div>
+                        </Paper>
+                      </Grid.Col>
+                      <Grid.Col span={5}>
+                        <Paper p="md" withBorder style={{ backgroundColor: 'rgb(13, 17, 22)', border: '1px solid rgba(255, 255, 255, 0.1)', height: '400px' }}>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Example Interaction</Text>
+                          <RAGPromptResponse includeOLTP={includeOLTP} currentMetric={metrics[metrics.length - 1]} currentScenario={currentScenario} />
+                        </Paper>
+                      </Grid.Col>
+                    </Grid>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
+            </Paper>
+            
             <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
               <Accordion styles={{
                 control: {
@@ -1968,6 +2023,8 @@ function App() {
 
             
 
+            
+
             <Accordion defaultValue={null} mt="md">
               <Accordion.Item value="advanced">
                 <Accordion.Control>
@@ -2082,6 +2139,7 @@ function App() {
                 </Accordion.Panel>
               </Accordion.Item>
             </Accordion>
+
           </Stack>
       </Container>
       </div>
