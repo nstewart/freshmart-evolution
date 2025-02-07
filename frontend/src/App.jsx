@@ -8,6 +8,7 @@ import RAGLatencyChart from './components/RAGLatencyChart.jsx';
 import RAGPromptResponse from './components/RAGPromptResponse.jsx';
 import ShoppingCart from './components/ShoppingCart.jsx';
 import AddProduct from './components/AddProduct.jsx';
+import TogglePromotion from './components/TogglePromotion.jsx';
 
 const HISTORY_WINDOW_MS = 3 * 60 * 1000; // 3 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
@@ -1625,11 +1626,14 @@ function App() {
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Grid>
-                      <Grid.Col span={6}>
+                      <Grid.Col span={7}>
                         <ShoppingCart />
                       </Grid.Col>
-                      <Grid.Col span={6}>
-                        <AddProduct />
+                      <Grid.Col span={5}>
+                        <Stack>
+                          <AddProduct />
+                          <TogglePromotion />
+                        </Stack>
                       </Grid.Col>
                     </Grid>
                   </Accordion.Panel>

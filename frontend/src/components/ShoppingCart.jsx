@@ -58,6 +58,14 @@ const ShoppingCart = () => {
                                 fontSize: '0.875rem',
                                 fontWeight: 600,
                                 backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                            }}>Product ID</th>
+                            <th style={{ 
+                                padding: '12px 16px', 
+                                textAlign: 'left', 
+                                color: '#BCB9C0', 
+                                fontSize: '0.875rem',
+                                fontWeight: 600,
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)'
                             }}>Product Name</th>
                             <th style={{ 
                                 padding: '12px 16px', 
@@ -88,6 +96,11 @@ const ShoppingCart = () => {
                                     }
                                 }}
                             >
+                                <td style={{ 
+                                    padding: '12px 16px', 
+                                    color: '#BCB9C0',
+                                    fontSize: '0.875rem'
+                                }}>{item.product_id}</td>
                                 <td style={{ 
                                     padding: '12px 16px', 
                                     color: '#BCB9C0',

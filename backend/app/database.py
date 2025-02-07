@@ -576,18 +576,67 @@ async def get_query_metrics(product_id: int) -> Dict:
 
 
 async def toggle_promotion(product_id: int):
-    async with postgres_connection() as conn:
-        result = await conn.fetchrow("""
-            UPDATE promotions
-            SET active = NOT active,
-                updated_at = NOW()
-            WHERE product_id = $1
-            RETURNING updated_at, active
-        """, product_id)
+    try:
+        async with postgres_connection() as conn:
+            # First check if the product exists
+            product_exists = await conn.fetchval(
+                "SELECT EXISTS(SELECT 1 FROM products WHERE product_id = $1)",
+                product_id
+            )
+            
+            if not product_exists:
+                return {
+                    "status": "error",
+                    "message": f"Product with ID {product_id} does not exist"
+                }
+
+            # Try to update existing promotion
+            result = await conn.fetchrow("""
+                UPDATE promotions
+                SET active = NOT active,
+                    updated_at = NOW()
+                WHERE product_id = $1
+                RETURNING updated_at, active
+            """, product_id)
+            
+            # If no existing promotion, create a new one
+            if not result:
+                result = await conn.fetchrow("""
+                    INSERT INTO promotions (
+                        product_id,
+                        promotion_discount,
+                        start_date,
+                        end_date,
+                        active,
+                        updated_at
+                    )
+                    VALUES (
+                        $1,
+                        10.0,  -- Default 10% discount
+                        NOW(),
+                        NOW() + interval '30 days',
+                        TRUE,
+                        NOW()
+                    )
+                    RETURNING updated_at, active
+                """, product_id)
+            
+            if not result:
+                return {
+                    "status": "error",
+                    "message": "Failed to create or update promotion"
+                }
+                
+            return {
+                "status": "success",
+                "updated_at": result["updated_at"],
+                "active": result["active"]
+            }
+    except Exception as e:
+        logger.error(f"Error in toggle_promotion for product_id {product_id}: {str(e)}")
         return {
-            "status": "success",
-            "updated_at": result["updated_at"] if result else None,
-            "active": result["active"] if result else None
+            "status": "error",
+            "message": f"Database error: {str(e)}"
         }
 
 
@@ -1009,9 +1058,10 @@ async def add_product(product_name: str, category_id: int, price: float):
                     RETURNING product_id, product_name, category_id, base_price
                 """, next_id, product_name, category_id, price)
                 
-                # Reset the sales sequence to the current maximum
+                # Reset sequences to match current maximum values
                 await conn.execute("""
-                    SELECT setval('sales_sale_id_seq', COALESCE((SELECT MAX(sale_id) FROM sales), 0))
+                    SELECT setval('sales_sale_id_seq', COALESCE((SELECT MAX(sale_id) FROM sales), 0));
+                    SELECT setval('promotions_promotion_id_seq', COALESCE((SELECT MAX(promotion_id) FROM promotions), 0));
                 """)
                 
                 # Add initial sale record for the product
