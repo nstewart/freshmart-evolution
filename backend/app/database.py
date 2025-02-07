@@ -604,6 +604,12 @@ async def toggle_promotion(product_id: int):
             
             # If no existing promotion, create a new one
             if not result:
+                # Reset the sequence to the maximum value to avoid conflicts
+                await conn.execute("""
+                    SELECT setval('promotions_promotion_id_seq', 
+                                COALESCE((SELECT MAX(promotion_id) FROM promotions), 0))
+                """)
+                
                 result = await conn.fetchrow("""
                     INSERT INTO promotions (
                         product_id,
