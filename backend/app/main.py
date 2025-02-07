@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 from pydantic import BaseModel
@@ -244,7 +244,7 @@ async def configure_refresh_interval(interval: int):
 
 
 @app.get("/api/shopping-cart")
-async def get_shopping_cart():
+async def get_shopping_cart(expanded = Query(None)):
     async with database.materialize_connection() as conn:
         try:
             # Start a transaction
@@ -256,15 +256,24 @@ async def get_shopping_cart():
                 """)
                 
                 # Get category subtotals from the view
-                subtotals = await conn.fetch("""
-                    SELECT 
+                clause = ""
+                if expanded:
+                    expanded_ids = ",".join([token.strip() for token in expanded.split(",") if token.strip().isdigit()])
+                    clause = f"OR parent_id IN ({expanded_ids})"
+
+                subtotals = await conn.fetch(f"""
+                    SELECT
+                        category_id, 
+                        parent_id,
+                        has_subcategory, 
                         category_name,
                         item_count,
-                        total as subtotal
+                        total AS subtotal
                     FROM category_totals
-                    ORDER BY category_name ASC
+                    WHERE parent_id IS NULL {clause}
+                    ORDER BY coalesce(parent_id, category_id), category_id;
                 """)
-                
+
                 return {
                     "cart_items": [dict(row) for row in cart_items],
                     "category_subtotals": [dict(row) for row in subtotals]

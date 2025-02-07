@@ -159,34 +159,25 @@ WITH MUTUALLY RECURSIVE
     HAVING SUM(r.item_count) > 0  -- only include categories with items
   ),
 
-  category_paths(category_id int, full_path text) AS (
-    -- Base: root categories (no parent)
+  has_subcategories(category_id int, has_subcategory boolean) AS (
     SELECT
-      category_id,
-      category_name::text
-    FROM categories
-    WHERE parent_id IS NULL
-
-    UNION ALL
-
-    -- Recursive: prepend parent's full path to build the ancestry string
-    SELECT
-      c.category_id,
-      cp.full_path || ' > ' || c.category_name
-    FROM category_paths cp
-    JOIN categories c
-      ON cp.category_id = c.parent_id
+      a.category_id,
+      count(*) FILTER (WHERE b.parent_id IS NOT NULL) > 0 AS has_subcategory
+    FROM categories a
+    LEFT JOIN categories b ON a.category_id = b.parent_id
+    GROUP BY a.category_id
   )
   
 SELECT
   t.category_id,
-  cp.full_path AS category_name,
+  c.parent_id,
+  s.has_subcategory,
+  c.category_name,
   t.total,
   t.item_count
 FROM totals t
-JOIN category_paths cp
-  ON t.category_id = cp.category_id
-ORDER BY t.category_id;
+JOIN categories c USING (category_id)
+JOIN has_subcategories s USING (category_id);
 
 CREATE INDEX IF NOT EXISTS dynamic_pricing_product_id_idx ON dynamic_pricing (product_id);
 
@@ -195,4 +186,5 @@ CREATE INDEX IF NOT EXISTS hierarchical_totals_category_id_idx ON hierarchical_t
 CREATE DEFAULT INDEX IF NOT EXISTS dynamic_price_shopping_cart_idx ON dynamic_price_shopping_cart;
 CREATE DEFAULT INDEX IF NOT EXISTS category_totals_category_id_idx ON category_totals;
 
+CREATE INDEX IF NOT EXISTS category_totals_parent_id_idx ON category_totals (parent_id);
 CREATE INDEX IF NOT EXISTS heartbeats_idx ON heartbeats (id DESC);
