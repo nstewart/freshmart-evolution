@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
+from pydantic import BaseModel
+from typing import Optional
 
 from . import database
 import logging
@@ -250,6 +252,42 @@ async def get_shopping_cart():
         except Exception as e:
             logger.error(f"Error fetching shopping cart: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+
+
+class ProductCreate(BaseModel):
+    product_name: str
+    category_id: int
+    price: float
+
+@app.get("/api/categories")
+async def get_categories():
+    """Get all available product categories"""
+    try:
+        categories = await database.get_categories()
+        return categories
+    except Exception as e:
+        logger.error(f"Error getting categories: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get categories"
+        )
+
+@app.post("/api/products")
+async def add_product(product: ProductCreate):
+    """Add a new product to the database"""
+    try:
+        new_product = await database.add_product(
+            product.product_name,
+            product.category_id,
+            product.price
+        )
+        return new_product
+    except Exception as e:
+        logger.error(f"Error adding product: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to add product"
+        )
 
 
 if __name__ == "__main__":

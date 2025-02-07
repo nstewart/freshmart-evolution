@@ -343,9 +343,27 @@ async def add_to_cart():
     async def insert_item():
         try:
             async with postgres_connection() as conn:
+                # First, check if product_id 1 exists in the cart
+                has_product_one = await conn.fetchval("""
+                    SELECT EXISTS(
+                        SELECT 1 FROM shopping_cart WHERE product_id = 1
+                    )
+                """)
+                
+                # If product_id 1 doesn't exist, insert it first
+                if not has_product_one:
+                    await conn.execute("""
+                        INSERT INTO shopping_cart (product_id, product_name, category_id, price)
+                        SELECT product_id, product_name, category_id, base_price 
+                        FROM products
+                        WHERE product_id = 1;
+                    """)
+                
+                # Then insert a random product
                 await conn.execute("""
                     INSERT INTO shopping_cart (product_id, product_name, category_id, price)
                     SELECT product_id, product_name, category_id, base_price FROM products
+                    WHERE product_id != 1
                     ORDER BY RANDOM()
                     LIMIT 1;
                 """)
@@ -358,19 +376,21 @@ async def add_to_cart():
             async with postgres_connection() as conn:
                 await conn.execute("""
                     DELETE FROM shopping_cart
-                    WHERE ts < NOW() - INTERVAL '1 minute';
+                    WHERE ts < NOW() - INTERVAL '5 minutes'
+                    AND product_id != 1;
                 """)
         except Exception as e:
-            logger.error(f"Error removing items to shopping cart: {str(e)}", exc_info=True)
+            logger.error(f"Error removing items from shopping cart: {str(e)}", exc_info=True)
             raise
 
+    # Initialize cart with 10 random items (product 1 will be included)
     for _ in range(10):
         await insert_item()
 
     while True:
         await insert_item()
         await delete_item()
-        await asyncio.sleep(3.0)
+        await asyncio.sleep(300.0)  # Sleep for 5 minutes (300 seconds)
 
 async def measure_query_time(query: str, params: Tuple, is_materialize: bool, source: str) -> Tuple[float, any]:
     start_time = time.time()
@@ -952,3 +972,56 @@ class MaterializeConnection(asyncpg.Connection):
     async def reset(self, *, timeout=None):
         # Skip reset for Materialize connections
         pass
+
+async def get_categories():
+    """Get all product categories from the database."""
+    try:
+        async with postgres_connection() as conn:
+            categories = await conn.fetch("""
+                SELECT DISTINCT category_id, category_name 
+                FROM categories 
+                ORDER BY category_name
+            """)
+            return [dict(row) for row in categories]
+    except Exception as e:
+        logger.error(f"Error fetching categories: {str(e)}", exc_info=True)
+        raise
+
+async def add_product(product_name: str, category_id: int, price: float):
+    """Add a new product to the database and to the shopping cart."""
+    try:
+        async with postgres_connection() as conn:
+            async with conn.transaction():
+                # First get the maximum product_id and add 1
+                next_id = await conn.fetchval("""
+                    SELECT COALESCE(MAX(product_id), 0) + 1 FROM products
+                """)
+                
+                # Insert into products table
+                result = await conn.fetchrow("""
+                    INSERT INTO products (product_id, product_name, category_id, base_price, supplier_id, available, last_update_time)
+                    VALUES ($1, $2, $3, $4, 1, true, NOW())
+                    RETURNING product_id, product_name, category_id, base_price
+                """, next_id, product_name, category_id, price)
+                
+                # Reset the sales sequence to the current maximum
+                await conn.execute("""
+                    SELECT setval('sales_sale_id_seq', COALESCE((SELECT MAX(sale_id) FROM sales), 0))
+                """)
+                
+                # Add initial sale record for the product
+                await conn.execute("""
+                    INSERT INTO sales (product_id, sale_date, price, sale_price)
+                    VALUES ($1, NOW(), $2, $2)
+                """, next_id, price)
+                
+                # Add the new product to the shopping cart
+                await conn.execute("""
+                    INSERT INTO shopping_cart (product_id, product_name, category_id, price)
+                    VALUES ($1, $2, $3, $4)
+                """, next_id, product_name, category_id, price)
+                
+                return dict(result)
+    except Exception as e:
+        logger.error(f"Error adding product: {str(e)}", exc_info=True)
+        raise
