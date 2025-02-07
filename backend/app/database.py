@@ -1025,3 +1025,22 @@ async def add_product(product_name: str, category_id: int, price: float):
     except Exception as e:
         logger.error(f"Error adding product: {str(e)}", exc_info=True)
         raise
+
+async def get_category_subtotals():
+    """Get subtotals for each category in the shopping cart."""
+    try:
+        async with materialize_connection() as conn:
+            subtotals = await conn.fetch("""
+                SELECT 
+                    c.category_name,
+                    COUNT(*) as item_count,
+                    SUM(sc.price) as subtotal
+                FROM dynamic_price_shopping_cart sc
+                JOIN categories c ON sc.category_id = c.category_id
+                GROUP BY c.category_name
+                ORDER BY c.category_name
+            """)
+            return [dict(row) for row in subtotals]
+    except Exception as e:
+        logger.error(f"Error fetching category subtotals: {str(e)}", exc_info=True)
+        raise
