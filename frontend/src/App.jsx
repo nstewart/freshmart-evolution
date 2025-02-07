@@ -1174,8 +1174,7 @@ function App() {
                                 const useMaterialize = currentScenario === 'materialize' || currentScenario === 'cqrs';
                                 const data = {
                                   product_id: "1",
-                                  name: "Fresh Red Delicious Apple",
-                                  category: "Fresh Produce",
+                                  name: "Fresh Red Delicious Apple",                                  
                                   current_price: (useMaterialize ? currentMetric.materialize_price :
                                                currentScenario === 'batch' ? currentMetric.materialized_view_price :
                                                currentScenario === 'direct' ? currentMetric.view_price :
