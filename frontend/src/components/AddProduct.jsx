@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Text } from '@mantine/core';
 
 const AddProduct = () => {
     const [categories, setCategories] = useState([]);
@@ -51,16 +52,34 @@ const AddProduct = () => {
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold mb-4">Add New Product</h2>
+        <div>
+            <Text size="lg" weight={600} mb="md" style={{ color: '#BCB9C0' }}>Add New Product</Text>
             {message && (
-                <div className={`p-4 mb-4 rounded ${message.includes('Failed') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                <div style={{ 
+                    padding: '12px', 
+                    marginBottom: '16px', 
+                    borderRadius: '4px',
+                    backgroundColor: message.includes('Failed') ? 'rgba(255, 0, 0, 0.1)' : 'rgba(0, 255, 0, 0.1)',
+                    color: message.includes('Failed') ? '#ff4d4f' : '#52c41a',
+                    border: `1px solid ${message.includes('Failed') ? '#ff4d4f' : '#52c41a'}`
+                }}>
                     {message}
                 </div>
             )}
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">
+            <form onSubmit={handleSubmit} style={{ 
+                backgroundColor: 'rgb(13, 17, 22)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '4px',
+                padding: '16px'
+            }}>
+                <div style={{ marginBottom: '16px' }}>
+                    <label style={{ 
+                        display: 'block',
+                        marginBottom: '8px',
+                        color: '#BCB9C0',
+                        fontSize: '14px',
+                        fontWeight: 500
+                    }}>
                         Product Name
                     </label>
                     <input
@@ -69,11 +88,29 @@ const AddProduct = () => {
                         value={formData.product_name}
                         onChange={handleChange}
                         required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '4px',
+                            color: '#BCB9C0',
+                            fontSize: '14px',
+                            '&:focus': {
+                                borderColor: '#228be6',
+                                outline: 'none'
+                            }
+                        }}
                     />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">
+                <div style={{ marginBottom: '16px' }}>
+                    <label style={{ 
+                        display: 'block',
+                        marginBottom: '8px',
+                        color: '#BCB9C0',
+                        fontSize: '14px',
+                        fontWeight: 500
+                    }}>
                         Category
                     </label>
                     <select
@@ -81,7 +118,19 @@ const AddProduct = () => {
                         value={formData.category_id}
                         onChange={handleChange}
                         required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '4px',
+                            color: '#BCB9C0',
+                            fontSize: '14px',
+                            '&:focus': {
+                                borderColor: '#228be6',
+                                outline: 'none'
+                            }
+                        }}
                     >
                         <option value="">Select a category</option>
                         {categories.map(category => (
@@ -91,8 +140,14 @@ const AddProduct = () => {
                         ))}
                     </select>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">
+                <div style={{ marginBottom: '16px' }}>
+                    <label style={{ 
+                        display: 'block',
+                        marginBottom: '8px',
+                        color: '#BCB9C0',
+                        fontSize: '14px',
+                        fontWeight: 500
+                    }}>
                         Price
                     </label>
                     <input
@@ -103,12 +158,37 @@ const AddProduct = () => {
                         required
                         step="0.01"
                         min="0"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '4px',
+                            color: '#BCB9C0',
+                            fontSize: '14px',
+                            '&:focus': {
+                                borderColor: '#228be6',
+                                outline: 'none'
+                            }
+                        }}
                     />
                 </div>
                 <button
                     type="submit"
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    style={{
+                        width: '100%',
+                        padding: '10px',
+                        backgroundColor: '#228be6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        '&:hover': {
+                            backgroundColor: '#1c7ed6'
+                        }
+                    }}
                 >
                     Add Product
                 </button>

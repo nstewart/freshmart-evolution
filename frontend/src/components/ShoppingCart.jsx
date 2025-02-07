@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Paper, Text } from '@mantine/core';
+import { Text } from '@mantine/core';
 
 const ShoppingCart = () => {
     const [cartItems, setCartItems] = useState([]);
@@ -35,7 +35,7 @@ const ShoppingCart = () => {
     }
 
     return (
-        <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+        <div>
             <Text size="lg" weight={600} mb="md" style={{ color: '#BCB9C0' }}>Shopping Cart</Text>
             <div className="overflow-x-auto">
                 <table style={{ 
@@ -129,7 +129,7 @@ const ShoppingCart = () => {
                     </tfoot>
                 </table>
             </div>
-        </Paper>
+        </div>
     );
 };
 
