@@ -39,7 +39,7 @@ const ShoppingCart = () => {
 
     return (
         <div>
-            <Text size="lg" weight={600} mb="md" style={{ color: '#BCB9C0' }}>Shopping Cart</Text>
+            
             <div className="overflow-x-auto">
                 <table style={{ 
                     width: '100%', 
