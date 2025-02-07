@@ -5,12 +5,17 @@ const ShoppingCart = () => {
     const [cartItems, setCartItems] = useState([]);
     const [categorySubtotals, setCategorySubtotals] = useState([]);
     const [error, setError] = useState(null);
+    const [requestTime, setRequestTime] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                const startTime = performance.now();
                 // Fetch cart data (includes both items and subtotals)
                 const response = await fetch('http://localhost:8000/api/shopping-cart');
+                const endTime = performance.now();
+                setRequestTime(Math.round(endTime - startTime));
+                
                 if (!response.ok) {
                     throw new Error('Failed to fetch cart data');
                 }
@@ -39,7 +44,11 @@ const ShoppingCart = () => {
 
     return (
         <div>
-            
+            {requestTime !== null && (
+                <Text size="xs" style={{ color: '#9d4edd', marginBottom: '8px', fontWeight: 500 }}>
+                    Request time: {requestTime}ms
+                </Text>
+            )}
             <div className="overflow-x-auto">
                 <table style={{ 
                     width: '100%', 
