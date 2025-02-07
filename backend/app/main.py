@@ -241,6 +241,17 @@ async def configure_refresh_interval(interval: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/shopping-cart")
+async def get_shopping_cart():
+    async with database.materialize_connection() as conn:
+        try:
+            result = await conn.fetch("SELECT * FROM dynamic_price_shopping_cart")
+            return [dict(row) for row in result]
+        except Exception as e:
+            logger.error(f"Error fetching shopping cart: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
 

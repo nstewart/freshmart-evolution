@@ -6,6 +6,7 @@ import ContainersCPUChart from './components/ContainersCPUChart.jsx';
 import ContainersMemoryChart from './components/ContainersMemoryChart.jsx';
 import RAGLatencyChart from './components/RAGLatencyChart.jsx';
 import RAGPromptResponse from './components/RAGPromptResponse.jsx';
+import ShoppingCart from './components/ShoppingCart.jsx';
 
 const HISTORY_WINDOW_MS = 3 * 60 * 1000; // 3 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
@@ -2082,6 +2083,9 @@ function App() {
                 </Accordion.Panel>
               </Accordion.Item>
             </Accordion>
+
+            <ShoppingCart />
+
           </Stack>
       </Container>
       </div>

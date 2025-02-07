@@ -104,7 +104,22 @@ SELECT
 FROM dynamic_pricing dp
 JOIN products p ON dp.product_id = p.product_id;
 
-CREATE VIEW hierarchical_totals AS
+CREATE VIEW dynamic_price_shopping_cart AS SELECT 
+  sc.product_id,  
+  sc.product_name,
+    c.category_name,
+    dp.adjusted_price AS price
+FROM 
+    shopping_cart sc
+JOIN 
+    products p ON sc.product_id = p.product_id
+JOIN 
+    categories c ON p.category_id = c.category_id
+JOIN 
+dynamic_pricing dp ON p.product_id = dp.product_id
+;
+
+
 WITH MUTUALLY RECURSIVE rollup (category_id int, total numeric(30, 2)) AS (
     SELECT category_id, sum(price) AS total
     FROM shopping_cart
@@ -126,5 +141,8 @@ WHERE total::text <> 'Infinity';
 CREATE INDEX IF NOT EXISTS dynamic_pricing_product_id_idx ON dynamic_pricing (product_id);
 
 CREATE INDEX IF NOT EXISTS hierarchical_totals_category_id_idx ON hierarchical_totals (category_id);
+
+CREATE DEFAULT INDEX IF NOT EXISTS dynamic_price_shopping_cart_idx ON dynamic_price_shopping_cart;
+
 
 CREATE INDEX IF NOT EXISTS heartbeats_idx ON heartbeats (id DESC);
