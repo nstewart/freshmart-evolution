@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Text } from '@mantine/core';
 
-const ShoppingCart = () => {
+const ShoppingCart = ({ onLatencyUpdate }) => {
     const [cartItems, setCartItems] = useState([]);
     const [categorySubtotals, setCategorySubtotals] = useState([]);
     const [error, setError] = useState(null);
@@ -14,7 +14,12 @@ const ShoppingCart = () => {
                 // Fetch cart data (includes both items and subtotals)
                 const response = await fetch('http://localhost:8000/api/shopping-cart');
                 const endTime = performance.now();
-                setRequestTime(Math.round(endTime - startTime));
+                const latency = Math.round(endTime - startTime);
+                setRequestTime(latency);
+                // Notify parent component of the latency
+                if (onLatencyUpdate) {
+                    onLatencyUpdate(latency);
+                }
                 
                 if (!response.ok) {
                     throw new Error('Failed to fetch cart data');
@@ -36,7 +41,7 @@ const ShoppingCart = () => {
 
         // Cleanup
         return () => clearInterval(intervalId);
-    }, []);
+    }, [onLatencyUpdate]);
 
     if (error) {
         return <div className="text-red-600">Error: {error}</div>;

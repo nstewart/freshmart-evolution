@@ -362,6 +362,7 @@ function App() {
   const [refreshInterval, setRefreshInterval] = useState(60);
   const [databaseSize, setDatabaseSize] = useState(null);
   const [showTTCA, setShowTTCA] = useState(false);
+  const [shoppingCartLatency, setShoppingCartLatency] = useState(null);
   const [stats, setStats] = useState({
     view: { max: 0, avg: 0, p99: 0 },
     materializeView: { max: 0, avg: 0, p99: 0 },
@@ -1627,7 +1628,7 @@ function App() {
                   <Accordion.Panel>
                     <Grid>
                       <Grid.Col span={7}>
-                        <ShoppingCart />
+                        <ShoppingCart onLatencyUpdate={setShoppingCartLatency} />
                       </Grid.Col>
                       <Grid.Col span={5}>
                         <Stack>
@@ -1699,7 +1700,14 @@ function App() {
                         }}>
                           <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Pipeline Latency</Text>
                           <div style={{ flex: 1, minHeight: 0 }}>
-                            <RAGLatencyChart currentScenario={currentScenario} stats={stats} includeOLTP={includeOLTP} />
+                            <RAGLatencyChart 
+                              currentScenario={currentScenario} 
+                              stats={{
+                                ...stats,
+                                shoppingCart: { avg: shoppingCartLatency }
+                              }} 
+                              includeOLTP={includeOLTP} 
+                            />
                           </div>
                         </Paper>
                       </Grid.Col>
