@@ -247,25 +247,27 @@ async def configure_refresh_interval(interval: int):
 async def get_shopping_cart():
     async with database.materialize_connection() as conn:
         try:
-            # Get cart items
-            cart_items = await conn.fetch("SELECT * FROM dynamic_price_shopping_cart")
-            
-            # Get category subtotals
-            subtotals = await conn.fetch("""
-                SELECT 
-                    c.category_name,
-                    COUNT(*) as item_count,
-                    SUM(sc.price) as subtotal
-                FROM dynamic_price_shopping_cart sc
-                JOIN categories c ON sc.category_id = c.category_id
-                GROUP BY c.category_name
-                ORDER BY c.category_name
-            """)
-            
-            return {
-                "cart_items": [dict(row) for row in cart_items],
-                "category_subtotals": [dict(row) for row in subtotals]
-            }
+            # Start a transaction
+            async with conn.transaction():
+                # Get cart items
+                cart_items = await conn.fetch("SELECT * FROM dynamic_price_shopping_cart")
+                
+                # Get category subtotals
+                subtotals = await conn.fetch("""
+                    SELECT 
+                        c.category_name,
+                        COUNT(*) as item_count,
+                        SUM(sc.price) as subtotal
+                    FROM dynamic_price_shopping_cart sc
+                    JOIN categories c ON sc.category_id = c.category_id
+                    GROUP BY c.category_name
+                    ORDER BY c.category_name
+                """)
+                
+                return {
+                    "cart_items": [dict(row) for row in cart_items],
+                    "category_subtotals": [dict(row) for row in subtotals]
+                }
         except Exception as e:
             logger.error(f"Error fetching shopping cart data: {e}")
             raise HTTPException(status_code=500, detail=str(e))
