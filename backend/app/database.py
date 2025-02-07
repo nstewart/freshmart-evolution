@@ -376,7 +376,7 @@ async def add_to_cart():
             async with postgres_connection() as conn:
                 await conn.execute("""
                     DELETE FROM shopping_cart
-                    WHERE ts < NOW() - INTERVAL '5 minutes'
+                    WHERE ts < NOW() - INTERVAL '30 seconds'
                     AND product_id != 1;
                 """)
         except Exception as e:
@@ -390,7 +390,7 @@ async def add_to_cart():
     while True:
         await insert_item()
         await delete_item()
-        await asyncio.sleep(300.0)  # Sleep for 5 minutes (300 seconds)
+        await asyncio.sleep(30.0)  # Sleep for 30 seconds
 
 async def measure_query_time(query: str, params: Tuple, is_materialize: bool, source: str) -> Tuple[float, any]:
     start_time = time.time()

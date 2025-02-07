@@ -107,6 +107,7 @@ JOIN products p ON dp.product_id = p.product_id;
 CREATE VIEW dynamic_price_shopping_cart AS SELECT 
   sc.product_id,  
   sc.product_name,
+  c.category_id,
     c.category_name,
     dp.adjusted_price AS price
 FROM 
