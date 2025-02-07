@@ -210,14 +210,17 @@ async def init_pools():
     materialize_pool = await new_materialize_pool()
 
 async def reload_pool():
-    global materialize_pool
 
+    global materialize_pool
     while True:
         await asyncio.sleep(60)
         new_pool = await new_materialize_pool()
         old_pool = materialize_pool
         materialize_pool = new_pool
-        await asyncio.wait_for(old_pool.close(), timeout=10)
+        try:
+            await asyncio.wait_for(old_pool.close(), timeout=10)
+        except asyncio.TimeoutError:
+            logger.warning("Old pool close timed out; continuing without halting service")
 
 
 @asynccontextmanager
