@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, Grid } from '@mantine/core';
+import { Text, Grid, Paper, Group, Divider } from '@mantine/core';
 
 const ShoppingCart = ({ onLatencyUpdate }) => {
     // Existing state for cart items and error handling.
@@ -129,7 +129,7 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                 </Text>
             )}
 
-            <Grid>
+            <Grid style={{ marginBottom: '8px' }}>
                 {/* Shopping Cart Column */}
                 <Grid.Col span={6}>
                     <Text size="md" weight={500} mb="sm" style={{ color: '#BCB9C0' }}>
@@ -144,7 +144,6 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                                 backgroundColor: 'rgb(13, 17, 22)',
                                 border: '1px solid rgba(255, 255, 255, 0.1)',
                                 borderRadius: '4px',
-                                marginBottom: '20px',
                                 display: 'flex',
                                 flexDirection: 'column',
                             }}
@@ -273,58 +272,6 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                                 </tr>
                             ))}
                             </tbody>
-                            <tfoot style={{ display: 'block', width: '100%' }}>
-                            <tr
-                                style={{
-                                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                    display: 'flex',
-                                    width: '100%',
-                                }}
-                            >
-                                <td
-                                    style={{
-                                        padding: '12px 16px',
-                                        color: '#BCB9C0',
-                                        fontSize: '0.875rem',
-                                        fontWeight: 600,
-                                        flex: '1',
-                                    }}
-                                ></td>
-                                <td
-                                    style={{
-                                        padding: '12px 16px',
-                                        color: '#BCB9C0',
-                                        fontSize: '0.875rem',
-                                        fontWeight: 600,
-                                        flex: '2',
-                                    }}
-                                ></td>
-                                <td
-                                    style={{
-                                        padding: '12px 16px',
-                                        textAlign: 'right',
-                                        color: '#BCB9C0',
-                                        fontSize: '0.875rem',
-                                        fontWeight: 600,
-                                        flex: '1',
-                                    }}
-                                >
-                                    Total:
-                                </td>
-                                <td
-                                    style={{
-                                        padding: '12px 16px',
-                                        textAlign: 'right',
-                                        color: '#228be6',
-                                        fontSize: '0.875rem',
-                                        fontWeight: 600,
-                                        flex: '1',
-                                    }}
-                                >
-                                    ${Number(total).toFixed(2)}
-                                </td>
-                            </tr>
-                            </tfoot>
                         </table>
                     </div>
                 </Grid.Col>
@@ -384,45 +331,39 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                             </tr>
                         </thead>
                         <tbody>{renderCategoryRows(null, 0)}</tbody>
-                        <tfoot>
-                            <tr style={{ 
-                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                            }}>
-                                <td
-                                    style={{
-                                        padding: '12px 16px',
-                                        color: '#BCB9C0',
-                                        fontSize: '0.875rem',
-                                        fontWeight: 600,
-                                    }}
-                                ></td>
-                                <td
-                                    style={{
-                                        padding: '12px 16px',
-                                        textAlign: 'right',
-                                        color: '#BCB9C0',
-                                        fontSize: '0.875rem',
-                                        fontWeight: 600,
-                                    }}
-                                >
-                                    Total:
-                                </td>
-                                <td
-                                    style={{
-                                        padding: '12px 16px',
-                                        textAlign: 'right',
-                                        color: '#228be6',
-                                        fontSize: '0.875rem',
-                                        fontWeight: 600,
-                                    }}
-                                >
-                                    ${Number(total).toFixed(2)}
-                                </td>
-                            </tr>
-                        </tfoot>
                     </table>
                 </Grid.Col>
             </Grid>
+                    
+            {/* Totals Row */}
+            <Grid style={{ marginTop: 0 }}>
+                <Grid.Col span={6}>
+                    <Paper p="md" style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '4px'
+                    }}>
+                        <Group position="apart" style={{ paddingRight: '16px' }}>
+                            <Text weight={600} size="sm" style={{ color: '#BCB9C0', flex: 3 }}>Shopping Cart Total:</Text>
+                            <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>${Number(total).toFixed(2)}</Text>
+                        </Group>
+                    </Paper>
+                </Grid.Col>
+                <Grid.Col span={6}>
+                    <Paper p="md" style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '4px'
+                    }}>
+                        <Group position="apart" style={{ paddingRight: '16px' }}>
+                            <Text weight={600} size="sm" style={{ color: '#BCB9C0', flex: 2 }}>Category Subtotals:</Text>
+                            <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>${Number(total).toFixed(2)}</Text>
+                        </Group>
+                    </Paper>
+                </Grid.Col>
+            </Grid>
+
+            <Divider my="xl" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }} />
         </div>
     );
 };
