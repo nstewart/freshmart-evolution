@@ -249,17 +249,19 @@ async def get_shopping_cart(expanded = Query(None)):
         try:
             # Start a transaction
             async with conn.transaction():
-                # Get cart items and calculate cart total
+                # Get cart items
                 cart_items = await conn.fetch("""
                     SELECT * FROM dynamic_price_shopping_cart
                     ORDER BY price DESC
                 """)
+                
+                # Calculate cart total with exact precision
                 cart_total = await conn.fetchval("""
-                    SELECT SUM(price)::float
+                    SELECT SUM(price)::numeric(20,10)
                     FROM dynamic_price_shopping_cart
                 """) or 0
                 
-                # Get category subtotals and calculate categories total
+                # Get category subtotals with exact precision
                 clause = ""
                 if expanded:
                     expanded_ids = ",".join([token.strip() for token in expanded.split(",") if token.strip().isdigit()])
@@ -273,7 +275,7 @@ async def get_shopping_cart(expanded = Query(None)):
                             has_subcategory, 
                             category_name,
                             item_count,
-                            total AS subtotal
+                            total::numeric(20,10) AS subtotal
                         FROM category_totals
                         WHERE parent_id IS NULL {clause}
                     )
@@ -284,16 +286,20 @@ async def get_shopping_cart(expanded = Query(None)):
                         category_name,
                         item_count,
                         subtotal,
-                        (SELECT SUM(total)::float FROM category_totals WHERE parent_id IS NULL) as categories_total
+                        (SELECT SUM(total)::numeric(20,10) FROM category_totals WHERE parent_id IS NULL) as categories_total
                     FROM category_data
                     ORDER BY coalesce(parent_id, category_id), category_id;
                 """)
+
+                # Ensure both totals have exactly the same precision
+                cart_total = float(cart_total) if cart_total is not None else 0
+                categories_total = float(subtotals[0]["categories_total"]) if subtotals else 0
 
                 return {
                     "cart_items": [dict(row) for row in cart_items],
                     "category_subtotals": [dict(row) for row in subtotals],
                     "cart_total": cart_total,
-                    "categories_total": subtotals[0]["categories_total"] if subtotals else 0
+                    "categories_total": categories_total
                 }
         except Exception as e:
             logger.error(f"Error fetching shopping cart data: {e}")

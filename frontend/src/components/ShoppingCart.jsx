@@ -347,7 +347,9 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                     }}>
                         <Group position="apart" style={{ paddingRight: '16px' }}>
                             <Text weight={600} size="sm" style={{ color: '#BCB9C0', flex: 3 }}>Shopping Cart Total:</Text>
-                            <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>${Number(cartTotal).toFixed(2)}</Text>
+                            <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>
+                                ${Number(cartTotal).toFixed(2)}
+                            </Text>
                         </Group>
                     </Paper>
                 </Grid.Col>
@@ -359,7 +361,9 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                     }}>
                         <Group position="apart" style={{ paddingRight: '16px' }}>
                             <Text weight={600} size="sm" style={{ color: '#BCB9C0', flex: 2 }}>Category Subtotals:</Text>
-                            <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>${Number(categoriesTotal).toFixed(2)}</Text>
+                            <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>
+                                ${Number(categoriesTotal).toFixed(2)}
+                            </Text>
                         </Group>
                     </Paper>
                 </Grid.Col>
