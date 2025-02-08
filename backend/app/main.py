@@ -254,7 +254,6 @@ async def get_shopping_cart(expanded = Query(None)):
                     SELECT * FROM dynamic_price_shopping_cart
                     ORDER BY price DESC
                 """)
-                logger.info(f"Cart items: {[dict(item) for item in cart_items]}")
                 
                 # Calculate cart total with exact precision
                 cart_total = await conn.fetchval("""
@@ -265,7 +264,6 @@ async def get_shopping_cart(expanded = Query(None)):
                     SELECT ROUND(total, 2)
                     FROM raw_total
                 """) or 0
-                logger.info(f"Cart total (raw): {cart_total}, type: {type(cart_total)}")
                 
                 # Get category subtotals with exact precision
                 clause = ""
@@ -310,17 +308,10 @@ async def get_shopping_cart(expanded = Query(None)):
                     FROM category_data
                     ORDER BY coalesce(parent_id, category_id), category_id;
                 """)
-                logger.info(f"Category subtotals: {[dict(sub) for sub in subtotals]}")
 
                 # Ensure both totals have exactly the same precision
                 cart_total = float(cart_total) if cart_total is not None else 0
                 categories_total = float(subtotals[0]["categories_total"]) if subtotals else 0
-                
-                # Add more detailed logging
-                logger.info(f"Cart items prices: {[item['price'] for item in cart_items]}")
-                logger.info(f"Category raw totals: {[sub['subtotal'] for sub in subtotals]}")
-                logger.info(f"Final cart_total: {cart_total}, type: {type(cart_total)}")
-                logger.info(f"Final categories_total: {categories_total}, type: {type(categories_total)}")
 
                 response_data = {
                     "cart_items": [dict(row) for row in cart_items],
@@ -328,7 +319,6 @@ async def get_shopping_cart(expanded = Query(None)):
                     "cart_total": cart_total,
                     "categories_total": categories_total
                 }
-                logger.info(f"Response data: {response_data}")
                 return response_data
         except Exception as e:
             logger.error(f"Error fetching shopping cart data: {e}")
