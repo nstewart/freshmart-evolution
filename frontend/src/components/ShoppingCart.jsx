@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text } from '@mantine/core';
+import { Text, Grid } from '@mantine/core';
 
 const ShoppingCart = ({ onLatencyUpdate }) => {
     // Existing state for cart items and error handling.
@@ -127,258 +127,268 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                 </Text>
             )}
 
-            <div className="overflow-x-auto">
-                {/* Cart Items Table */}
-                <table
-                    style={{
-                        width: '100%',
-                        borderCollapse: 'collapse',
-                        backgroundColor: 'rgb(13, 17, 22)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '4px',
-                        marginBottom: '20px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                    }}
-                >
-                    <thead style={{ display: 'block' }}>
-                    <tr
-                        style={{
-                            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                            display: 'flex',
-                            width: '100%',
-                        }}
-                    >
-                        <th
+            <Grid>
+                {/* Shopping Cart Column */}
+                <Grid.Col span={6}>
+                    <Text size="md" weight={500} mb="sm" style={{ color: '#BCB9C0' }}>
+                        Shopping Cart
+                    </Text>
+                    <div className="overflow-x-auto">
+                        {/* Cart Items Table */}
+                        <table
                             style={{
-                                padding: '12px 16px',
-                                textAlign: 'left',
-                                color: '#BCB9C0',
-                                fontSize: '0.875rem',
-                                fontWeight: 600,
-                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                flex: '1',
-                            }}
-                        >
-                            Product ID
-                        </th>
-                        <th
-                            style={{
-                                padding: '12px 16px',
-                                textAlign: 'left',
-                                color: '#BCB9C0',
-                                fontSize: '0.875rem',
-                                fontWeight: 600,
-                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                flex: '2',
-                            }}
-                        >
-                            Product Name
-                        </th>
-                        <th
-                            style={{
-                                padding: '12px 16px',
-                                textAlign: 'left',
-                                color: '#BCB9C0',
-                                fontSize: '0.875rem',
-                                fontWeight: 600,
-                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                flex: '1',
-                            }}
-                        >
-                            Category
-                        </th>
-                        <th
-                            style={{
-                                padding: '12px 16px',
-                                textAlign: 'right',
-                                color: '#BCB9C0',
-                                fontSize: '0.875rem',
-                                fontWeight: 600,
-                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                flex: '1',
-                            }}
-                        >
-                            Price
-                        </th>
-                    </tr>
-                    </thead>
-                    <tbody
-                        style={{
-                            display: 'block',
-                            maxHeight: '400px',
-                            overflowY: 'auto',
-                            overflowX: 'hidden',
-                        }}
-                    >
-                    {cartItems.map((item, index) => (
-                        <tr
-                            key={index}
-                            style={{
-                                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                                display: 'flex',
                                 width: '100%',
-                                cursor: 'pointer',
+                                borderCollapse: 'collapse',
+                                backgroundColor: 'rgb(13, 17, 22)',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                borderRadius: '4px',
+                                marginBottom: '20px',
+                                display: 'flex',
+                                flexDirection: 'column',
                             }}
                         >
-                            <td
+                            <thead style={{ display: 'block' }}>
+                            <tr
                                 style={{
-                                    padding: '12px 16px',
-                                    color: '#BCB9C0',
-                                    fontSize: '0.875rem',
-                                    flex: '1',
+                                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                                    display: 'flex',
+                                    width: '100%',
                                 }}
                             >
-                                {item.product_id}
-                            </td>
-                            <td
+                                <th
+                                    style={{
+                                        padding: '12px 16px',
+                                        textAlign: 'left',
+                                        color: '#BCB9C0',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                        flex: '1',
+                                    }}
+                                >
+                                    Product ID
+                                </th>
+                                <th
+                                    style={{
+                                        padding: '12px 16px',
+                                        textAlign: 'left',
+                                        color: '#BCB9C0',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                        flex: '2',
+                                    }}
+                                >
+                                    Product Name
+                                </th>
+                                <th
+                                    style={{
+                                        padding: '12px 16px',
+                                        textAlign: 'left',
+                                        color: '#BCB9C0',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                        flex: '1',
+                                    }}
+                                >
+                                    Category
+                                </th>
+                                <th
+                                    style={{
+                                        padding: '12px 16px',
+                                        textAlign: 'right',
+                                        color: '#BCB9C0',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                        flex: '1',
+                                    }}
+                                >
+                                    Price
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody
                                 style={{
-                                    padding: '12px 16px',
-                                    color: '#BCB9C0',
-                                    fontSize: '0.875rem',
-                                    flex: '2',
+                                    display: 'block',
+                                    maxHeight: '400px',
+                                    overflowY: 'auto',
+                                    overflowX: 'hidden',
                                 }}
                             >
-                                {item.product_name}
-                            </td>
-                            <td
+                            {cartItems.map((item, index) => (
+                                <tr
+                                    key={index}
+                                    style={{
+                                        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                                        display: 'flex',
+                                        width: '100%',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    <td
+                                        style={{
+                                            padding: '12px 16px',
+                                            color: '#BCB9C0',
+                                            fontSize: '0.875rem',
+                                            flex: '1',
+                                        }}
+                                    >
+                                        {item.product_id}
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: '12px 16px',
+                                            color: '#BCB9C0',
+                                            fontSize: '0.875rem',
+                                            flex: '2',
+                                        }}
+                                    >
+                                        {item.product_name}
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: '12px 16px',
+                                            color: '#BCB9C0',
+                                            fontSize: '0.875rem',
+                                            flex: '1',
+                                        }}
+                                    >
+                                        {item.category_name}
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: '12px 16px',
+                                            textAlign: 'right',
+                                            color: '#228be6',
+                                            fontSize: '0.875rem',
+                                            fontWeight: 500,
+                                            flex: '1',
+                                        }}
+                                    >
+                                        ${Number(item.price).toFixed(2)}
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                            <tfoot style={{ display: 'block', width: '100%' }}>
+                            <tr
                                 style={{
-                                    padding: '12px 16px',
-                                    color: '#BCB9C0',
-                                    fontSize: '0.875rem',
-                                    flex: '1',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                    display: 'flex',
+                                    width: '100%',
                                 }}
                             >
-                                {item.category_name}
-                            </td>
-                            <td
-                                style={{
-                                    padding: '12px 16px',
-                                    textAlign: 'right',
-                                    color: '#228be6',
-                                    fontSize: '0.875rem',
-                                    fontWeight: 500,
-                                    flex: '1',
-                                }}
-                            >
-                                ${Number(item.price).toFixed(2)}
-                            </td>
-                        </tr>
-                    ))}
-                    </tbody>
-                    <tfoot style={{ display: 'block', width: '100%' }}>
-                    <tr
+                                <td
+                                    style={{
+                                        padding: '12px 16px',
+                                        color: '#BCB9C0',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        flex: '1',
+                                    }}
+                                ></td>
+                                <td
+                                    style={{
+                                        padding: '12px 16px',
+                                        color: '#BCB9C0',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        flex: '2',
+                                    }}
+                                ></td>
+                                <td
+                                    style={{
+                                        padding: '12px 16px',
+                                        textAlign: 'right',
+                                        color: '#BCB9C0',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        flex: '1',
+                                    }}
+                                >
+                                    Total:
+                                </td>
+                                <td
+                                    style={{
+                                        padding: '12px 16px',
+                                        textAlign: 'right',
+                                        color: '#228be6',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        flex: '1',
+                                    }}
+                                >
+                                    $
+                                    {cartItems
+                                        .reduce((sum, item) => sum + Number(item.price), 0)
+                                        .toFixed(2)}
+                                </td>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </Grid.Col>
+
+                {/* Category Subtotals Column */}
+                <Grid.Col span={6}>
+                    <Text size="md" weight={500} mb="sm" style={{ color: '#BCB9C0' }}>
+                        Category Subtotals
+                    </Text>
+                    <table
                         style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                            display: 'flex',
                             width: '100%',
+                            borderCollapse: 'collapse',
+                            backgroundColor: 'rgb(13, 17, 22)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '4px',
                         }}
                     >
-                        <td
-                            style={{
-                                padding: '12px 16px',
-                                color: '#BCB9C0',
-                                fontSize: '0.875rem',
-                                fontWeight: 600,
-                                flex: '1',
-                            }}
-                        ></td>
-                        <td
-                            style={{
-                                padding: '12px 16px',
-                                color: '#BCB9C0',
-                                fontSize: '0.875rem',
-                                fontWeight: 600,
-                                flex: '2',
-                            }}
-                        ></td>
-                        <td
-                            style={{
-                                padding: '12px 16px',
-                                textAlign: 'right',
-                                color: '#BCB9C0',
-                                fontSize: '0.875rem',
-                                fontWeight: 600,
-                                flex: '1',
-                            }}
-                        >
-                            Total:
-                        </td>
-                        <td
-                            style={{
-                                padding: '12px 16px',
-                                textAlign: 'right',
-                                color: '#228be6',
-                                fontSize: '0.875rem',
-                                fontWeight: 600,
-                                flex: '1',
-                            }}
-                        >
-                            $
-                            {cartItems
-                                .reduce((sum, item) => sum + Number(item.price), 0)
-                                .toFixed(2)}
-                        </td>
-                    </tr>
-                    </tfoot>
-                </table>
-
-                {/* Hierarchical Category Subtotals Table */}
-                <Text size="md" weight={500} mb="sm" style={{ color: '#BCB9C0' }}>
-                    Category Subtotals
-                </Text>
-                <table
-                    style={{
-                        width: '100%',
-                        borderCollapse: 'collapse',
-                        backgroundColor: 'rgb(13, 17, 22)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '4px',
-                    }}
-                >
-                    <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                        <th
-                            style={{
-                                padding: '12px 16px',
-                                textAlign: 'left',
-                                color: '#BCB9C0',
-                                fontSize: '0.875rem',
-                                fontWeight: 600,
-                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                            }}
-                        >
-                            Category
-                        </th>
-                        <th
-                            style={{
-                                padding: '12px 16px',
-                                textAlign: 'right',
-                                color: '#BCB9C0',
-                                fontSize: '0.875rem',
-                                fontWeight: 600,
-                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                            }}
-                        >
-                            Items
-                        </th>
-                        <th
-                            style={{
-                                padding: '12px 16px',
-                                textAlign: 'right',
-                                color: '#BCB9C0',
-                                fontSize: '0.875rem',
-                                fontWeight: 600,
-                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                            }}
-                        >
-                            Subtotal
-                        </th>
-                    </tr>
-                    </thead>
-                    <tbody>{renderCategoryRows(null, 0)}</tbody>
-                </table>
-            </div>
+                        <thead>
+                            <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                                <th
+                                    style={{
+                                        padding: '12px 16px',
+                                        textAlign: 'left',
+                                        color: '#BCB9C0',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                    }}
+                                >
+                                    Category
+                                </th>
+                                <th
+                                    style={{
+                                        padding: '12px 16px',
+                                        textAlign: 'right',
+                                        color: '#BCB9C0',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                    }}
+                                >
+                                    Items
+                                </th>
+                                <th
+                                    style={{
+                                        padding: '12px 16px',
+                                        textAlign: 'right',
+                                        color: '#BCB9C0',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                    }}
+                                >
+                                    Subtotal
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>{renderCategoryRows(null, 0)}</tbody>
+                    </table>
+                </Grid.Col>
+            </Grid>
         </div>
     );
 };
