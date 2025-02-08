@@ -7,7 +7,8 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
     const [categorySubtotals, setCategorySubtotals] = useState([]);
     const [error, setError] = useState(null);
     const [requestTime, setRequestTime] = useState(null);
-    const [total, setTotal] = useState(0);
+    const [cartTotal, setCartTotal] = useState(0);
+    const [categoriesTotal, setCategoriesTotal] = useState(0);
 
     // New state: keep track of which category IDs are expanded.
     const [expandedCategories, setExpandedCategories] = useState([]);
@@ -42,7 +43,8 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                 const data = await response.json();
                 setCartItems(data.cart_items);
                 setCategorySubtotals(data.category_subtotals);
-                setTotal(data.total);
+                setCartTotal(data.cart_total);
+                setCategoriesTotal(data.categories_total);
             } catch (err) {
                 setError(err.message);
                 console.error('Error fetching data:', err);
@@ -345,7 +347,7 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                     }}>
                         <Group position="apart" style={{ paddingRight: '16px' }}>
                             <Text weight={600} size="sm" style={{ color: '#BCB9C0', flex: 3 }}>Shopping Cart Total:</Text>
-                            <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>${Number(total).toFixed(2)}</Text>
+                            <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>${Number(cartTotal).toFixed(2)}</Text>
                         </Group>
                     </Paper>
                 </Grid.Col>
@@ -357,7 +359,7 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                     }}>
                         <Group position="apart" style={{ paddingRight: '16px' }}>
                             <Text weight={600} size="sm" style={{ color: '#BCB9C0', flex: 2 }}>Category Subtotals:</Text>
-                            <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>${Number(total).toFixed(2)}</Text>
+                            <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>${Number(categoriesTotal).toFixed(2)}</Text>
                         </Group>
                     </Paper>
                 </Grid.Col>

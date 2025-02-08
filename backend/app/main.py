@@ -249,13 +249,17 @@ async def get_shopping_cart(expanded = Query(None)):
         try:
             # Start a transaction
             async with conn.transaction():
-                # Get cart items, sorted by price descending
+                # Get cart items and calculate cart total
                 cart_items = await conn.fetch("""
                     SELECT * FROM dynamic_price_shopping_cart
                     ORDER BY price DESC
                 """)
+                cart_total = await conn.fetchval("""
+                    SELECT SUM(price)::float
+                    FROM dynamic_price_shopping_cart
+                """) or 0
                 
-                # Get category subtotals from the view
+                # Get category subtotals and calculate categories total
                 clause = ""
                 if expanded:
                     expanded_ids = ",".join([token.strip() for token in expanded.split(",") if token.strip().isdigit()])
@@ -280,7 +284,7 @@ async def get_shopping_cart(expanded = Query(None)):
                         category_name,
                         item_count,
                         subtotal,
-                        (SELECT SUM(total) FROM category_totals WHERE parent_id IS NULL) as total
+                        (SELECT SUM(total)::float FROM category_totals WHERE parent_id IS NULL) as categories_total
                     FROM category_data
                     ORDER BY coalesce(parent_id, category_id), category_id;
                 """)
@@ -288,7 +292,8 @@ async def get_shopping_cart(expanded = Query(None)):
                 return {
                     "cart_items": [dict(row) for row in cart_items],
                     "category_subtotals": [dict(row) for row in subtotals],
-                    "total": subtotals[0]["total"] if subtotals else 0
+                    "cart_total": cart_total,
+                    "categories_total": subtotals[0]["categories_total"] if subtotals else 0
                 }
         except Exception as e:
             logger.error(f"Error fetching shopping cart data: {e}")
