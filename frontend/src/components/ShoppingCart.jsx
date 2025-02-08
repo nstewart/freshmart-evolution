@@ -110,7 +110,7 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                                     fontWeight: 500,
                                 }}
                             >
-                                ${Number(cat.subtotal).toFixed(2)}
+                                ${cat.subtotal.toFixed(2)}
                             </td>
                         </tr>
                         {/* Render children only if this category is expanded */}
@@ -269,7 +269,7 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                                             flex: '1',
                                         }}
                                     >
-                                        ${Number(item.price).toFixed(2)}
+                                        ${item.price.toFixed(2)}
                                     </td>
                                 </tr>
                             ))}
@@ -348,7 +348,7 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                         <Group position="apart" style={{ paddingRight: '16px' }}>
                             <Text weight={600} size="sm" style={{ color: '#BCB9C0', flex: 3 }}>Shopping Cart Total:</Text>
                             <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>
-                                ${Number(cartTotal).toFixed(2)}
+                                ${cartTotal.toFixed(2)}
                             </Text>
                         </Group>
                     </Paper>
@@ -362,7 +362,7 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                         <Group position="apart" style={{ paddingRight: '16px' }}>
                             <Text weight={600} size="sm" style={{ color: '#BCB9C0', flex: 2 }}>Category Subtotals:</Text>
                             <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>
-                                ${Number(categoriesTotal).toFixed(2)}
+                                ${categoriesTotal.toFixed(2)}
                             </Text>
                         </Group>
                     </Paper>

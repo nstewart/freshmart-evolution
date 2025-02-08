@@ -254,12 +254,18 @@ async def get_shopping_cart(expanded = Query(None)):
                     SELECT * FROM dynamic_price_shopping_cart
                     ORDER BY price DESC
                 """)
+                logger.info(f"Cart items: {[dict(item) for item in cart_items]}")
                 
                 # Calculate cart total with exact precision
                 cart_total = await conn.fetchval("""
-                    SELECT SUM(price)::numeric(20,10)
-                    FROM dynamic_price_shopping_cart
+                    WITH raw_total AS (
+                        SELECT SUM(price)::numeric(20,10) as total
+                        FROM dynamic_price_shopping_cart
+                    )
+                    SELECT ROUND(total, 2)
+                    FROM raw_total
                 """) or 0
+                logger.info(f"Cart total (raw): {cart_total}, type: {type(cart_total)}")
                 
                 # Get category subtotals with exact precision
                 clause = ""
@@ -268,16 +274,30 @@ async def get_shopping_cart(expanded = Query(None)):
                     clause = f"OR parent_id IN ({expanded_ids})"
 
                 subtotals = await conn.fetch(f"""
-                    WITH category_data AS (
+                    WITH raw_totals AS (
                         SELECT
                             category_id, 
                             parent_id,
                             has_subcategory, 
                             category_name,
                             item_count,
-                            total::numeric(20,10) AS subtotal
+                            total::numeric(20,10) as raw_total
                         FROM category_totals
                         WHERE parent_id IS NULL {clause}
+                    ),
+                    category_data AS (
+                        SELECT
+                            category_id, 
+                            parent_id,
+                            has_subcategory, 
+                            category_name,
+                            item_count,
+                            ROUND(raw_total, 2) AS subtotal
+                        FROM raw_totals
+                    ),
+                    total_calc AS (
+                        SELECT SUM(raw_total)::numeric(20,10) as total
+                        FROM raw_totals
                     )
                     SELECT
                         category_id, 
@@ -286,21 +306,30 @@ async def get_shopping_cart(expanded = Query(None)):
                         category_name,
                         item_count,
                         subtotal,
-                        (SELECT SUM(total)::numeric(20,10) FROM category_totals WHERE parent_id IS NULL) as categories_total
+                        ROUND((SELECT total FROM total_calc), 2) as categories_total
                     FROM category_data
                     ORDER BY coalesce(parent_id, category_id), category_id;
                 """)
+                logger.info(f"Category subtotals: {[dict(sub) for sub in subtotals]}")
 
                 # Ensure both totals have exactly the same precision
                 cart_total = float(cart_total) if cart_total is not None else 0
                 categories_total = float(subtotals[0]["categories_total"]) if subtotals else 0
+                
+                # Add more detailed logging
+                logger.info(f"Cart items prices: {[item['price'] for item in cart_items]}")
+                logger.info(f"Category raw totals: {[sub['subtotal'] for sub in subtotals]}")
+                logger.info(f"Final cart_total: {cart_total}, type: {type(cart_total)}")
+                logger.info(f"Final categories_total: {categories_total}, type: {type(categories_total)}")
 
-                return {
+                response_data = {
                     "cart_items": [dict(row) for row in cart_items],
                     "category_subtotals": [dict(row) for row in subtotals],
                     "cart_total": cart_total,
                     "categories_total": categories_total
                 }
+                logger.info(f"Response data: {response_data}")
+                return response_data
         except Exception as e:
             logger.error(f"Error fetching shopping cart data: {e}")
             raise HTTPException(status_code=500, detail=str(e))
