@@ -295,7 +295,8 @@ async def get_shopping_cart(expanded = Query(None)):
                     ),
                     total_calc AS (
                         SELECT SUM(raw_total)::numeric(20,10) as total
-                        FROM raw_totals
+                        FROM raw_totals 
+                        WHERE parent_id IS NULL
                     )
                     SELECT
                         category_id, 
