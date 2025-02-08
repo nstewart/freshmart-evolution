@@ -7,6 +7,7 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
     const [categorySubtotals, setCategorySubtotals] = useState([]);
     const [error, setError] = useState(null);
     const [requestTime, setRequestTime] = useState(null);
+    const [total, setTotal] = useState(0);
 
     // New state: keep track of which category IDs are expanded.
     const [expandedCategories, setExpandedCategories] = useState([]);
@@ -41,6 +42,7 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                 const data = await response.json();
                 setCartItems(data.cart_items);
                 setCategorySubtotals(data.category_subtotals);
+                setTotal(data.total);
             } catch (err) {
                 setError(err.message);
                 console.error('Error fetching data:', err);
@@ -223,8 +225,7 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                                     style={{
                                         borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                                         display: 'flex',
-                                        width: '100%',
-                                        cursor: 'pointer',
+                                        width: '100%'
                                     }}
                                 >
                                     <td
@@ -320,10 +321,7 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                                         flex: '1',
                                     }}
                                 >
-                                    $
-                                    {cartItems
-                                        .reduce((sum, item) => sum + Number(item.price), 0)
-                                        .toFixed(2)}
+                                    ${Number(total).toFixed(2)}
                                 </td>
                             </tr>
                             </tfoot>
@@ -386,6 +384,42 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                             </tr>
                         </thead>
                         <tbody>{renderCategoryRows(null, 0)}</tbody>
+                        <tfoot>
+                            <tr style={{ 
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                            }}>
+                                <td
+                                    style={{
+                                        padding: '12px 16px',
+                                        color: '#BCB9C0',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                    }}
+                                ></td>
+                                <td
+                                    style={{
+                                        padding: '12px 16px',
+                                        textAlign: 'right',
+                                        color: '#BCB9C0',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    Total:
+                                </td>
+                                <td
+                                    style={{
+                                        padding: '12px 16px',
+                                        textAlign: 'right',
+                                        color: '#228be6',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    ${Number(total).toFixed(2)}
+                                </td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </Grid.Col>
             </Grid>

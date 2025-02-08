@@ -262,21 +262,33 @@ async def get_shopping_cart(expanded = Query(None)):
                     clause = f"OR parent_id IN ({expanded_ids})"
 
                 subtotals = await conn.fetch(f"""
+                    WITH category_data AS (
+                        SELECT
+                            category_id, 
+                            parent_id,
+                            has_subcategory, 
+                            category_name,
+                            item_count,
+                            total AS subtotal
+                        FROM category_totals
+                        WHERE parent_id IS NULL {clause}
+                    )
                     SELECT
                         category_id, 
                         parent_id,
                         has_subcategory, 
                         category_name,
                         item_count,
-                        total AS subtotal
-                    FROM category_totals
-                    WHERE parent_id IS NULL {clause}
+                        subtotal,
+                        (SELECT SUM(total) FROM category_totals WHERE parent_id IS NULL) as total
+                    FROM category_data
                     ORDER BY coalesce(parent_id, category_id), category_id;
                 """)
 
                 return {
                     "cart_items": [dict(row) for row in cart_items],
-                    "category_subtotals": [dict(row) for row in subtotals]
+                    "category_subtotals": [dict(row) for row in subtotals],
+                    "total": subtotals[0]["total"] if subtotals else 0
                 }
         except Exception as e:
             logger.error(f"Error fetching shopping cart data: {e}")
