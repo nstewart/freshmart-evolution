@@ -1623,7 +1623,7 @@ function App() {
                     }}>
                         <Accordion.Item value="shoppingCart">
                             <Accordion.Control>
-                                <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>Shopping Cart</Text>
+                                <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>Composable and Consistent Data Products</Text>
                             </Accordion.Control>
                             <Accordion.Panel>
                                 {/* Cart and Subtotals Row */}
