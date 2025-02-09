@@ -309,8 +309,7 @@ async def get_shopping_cart(expanded = Query(None)):
                     ORDER BY coalesce(parent_id, category_id), category_id;
                 """)
 
-                # Ensure both totals have exactly the same precision
-                cart_total = float(cart_total) if cart_total is not None else 0
+                # Extract the final values
                 categories_total = float(subtotals[0]["categories_total"]) if subtotals else 0
 
                 response_data = {

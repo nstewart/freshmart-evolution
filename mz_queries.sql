@@ -123,11 +123,11 @@ dynamic_pricing dp ON p.product_id = dp.product_id
 
 CREATE VIEW category_totals AS
 WITH MUTUALLY RECURSIVE
-  rollup(category_id int, total numeric(39,2), item_count int) AS (
+  rollup(category_id int, total numeric(20,10), item_count int) AS (
     -- Base: calculate each category's direct total and item count
     SELECT
       c.category_id,
-      COALESCE(SUM(d.price), 0)::numeric(39,2),
+      COALESCE(SUM(d.price), 0)::numeric(20,10),
       COUNT(d.price)
     FROM categories c
     LEFT JOIN dynamic_price_shopping_cart d
@@ -147,10 +147,10 @@ WITH MUTUALLY RECURSIVE
     WHERE c.parent_id IS NOT NULL
   ),
 
-  totals(category_id int, total numeric(39,2), item_count int) AS (
+  totals(category_id int, total numeric(20,10), item_count int) AS (
     SELECT
       c.category_id,
-      SUM(r.total)::numeric(39,2) AS total,
+      SUM(r.total)::numeric(20,10) AS total,
       SUM(r.item_count) AS item_count
     FROM categories c
     JOIN rollup r
