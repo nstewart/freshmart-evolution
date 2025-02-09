@@ -275,6 +275,19 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                                                 flex: '1',
                                             }}
                                         >
+                                            Stock
+                                        </th>
+                                        <th
+                                            style={{
+                                                padding: '12px 16px',
+                                                textAlign: 'right',
+                                                color: '#BCB9C0',
+                                                fontSize: '0.875rem',
+                                                fontWeight: 600,
+                                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                                flex: '1',
+                                            }}
+                                        >
                                             Price
                                         </th>
                                     </tr>
@@ -325,6 +338,18 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                                                 }}
                                             >
                                                 {item.category_name}
+                                            </td>
+                                            <td
+                                                style={{
+                                                    padding: '12px 16px',
+                                                    textAlign: 'right',
+                                                    color: item.available_stock > 0 ? '#40c057' : '#fa5252',
+                                                    fontSize: '0.875rem',
+                                                    fontWeight: 500,
+                                                    flex: '1',
+                                                }}
+                                            >
+                                                {item.available_stock}
                                             </td>
                                             <td
                                                 style={{
