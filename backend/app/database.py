@@ -6,6 +6,7 @@ import asyncpg
 from dotenv import load_dotenv
 import logging
 import datetime
+import random
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -1117,3 +1118,33 @@ async def get_category_subtotals():
     except Exception as e:
         logger.error(f"Error fetching category subtotals: {str(e)}", exc_info=True)
         raise
+
+async def update_inventory_levels():
+    """Randomly updates inventory levels for items in the shopping cart every second."""
+    while True:
+        try:
+            async with postgres_pool.acquire() as conn:
+                # Get current cart items and their inventory levels
+                cart_items = await conn.fetch("""
+                    SELECT DISTINCT sc.product_id, i.stock 
+                    FROM shopping_cart sc
+                    JOIN inventory i ON sc.product_id = i.product_id
+                """)
+                
+                for item in cart_items:
+                    # Randomly decide to add or subtract (1 for add, -1 for subtract)
+                    direction = 1 if random.random() > 0.5 else -1
+                    # Random amount between 1-5
+                    amount = random.randint(1, 5) * direction
+                    
+                    # Update inventory ensuring stock doesn't go below 0
+                    await conn.execute("""
+                        UPDATE inventory 
+                        SET stock = GREATEST(0, stock + $1)
+                        WHERE product_id = $2
+                    """, amount, item['product_id'])
+                    
+                    logger.debug(f"Updated inventory for product {item['product_id']}: {amount:+d} units")
+        except Exception as e:
+            logger.error(f"Error updating inventory levels: {str(e)}", exc_info=True)
+        await asyncio.sleep(1.0)
