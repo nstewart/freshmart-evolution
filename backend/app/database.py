@@ -6,7 +6,6 @@ import asyncpg
 from dotenv import load_dotenv
 import logging
 import datetime
-from contextlib import asynccontextmanager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -198,7 +197,8 @@ async def new_materialize_pool():
         server_settings={
             'application_name': 'freshmart_mz',
             'statement_timeout': '120s',
-            'idle_in_transaction_session_timeout': '120s'
+            'idle_in_transaction_session_timeout': '120s',
+            'statement_logging_sample_rate': '0'
         }
     )
 
@@ -209,38 +209,6 @@ async def init_pools():
     postgres_pool = await new_postgres_pool()
     materialize_pool = await new_materialize_pool()
 
-async def reload_pool():
-
-    global materialize_pool
-    while True:
-        await asyncio.sleep(60)
-        new_pool = await new_materialize_pool()
-        old_pool = materialize_pool
-        materialize_pool = new_pool
-        try:
-            await asyncio.wait_for(old_pool.close(), timeout=10)
-        except asyncio.TimeoutError:
-            logger.warning("Old pool close timed out; continuing without halting service")
-
-
-@asynccontextmanager
-async def postgres_connection():
-    """Acquire a PostgreSQL connection from the pool."""
-    async with postgres_pool.acquire() as conn:
-        await conn.execute("SET statement_timeout TO '120s'")
-        await conn.execute(f"SET TRANSACTION_ISOLATION TO '{current_isolation_level}'")
-        yield conn
-
-
-@asynccontextmanager
-async def materialize_connection():
-    """Acquire a Materialize connection from the pool."""
-    async with materialize_pool.acquire() as conn:
-        await conn.execute("SET statement_timeout TO '120s'")
-        await conn.execute(f"SET TRANSACTION_ISOLATION TO '{current_isolation_level}'")
-        await conn.execute(f"SET statement_logging_sample_rate TO 0")
-        yield conn
-
 
 # ============================================================================
 # Functions using connection pools
@@ -250,7 +218,7 @@ async def create_heartbeat():
     """Create heartbeat entries at a fixed interval."""
     while True:
         try:
-            async with postgres_connection() as conn:
+            async with postgres_pool.acquire() as conn:
                 insert_time = time.time()
                 async with conn.transaction():
                     result = await conn.fetchrow(
@@ -274,7 +242,7 @@ async def refresh_materialized_view():
     """Refresh the materialized view with proper lock handling."""
     start_time = time.time()
     try:
-        async with postgres_connection() as conn:
+        async with postgres_pool.acquire() as conn:
             await conn.execute("SET statement_timeout TO '120s'")
             await conn.execute("""
                 SET LOCAL lock_timeout = '120s';
@@ -345,14 +313,14 @@ async def add_to_cart():
     """Automatically adds a new item to a shopping cart at a fixed internal"""
     async def insert_item():
         try:
-            async with postgres_connection() as conn:
+            async with postgres_pool.acquire() as conn:
                 # First, check if product_id 1 exists in the cart
                 has_product_one = await conn.fetchval("""
                     SELECT EXISTS(
                         SELECT 1 FROM shopping_cart WHERE product_id = 1
                     )
                 """)
-                
+
                 # If product_id 1 doesn't exist, insert it first
                 if not has_product_one:
                     await conn.execute("""
@@ -361,7 +329,7 @@ async def add_to_cart():
                         FROM products
                         WHERE product_id = 1;
                     """)
-                
+
                 # Then insert a random product
                 await conn.execute("""
                     INSERT INTO shopping_cart (product_id, product_name, category_id, price)
@@ -376,7 +344,7 @@ async def add_to_cart():
 
     async def delete_item():
         try:
-            async with postgres_connection() as conn:
+            async with postgres_pool.acquire() as conn:
                 await conn.execute("""
                     DELETE FROM shopping_cart
                     WHERE ts IN (
@@ -404,10 +372,10 @@ async def measure_query_time(query: str, params: Tuple, is_materialize: bool, so
     start_time = time.time()
     try:
         if is_materialize:
-            async with materialize_connection() as conn:
+            async with materialize_pool.acquire() as conn:
                 result = await conn.fetchrow(query, *params, timeout=120.0)
         else:
-            async with postgres_connection() as conn:
+            async with postgres_pool.acquire() as conn:
                 result = await conn.fetchrow(query, *params, timeout=120.0)
         duration = time.time() - start_time
 
@@ -464,7 +432,7 @@ async def measure_query_time(query: str, params: Tuple, is_materialize: bool, so
 
 
 async def get_database_size() -> float:
-    async with postgres_connection() as conn:
+    async with postgres_pool.acquire() as conn:
         logger.debug("Querying database size...")
         size = await conn.fetchval("SELECT pg_database_size(current_database())")
         logger.debug(f"Raw database size (bytes): {size}")
@@ -480,7 +448,7 @@ async def get_query_metrics(product_id: int) -> Dict:
     current_time = time.time()
     response = {'timestamp': int(current_time * 1000), 'isolation_level': current_isolation_level}
     try:
-        async with postgres_connection() as pg_conn:
+        async with postgres_pool.acquire() as pg_conn:
             mv_freshness = await pg_conn.fetchrow("""
                 SELECT EXTRACT(EPOCH FROM (NOW() - last_refresh)) as age,
                        refresh_duration
@@ -495,7 +463,7 @@ async def get_query_metrics(product_id: int) -> Dict:
             """)
         materialize_lag = 0.0
         try:
-            async with materialize_connection() as mz_conn:
+            async with materialize_pool.acquire() as mz_conn:
                 logger.debug("Fetching Materialize heartbeat...")
                 mz_heartbeat = await mz_conn.fetchrow(f'''
                     SELECT id, ts
@@ -580,13 +548,13 @@ async def get_query_metrics(product_id: int) -> Dict:
 
 async def toggle_promotion(product_id: int):
     try:
-        async with postgres_connection() as conn:
+        async with postgres_pool.acquire() as conn:
             # First check if the product exists
             product_exists = await conn.fetchval(
                 "SELECT EXISTS(SELECT 1 FROM products WHERE product_id = $1)",
                 product_id
             )
-            
+
             if not product_exists:
                 return {
                     "status": "error",
@@ -601,7 +569,7 @@ async def toggle_promotion(product_id: int):
                 WHERE product_id = $1
                 RETURNING updated_at, active
             """, product_id)
-            
+
             # If no existing promotion, create a new one
             if not result:
                 # Reset the sequence to the maximum value to avoid conflicts
@@ -609,7 +577,7 @@ async def toggle_promotion(product_id: int):
                     SELECT setval('promotions_promotion_id_seq', 
                                 COALESCE((SELECT MAX(promotion_id) FROM promotions), 0))
                 """)
-                
+
                 result = await conn.fetchrow("""
                     INSERT INTO promotions (
                         product_id,
@@ -629,13 +597,13 @@ async def toggle_promotion(product_id: int):
                     )
                     RETURNING updated_at, active
                 """, product_id)
-            
+
             if not result:
                 return {
                     "status": "error",
                     "message": "Failed to create or update promotion"
                 }
-                
+
             return {
                 "status": "success",
                 "updated_at": result["updated_at"],
@@ -651,7 +619,7 @@ async def toggle_promotion(product_id: int):
 
 async def toggle_view_index():
     try:
-        async with materialize_connection() as conn:
+        async with materialize_pool.acquire() as conn:
             if await check_materialize_index_exists():
                 await conn.execute(f"DROP INDEX {mz_schema}.dynamic_pricing_product_id_idx")
                 return {"message": "Index dropped successfully", "index_exists": False}
@@ -665,7 +633,7 @@ async def toggle_view_index():
 
 
 async def get_view_index_status():
-    async with materialize_connection() as conn:
+    async with materialize_pool.acquire() as conn:
         index_exists = await conn.fetchval("""
             SELECT TRUE 
             FROM mz_catalog.mz_indexes
@@ -675,14 +643,14 @@ async def get_view_index_status():
 
 
 async def get_isolation_level():
-    async with materialize_connection() as conn:
+    async with materialize_pool.acquire() as conn:
         level = await conn.fetchval("SHOW transaction_isolation")
         return level.lower()
 
 
 async def toggle_isolation_level():
     global current_isolation_level
-    async with materialize_connection() as conn:
+    async with materialize_pool.acquire() as conn:
         new_level = "strict serializable" if current_isolation_level == "serializable" else "serializable"
         await conn.execute(f"SET TRANSACTION_ISOLATION TO '{new_level}'")
         current_isolation_level = new_level
@@ -694,7 +662,7 @@ async def check_materialize_index_exists():
     retry_delay = 1.0
     for attempt in range(max_retries):
         try:
-            async with materialize_connection() as conn:
+            async with materialize_pool.acquire() as conn:
                 result = await conn.fetchval("""
                     SELECT TRUE 
                     FROM mz_catalog.mz_indexes
@@ -784,7 +752,7 @@ async def get_concurrency_limits():
 async def update_freshness_metrics():
     while True:
         try:
-            async with postgres_connection() as conn:
+            async with postgres_pool.acquire() as conn:
                 logger.info(
                     f"Current Freshness Values:\n  - MV: {query_stats['materialized_view']['current_stats']['freshness']:.2f}s"
                     f"\n  - Materialize: {query_stats['materialize']['current_stats']['freshness']:.2f}s")
@@ -811,14 +779,14 @@ async def update_freshness_metrics():
                 except Exception as e:
                     logger.error(f"Error updating MV freshness: {str(e)}")
             try:
-                async with postgres_connection() as conn:
+                async with postgres_pool.acquire() as conn:
                     pg_heartbeat = await conn.fetchrow(f"""
                         SELECT id, ts, NOW() as current_ts
                         FROM {mz_schema}.heartbeats
                         ORDER BY ts DESC
                         LIMIT 1
                     """)
-                async with materialize_connection() as conn:
+                async with materialize_pool.acquire() as conn:
                     mz_heartbeat = await conn.fetchrow(f"""
                         SELECT id, ts
                         FROM {mz_schema}.heartbeats
@@ -988,15 +956,15 @@ class MaterializeConnection(asyncpg.Connection):
                             if hasattr(self, '_protocol') and self._protocol is not None:
                                 await self.execute("ROLLBACK")
                         except Exception as e:
-                            logger.debug(f"Ignoring error during cleanup: {str(e)}")
+                            logger.info(f"Ignoring error during cleanup: {str(e)}")
                         finally:
                             self._closed = True
 
             if loop.is_running():
-                logger.debug("Cleanup: event loop is running, scheduling cleanup")
+                logger.info("Cleanup: event loop is running, scheduling cleanup")
                 loop.create_task(safe_cleanup())
             else:
-                logger.debug("Cleanup: event loop not running, running cleanup synchronously")
+                logger.info("Cleanup: event loop not running, running cleanup synchronously")
                 loop.run_until_complete(safe_cleanup())
         except Exception as e:
             logger.error(f"Error during Materialize connection cleanup: {str(e)}")
@@ -1039,7 +1007,7 @@ class MaterializeConnection(asyncpg.Connection):
 async def get_categories():
     """Get all product categories from the database."""
     try:
-        async with postgres_connection() as conn:
+        async with postgres_pool.acquire() as conn:
             categories = await conn.fetch("""
                 SELECT DISTINCT category_id, category_name 
                 FROM categories 
@@ -1053,38 +1021,38 @@ async def get_categories():
 async def add_product(product_name: str, category_id: int, price: float):
     """Add a new product to the database and to the shopping cart."""
     try:
-        async with postgres_connection() as conn:
+        async with postgres_pool.acquire() as conn:
             async with conn.transaction():
                 # First get the maximum product_id and add 1
                 next_id = await conn.fetchval("""
                     SELECT COALESCE(MAX(product_id), 0) + 1 FROM products
                 """)
-                
+
                 # Insert into products table
                 result = await conn.fetchrow("""
                     INSERT INTO products (product_id, product_name, category_id, base_price, supplier_id, available, last_update_time)
                     VALUES ($1, $2, $3, $4, 1, true, NOW())
                     RETURNING product_id, product_name, category_id, base_price
                 """, next_id, product_name, category_id, price)
-                
+
                 # Reset sequences to match current maximum values
                 await conn.execute("""
                     SELECT setval('sales_sale_id_seq', COALESCE((SELECT MAX(sale_id) FROM sales), 0));
                     SELECT setval('promotions_promotion_id_seq', COALESCE((SELECT MAX(promotion_id) FROM promotions), 0));
                 """)
-                
+
                 # Add initial sale record for the product
                 await conn.execute("""
                     INSERT INTO sales (product_id, sale_date, price, sale_price)
                     VALUES ($1, NOW(), $2, $2)
                 """, next_id, price)
-                
+
                 # Add the new product to the shopping cart
                 await conn.execute("""
                     INSERT INTO shopping_cart (product_id, product_name, category_id, price)
                     VALUES ($1, $2, $3, $4)
                 """, next_id, product_name, category_id, price)
-                
+
                 return dict(result)
     except Exception as e:
         logger.error(f"Error adding product: {str(e)}", exc_info=True)
@@ -1093,7 +1061,7 @@ async def add_product(product_name: str, category_id: int, price: float):
 async def get_category_subtotals():
     """Get subtotals for each category in the shopping cart."""
     try:
-        async with materialize_connection() as conn:
+        async with materialize_pool.acquire() as conn:
             subtotals = await conn.fetch("""
                 SELECT 
                     category_name,

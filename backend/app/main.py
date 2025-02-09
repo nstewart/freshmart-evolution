@@ -45,7 +45,6 @@ async def startup_event():
     asyncio.create_task(database.collect_container_stats())
     # Start the continuous shopping cart task
     asyncio.create_task(database.add_to_cart())
-    asyncio.create_task(database.reload_pool())
 
     logger.info("Started background tasks: heartbeat, materialized view auto-refresh, continuous query load, shopping cart, and container stats collection")
 
@@ -245,7 +244,7 @@ async def configure_refresh_interval(interval: int):
 
 @app.get("/api/shopping-cart")
 async def get_shopping_cart(expanded = Query(None)):
-    async with database.materialize_connection() as conn:
+    async with database.materialize_pool.acquire()as conn:
         try:
             # Start a transaction
             async with conn.transaction():
