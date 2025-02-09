@@ -315,19 +315,6 @@ async def add_to_cart():
     async def insert_item():
         try:
             async with postgres_pool.acquire() as conn:
-                # Ensure we have a unique constraint on inventory.product_id
-                await conn.execute("""
-                    DO $$ 
-                    BEGIN
-                        IF NOT EXISTS (
-                            SELECT 1 FROM pg_constraint 
-                            WHERE conname = 'inventory_product_id_key'
-                        ) THEN
-                            ALTER TABLE inventory ADD CONSTRAINT inventory_product_id_key UNIQUE (product_id);
-                        END IF;
-                    END $$;
-                """)
-
                 # First, check if product_id 1 exists in the cart
                 has_product_one = await conn.fetchval("""
                     SELECT EXISTS(
@@ -343,14 +330,35 @@ async def add_to_cart():
                         FROM products
                         WHERE product_id = 1;
                     """)
-                    # Initialize inventory for product 1
-                    await conn.execute("""
-                        INSERT INTO inventory (product_id, warehouse_id, stock, restock_date)
-                        VALUES (1, 1, floor(random() * (25 - 5 + 1) + 5)::int, NOW() + interval '30 days')
-                        ON CONFLICT (product_id) DO UPDATE
-                        SET stock = floor(random() * (25 - 5 + 1) + 5)::int,
-                            restock_date = NOW() + interval '30 days';
+                    
+                    # Check if inventory exists for product 1
+                    has_inventory = await conn.fetchval("""
+                        SELECT EXISTS(
+                            SELECT 1 FROM inventory WHERE product_id = 1
+                        )
                     """)
+                    
+                    if not has_inventory:
+                        # Reset the sequence to the maximum value to avoid conflicts
+                        await conn.execute("""
+                            SELECT setval('inventory_inventory_id_seq', 
+                                        COALESCE((SELECT MAX(inventory_id) FROM inventory), 0))
+                        """)
+                        # Insert new inventory record
+                        await conn.execute("""
+                            INSERT INTO inventory (inventory_id, product_id, warehouse_id, stock, restock_date)
+                            VALUES (nextval('inventory_inventory_id_seq'), 1, 1, 
+                                   floor(random() * (25 - 5 + 1) + 5)::int, 
+                                   NOW() + interval '30 days')
+                        """)
+                    else:
+                        # Update existing inventory record
+                        await conn.execute("""
+                            UPDATE inventory 
+                            SET stock = floor(random() * (25 - 5 + 1) + 5)::int,
+                                restock_date = NOW() + interval '30 days'
+                            WHERE product_id = 1
+                        """)
 
                 # Then insert a random product
                 product = await conn.fetchrow("""
@@ -368,14 +376,34 @@ async def add_to_cart():
                 """)
                 
                 if product:
-                    # Initialize inventory for the randomly selected product
-                    await conn.execute("""
-                        INSERT INTO inventory (product_id, warehouse_id, stock, restock_date)
-                        VALUES ($1, 1, floor(random() * (25 - 5 + 1) + 5)::int, NOW() + interval '30 days')
-                        ON CONFLICT (product_id) DO UPDATE
-                        SET stock = floor(random() * (25 - 5 + 1) + 5)::int,
-                            restock_date = NOW() + interval '30 days';
+                    # Check if inventory exists for the random product
+                    has_inventory = await conn.fetchval("""
+                        SELECT EXISTS(
+                            SELECT 1 FROM inventory WHERE product_id = $1
+                        )
                     """, product['product_id'])
+                    
+                    if not has_inventory:
+                        # Reset the sequence to the maximum value to avoid conflicts
+                        await conn.execute("""
+                            SELECT setval('inventory_inventory_id_seq', 
+                                        COALESCE((SELECT MAX(inventory_id) FROM inventory), 0))
+                        """)
+                        # Insert new inventory record
+                        await conn.execute("""
+                            INSERT INTO inventory (inventory_id, product_id, warehouse_id, stock, restock_date)
+                            VALUES (nextval('inventory_inventory_id_seq'), $1, 1, 
+                                   floor(random() * (25 - 5 + 1) + 5)::int, 
+                                   NOW() + interval '30 days')
+                        """, product['product_id'])
+                    else:
+                        # Update existing inventory record
+                        await conn.execute("""
+                            UPDATE inventory 
+                            SET stock = floor(random() * (25 - 5 + 1) + 5)::int,
+                                restock_date = NOW() + interval '30 days'
+                            WHERE product_id = $1
+                        """, product['product_id'])
         except Exception as e:
             logger.error(f"Error adding item to shopping cart: {str(e)}", exc_info=True)
             raise
