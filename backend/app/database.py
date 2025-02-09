@@ -6,6 +6,7 @@ import asyncpg
 from dotenv import load_dotenv
 import logging
 import datetime
+import random
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -329,15 +330,80 @@ async def add_to_cart():
                         FROM products
                         WHERE product_id = 1;
                     """)
+                    
+                    # Check if inventory exists for product 1
+                    has_inventory = await conn.fetchval("""
+                        SELECT EXISTS(
+                            SELECT 1 FROM inventory WHERE product_id = 1
+                        )
+                    """)
+                    
+                    if not has_inventory:
+                        # Reset the sequence to the maximum value to avoid conflicts
+                        await conn.execute("""
+                            SELECT setval('inventory_inventory_id_seq', 
+                                        COALESCE((SELECT MAX(inventory_id) FROM inventory), 0))
+                        """)
+                        # Insert new inventory record
+                        await conn.execute("""
+                            INSERT INTO inventory (inventory_id, product_id, warehouse_id, stock, restock_date)
+                            VALUES (nextval('inventory_inventory_id_seq'), 1, 1, 
+                                   floor(random() * (25 - 5 + 1) + 5)::int, 
+                                   NOW() + interval '30 days')
+                        """)
+                    else:
+                        # Update existing inventory record
+                        await conn.execute("""
+                            UPDATE inventory 
+                            SET stock = floor(random() * (25 - 5 + 1) + 5)::int,
+                                restock_date = NOW() + interval '30 days'
+                            WHERE product_id = 1
+                        """)
 
                 # Then insert a random product
-                await conn.execute("""
+                product = await conn.fetchrow("""
+                    WITH selected_product AS (
+                        SELECT product_id, product_name, category_id, base_price 
+                        FROM products
+                        WHERE product_id != 1
+                        ORDER BY RANDOM()
+                        LIMIT 1
+                    )
                     INSERT INTO shopping_cart (product_id, product_name, category_id, price)
-                    SELECT product_id, product_name, category_id, base_price FROM products
-                    WHERE product_id != 1
-                    ORDER BY RANDOM()
-                    LIMIT 1;
+                    SELECT product_id, product_name, category_id, base_price 
+                    FROM selected_product
+                    RETURNING product_id;
                 """)
+                
+                if product:
+                    # Check if inventory exists for the random product
+                    has_inventory = await conn.fetchval("""
+                        SELECT EXISTS(
+                            SELECT 1 FROM inventory WHERE product_id = $1
+                        )
+                    """, product['product_id'])
+                    
+                    if not has_inventory:
+                        # Reset the sequence to the maximum value to avoid conflicts
+                        await conn.execute("""
+                            SELECT setval('inventory_inventory_id_seq', 
+                                        COALESCE((SELECT MAX(inventory_id) FROM inventory), 0))
+                        """)
+                        # Insert new inventory record
+                        await conn.execute("""
+                            INSERT INTO inventory (inventory_id, product_id, warehouse_id, stock, restock_date)
+                            VALUES (nextval('inventory_inventory_id_seq'), $1, 1, 
+                                   floor(random() * (25 - 5 + 1) + 5)::int, 
+                                   NOW() + interval '30 days')
+                        """, product['product_id'])
+                    else:
+                        # Update existing inventory record
+                        await conn.execute("""
+                            UPDATE inventory 
+                            SET stock = floor(random() * (25 - 5 + 1) + 5)::int,
+                                restock_date = NOW() + interval '30 days'
+                            WHERE product_id = $1
+                        """, product['product_id'])
         except Exception as e:
             logger.error(f"Error adding item to shopping cart: {str(e)}", exc_info=True)
             raise
@@ -1047,6 +1113,12 @@ async def add_product(product_name: str, category_id: int, price: float):
                     VALUES ($1, NOW(), $2, $2)
                 """, next_id, price)
 
+                # Initialize inventory with random stock between 5 and 25
+                await conn.execute("""
+                    INSERT INTO inventory (product_id, warehouse_id, stock, restock_date)
+                    VALUES ($1, 1, floor(random() * (25 - 5 + 1) + 5)::int, NOW() + interval '30 days')
+                """, next_id)
+
                 # Add the new product to the shopping cart
                 await conn.execute("""
                     INSERT INTO shopping_cart (product_id, product_name, category_id, price)
@@ -1074,3 +1146,33 @@ async def get_category_subtotals():
     except Exception as e:
         logger.error(f"Error fetching category subtotals: {str(e)}", exc_info=True)
         raise
+
+async def update_inventory_levels():
+    """Randomly updates inventory levels for items in the shopping cart every second."""
+    while True:
+        try:
+            async with postgres_pool.acquire() as conn:
+                # Get current cart items and their inventory levels
+                cart_items = await conn.fetch("""
+                    SELECT DISTINCT sc.product_id, i.stock 
+                    FROM shopping_cart sc
+                    JOIN inventory i ON sc.product_id = i.product_id
+                """)
+                
+                for item in cart_items:
+                    # Randomly decide to add or subtract (1 for add, -1 for subtract)
+                    direction = 1 if random.random() > 0.5 else -1
+                    # Random amount between 1-5
+                    amount = random.randint(1, 5) * direction
+                    
+                    # Update inventory ensuring stock doesn't go below 0
+                    await conn.execute("""
+                        UPDATE inventory 
+                        SET stock = GREATEST(0, stock + $1)
+                        WHERE product_id = $2
+                    """, amount, item['product_id'])
+                    
+                    logger.debug(f"Updated inventory for product {item['product_id']}: {amount:+d} units")
+        except Exception as e:
+            logger.error(f"Error updating inventory levels: {str(e)}", exc_info=True)
+        await asyncio.sleep(1.0)

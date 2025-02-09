@@ -108,8 +108,9 @@ CREATE VIEW dynamic_price_shopping_cart AS SELECT
   sc.product_id,  
   sc.product_name,
   c.category_id,
-    c.category_name,
-    dp.adjusted_price AS price
+  c.category_name,
+  dp.adjusted_price AS price,
+  COALESCE(SUM(i.stock), 0) as available_stock
 FROM 
     shopping_cart sc
 JOIN 
@@ -117,9 +118,15 @@ JOIN
 JOIN 
     categories c ON p.category_id = c.category_id
 JOIN 
-dynamic_pricing dp ON p.product_id = dp.product_id
-;
-
+    dynamic_pricing dp ON p.product_id = dp.product_id
+LEFT JOIN
+    inventory i ON p.product_id = i.product_id
+GROUP BY
+    sc.product_id,
+    sc.product_name,
+    c.category_id,
+    c.category_name,
+    dp.adjusted_price;
 
 CREATE VIEW category_totals AS
 WITH MUTUALLY RECURSIVE

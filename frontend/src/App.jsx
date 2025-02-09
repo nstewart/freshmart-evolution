@@ -1122,16 +1122,16 @@ function App() {
 {`
    Categories ──┐
                 └──► Popularity Score ──┐
-      Sales ────┐                       │
-         │      └──► Recent Prices ─────┤
-         │                              │
-         └────► High Demand ────────────┤
                                         │
-    Products ───┐                       ├──► Inventory Item
-                ├──► Inventory Status  ─┘
+      Sales ────┬──► Recent Prices ─────┤
                 │                       │
-   Promotions ──┴──► Promotion Effect  ─┘
-   
+                └──► High Demand ───────┤
+                                        │
+   Products ────┬──► Base Price ────────┼──► Inventory Item
+                │                       │
+   Inventory ───┴──► Stock Level ───────┤
+                                        │
+  Promotions ───────► Discount ─────────┘
 `} 
                             <span 
                               onClick={togglePromotion} 
