@@ -249,35 +249,78 @@ async def get_shopping_cart(expanded = Query(None)):
         try:
             # Start a transaction
             async with conn.transaction():
-                # Get cart items, sorted by price descending
+                # Get cart items
                 cart_items = await conn.fetch("""
                     SELECT * FROM dynamic_price_shopping_cart
                     ORDER BY price DESC
                 """)
                 
-                # Get category subtotals from the view
+                # Calculate cart total with exact precision
+                cart_total = await conn.fetchval("""
+                    WITH raw_total AS (
+                        SELECT SUM(price)::numeric(20,10) as total
+                        FROM dynamic_price_shopping_cart
+                    )
+                    SELECT ROUND(total, 2)
+                    FROM raw_total
+                """) or 0
+                
+                # Get category subtotals with exact precision
                 clause = ""
                 if expanded:
                     expanded_ids = ",".join([token.strip() for token in expanded.split(",") if token.strip().isdigit()])
                     clause = f"OR parent_id IN ({expanded_ids})"
 
                 subtotals = await conn.fetch(f"""
+                    WITH raw_totals AS (
+                        SELECT
+                            category_id, 
+                            parent_id,
+                            has_subcategory, 
+                            category_name,
+                            item_count,
+                            total::numeric(20,10) as raw_total
+                        FROM category_totals
+                        WHERE parent_id IS NULL {clause}
+                    ),
+                    category_data AS (
+                        SELECT
+                            category_id, 
+                            parent_id,
+                            has_subcategory, 
+                            category_name,
+                            item_count,
+                            ROUND(raw_total, 2) AS subtotal
+                        FROM raw_totals
+                    ),
+                    total_calc AS (
+                        SELECT SUM(raw_total)::numeric(20,10) as total
+                        FROM raw_totals 
+                        WHERE parent_id IS NULL
+                    )
                     SELECT
                         category_id, 
                         parent_id,
                         has_subcategory, 
                         category_name,
                         item_count,
-                        total AS subtotal
-                    FROM category_totals
-                    WHERE parent_id IS NULL {clause}
+                        subtotal,
+                        ROUND((SELECT total FROM total_calc), 2) as categories_total
+                    FROM category_data
                     ORDER BY coalesce(parent_id, category_id), category_id;
                 """)
 
-                return {
+                # Ensure both totals have exactly the same precision
+                cart_total = float(cart_total) if cart_total is not None else 0
+                categories_total = float(subtotals[0]["categories_total"]) if subtotals else 0
+
+                response_data = {
                     "cart_items": [dict(row) for row in cart_items],
-                    "category_subtotals": [dict(row) for row in subtotals]
+                    "category_subtotals": [dict(row) for row in subtotals],
+                    "cart_total": cart_total,
+                    "categories_total": categories_total
                 }
+                return response_data
         except Exception as e:
             logger.error(f"Error fetching shopping cart data: {e}")
             raise HTTPException(status_code=500, detail=str(e))
