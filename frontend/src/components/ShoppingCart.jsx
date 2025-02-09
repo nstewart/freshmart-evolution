@@ -152,9 +152,13 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                             margin: 0
                         }}>
 {`
-   Inventory Item ────────────┐
-                              ├──► Shopping Cart
-   Categories ────────────────┘            
+Inventory Item ────────────┐
+                           |
+   Products ───────────────┤     
+                           ├──► Shopping Cart     
+   Categories ─────────────┤     
+                           │     
+   Inventory ──────────────┘
 `}
                         </pre>
                     </Paper>
