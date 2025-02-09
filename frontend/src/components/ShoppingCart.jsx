@@ -152,13 +152,13 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                             margin: 0
                         }}>
 {`
-Inventory Item ────────────┐
-                           |
-   Products ───────────────┤     
-                           ├──► Shopping Cart     
-   Categories ─────────────┤     
-                           │     
-   Inventory ──────────────┘
+Inventory Item ───────────────────┐
+                                  |
+   Products ──────────────────────┤     
+                                  ├──► Shopping Cart     
+   Categories ────────────────────┤     
+                                  │     
+   Inventory ─────────────────────┘
 `}
                         </pre>
                     </Paper>
@@ -182,9 +182,13 @@ Inventory Item ────────────┐
                             margin: 0
                         }}>
 {`
-   Shopping Cart ─────────────┐
-                              ├──► Aggregated Cart Summary
-   Categories ────────────────┘             
+Shopping Cart ─────┐
+                   ├──► Category Totals ───┐
+Categories ────────┤                       ├──► Hierarchical Summary
+                   │                       │    
+Parent Categories ─┴───► Category Tree ────┘    
+
+                                              
 `}
                         </pre>
                     </Paper>
