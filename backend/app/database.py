@@ -204,11 +204,83 @@ async def new_materialize_pool():
     )
 
 
+async def refresh_materialize_pool():
+    """Safely refresh the Materialize connection pool with retries."""
+    global materialize_pool
+    max_retries = 3
+    retry_delay = 1.0  # Start with 1 second delay
+    
+    for attempt in range(max_retries):
+        try:
+            logger.info("Starting Materialize pool refresh...")
+            
+            # Create new pool first
+            new_pool = await new_materialize_pool()
+            
+            # Test the new pool with a simple query before switching
+            try:
+                async with new_pool.acquire() as conn:
+                    await conn.fetchval("SELECT 1")
+            except Exception as e:
+                logger.error(f"New pool validation failed: {str(e)}")
+                await new_pool.close()
+                raise
+            
+            if materialize_pool:
+                old_pool = materialize_pool
+                # Update the global reference first
+                materialize_pool = new_pool
+                
+                try:
+                    # Wait a short time for in-flight queries to complete
+                    await asyncio.sleep(0.5)
+                    
+                    # Try to gracefully close the old pool with a timeout
+                    try:
+                        await asyncio.wait_for(old_pool.close(), timeout=5.0)
+                    except asyncio.TimeoutError:
+                        logger.warning("Timeout while closing old pool - continuing anyway")
+                    except Exception as e:
+                        logger.warning(f"Non-critical error closing old pool: {str(e)}")
+                except Exception as e:
+                    logger.warning(f"Error during old pool cleanup: {str(e)}")
+            else:
+                # First time initialization
+                materialize_pool = new_pool
+            
+            logger.info("Successfully refreshed Materialize pool")
+            return
+            
+        except Exception as e:
+            logger.error(f"Error refreshing Materialize pool (attempt {attempt + 1}/{max_retries}): {str(e)}")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                logger.error("Max retries reached for Materialize pool refresh")
+                # Don't raise the error - we want to keep trying in the next interval
+
+
+async def periodic_pool_refresh():
+    """Periodically refresh the Materialize connection pool."""
+    while True:
+        try:
+            await asyncio.sleep(60)  # Refresh every minute
+            await refresh_materialize_pool()
+        except Exception as e:
+            logger.error(f"Error in periodic pool refresh: {str(e)}")
+            # On error, wait a bit longer before next attempt
+            await asyncio.sleep(5)  # Brief pause on error before continuing
+
+
 async def init_pools():
     """Initialize the global connection pools for PostgreSQL and Materialize."""
     global postgres_pool, materialize_pool
     postgres_pool = await new_postgres_pool()
     materialize_pool = await new_materialize_pool()
+    
+    # Start the periodic pool refresh task
+    asyncio.create_task(periodic_pool_refresh())
 
 
 # ============================================================================
