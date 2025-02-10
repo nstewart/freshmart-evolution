@@ -1701,7 +1701,7 @@ function App() {
                         </Text>
                       </Grid.Col>
                       <Grid.Col span={6}>
-                        <Paper p="xl" style={{ backgroundColor: '#E7E0FC', borderRadius: '12px' }}>
+                        <Paper p="xl" style={{ backgroundColor: 'rgb(13, 17, 22)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                           <Image
                             src="/images/materialize-architecture.png"
                             height={425}
