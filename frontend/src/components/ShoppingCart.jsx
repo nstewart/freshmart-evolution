@@ -244,7 +244,7 @@ Parent Categories ─┴───► Category Tree ────┘
                                                 flex: '1',
                                             }}
                                         >
-                                            Product ID
+                                            Prod. ID
                                         </th>
                                         <th
                                             style={{
