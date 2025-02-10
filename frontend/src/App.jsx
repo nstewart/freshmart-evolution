@@ -865,6 +865,9 @@ function App() {
     }
   }, [currentScenario]);
 
+  const [latencyScale, setLatencyScale] = useState('linear');
+  const [reactionScale, setReactionScale] = useState('linear');
+
   if (error) {
     console.error('Rendering error state:', error);
   }
@@ -1408,9 +1411,38 @@ function App() {
 
                 <Accordion.Item value="latency">
                   <Accordion.Control>
-                    <Text size="lg" weight={500} style={{ color: '#BCB9C0' }}>Query Latency (ms, log scale)</Text>
+                    <Text size="lg" weight={500} style={{ color: '#BCB9C0' }}>Query Latency (ms)</Text>
                   </Accordion.Control>
                   <Accordion.Panel>
+                    <Group position="apart" mb="md">
+                      <Text size="sm" style={{ color: '#BCB9C0' }}>Scale Type:</Text>
+                      <Button.Group>
+                        <Button
+                          size="xs"
+                          variant={latencyScale === 'linear' ? 'filled' : 'default'}
+                          onClick={() => setLatencyScale('linear')}
+                          style={{
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            backgroundColor: latencyScale === 'linear' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                            color: '#BCB9C0'
+                          }}
+                        >
+                          Linear
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant={latencyScale === 'log' ? 'filled' : 'default'}
+                          onClick={() => setLatencyScale('log')}
+                          style={{
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            backgroundColor: latencyScale === 'log' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                            color: '#BCB9C0'
+                          }}
+                        >
+                          Log
+                        </Button>
+                      </Button.Group>
+                    </Group>
                     <div style={{ width: '100%', height: '200px' }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart 
@@ -1431,8 +1463,8 @@ function App() {
                           />
                           <YAxis 
                             stroke="#BCB9C0" 
-                            scale="log"
-                            domain={[0.1, 'dataMax']}
+                            scale={latencyScale}
+                            domain={latencyScale === 'log' ? [0.1, 'dataMax'] : [0, 'dataMax']}
                             tickFormatter={(value) => `${value.toFixed(1)}`}
                             allowDataOverflow={true}
                           />
@@ -1495,9 +1527,38 @@ function App() {
 
                 <Accordion.Item value="reaction">
                   <Accordion.Control>
-                    <Text size="lg" weight={500} style={{ color: '#BCB9C0' }}>Reaction Time (ms) </Text>
+                    <Text size="lg" weight={500} style={{ color: '#BCB9C0' }}>Reaction Time (ms)</Text>
                   </Accordion.Control>
                   <Accordion.Panel>
+                    <Group position="apart" mb="md">
+                      <Text size="sm" style={{ color: '#BCB9C0' }}>Scale Type:</Text>
+                      <Button.Group>
+                        <Button
+                          size="xs"
+                          variant={reactionScale === 'linear' ? 'filled' : 'default'}
+                          onClick={() => setReactionScale('linear')}
+                          style={{
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            backgroundColor: reactionScale === 'linear' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                            color: '#BCB9C0'
+                          }}
+                        >
+                          Linear
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant={reactionScale === 'log' ? 'filled' : 'default'}
+                          onClick={() => setReactionScale('log')}
+                          style={{
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            backgroundColor: reactionScale === 'log' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                            color: '#BCB9C0'
+                          }}
+                        >
+                          Log
+                        </Button>
+                      </Button.Group>
+                    </Group>
                     <div style={{ width: '100%', height: '200px' }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart 
@@ -1518,7 +1579,8 @@ function App() {
                           <YAxis 
                             stroke="#BCB9C0" 
                             tick={{ fill: '#BCB9C0', fontSize: 14 }}
-                            domain={[0, 'dataMax']}
+                            scale={reactionScale}
+                            domain={reactionScale === 'log' ? [0.1, 'dataMax'] : [0, 'dataMax']}
                             tickFormatter={(value) => `${value.toFixed(1)}`}
                             allowDataOverflow={true}
                           />
@@ -1639,7 +1701,7 @@ function App() {
                         </Text>
                       </Grid.Col>
                       <Grid.Col span={6}>
-                        <Paper p="xl" style={{ backgroundColor: '#E7E0FC', borderRadius: '12px' }}>
+                        <Paper p="xl" style={{ backgroundColor: 'rgb(13, 17, 22)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                           <Image
                             src="/images/materialize-architecture.png"
                             height={425}
