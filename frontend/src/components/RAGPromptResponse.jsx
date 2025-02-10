@@ -3,32 +3,41 @@ import { Paper, Text } from '@mantine/core';
 import axios from 'axios';
 
 // Custom hook for typewriter effect
-const useTypewriter = (text, speed = 10) => {
+const useTypewriter = (text, speed = 10, shouldTrigger) => {
   const [displayText, setDisplayText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const previousTriggerRef = useRef(shouldTrigger);
 
   useEffect(() => {
-    // Reset state when text changes
-    setDisplayText('');
-    setCurrentIndex(0);
-    setIsTyping(true);
-  }, [text]);
+    // Only reset state when shouldTrigger changes from false to true
+    if (shouldTrigger && !previousTriggerRef.current) {
+      setDisplayText('');
+      setCurrentIndex(0);
+      setIsTyping(true);
+    } else if (!shouldTrigger) {
+      // When not animating, show full text immediately
+      setDisplayText(text);
+      setCurrentIndex(text.length);
+      setIsTyping(false);
+    }
+    previousTriggerRef.current = shouldTrigger;
+  }, [shouldTrigger, text]);
 
   useEffect(() => {
-    if (currentIndex < text.length) {
+    if (currentIndex < text.length && isTyping) {
       const timer = setTimeout(() => {
         setDisplayText(text.slice(0, currentIndex + 1));
         setCurrentIndex(i => i + 1);
       }, speed);
 
       return () => clearTimeout(timer);
-    } else {
+    } else if (isTyping) {
       setIsTyping(false);
     }
-  }, [currentIndex, text, speed]);
+  }, [currentIndex, text, speed, isTyping]);
 
-  return { displayText, isTyping };
+  return { displayText, isTyping, isComplete: currentIndex >= text.length };
 };
 
 const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
@@ -43,6 +52,8 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
     cqrs: null
   });
   const [cartData, setCartData] = useState(null);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+  const previousOLTPRef = useRef(includeOLTP);
 
   // Fetch cart data
   useEffect(() => {
@@ -62,6 +73,13 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
       return () => clearInterval(interval);
     }
   }, [currentScenario, includeOLTP]);
+
+  useEffect(() => {
+    if (previousOLTPRef.current !== includeOLTP) {
+      setShouldAnimate(true);
+    }
+    previousOLTPRef.current = includeOLTP;
+  }, [includeOLTP]);
 
   useEffect(() => {
     if (!includeOLTP) {
@@ -173,7 +191,17 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
 
   const response = getResponse();
   const fullText = response.parts.map(part => typeof part === 'string' ? part : part.text).join('');
-  const { displayText, isTyping } = useTypewriter(fullText);
+  const { displayText, isTyping, isComplete } = useTypewriter(fullText, 10, shouldAnimate);
+
+  // Reset animation when complete
+  useEffect(() => {
+    if (isComplete && shouldAnimate) {
+      const timer = setTimeout(() => {
+        setShouldAnimate(false);
+      }, 500); // Wait a bit after completion before resetting
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete, shouldAnimate]);
 
   const renderColoredText = (text) => {
     let currentPosition = 0;
