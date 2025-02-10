@@ -1611,6 +1611,49 @@ function App() {
               </Accordion>
             </Paper>
 
+            <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+              <Accordion styles={{
+                control: {
+                  borderBottom: 'none'
+                },
+                item: {
+                  borderBottom: 'none'
+                }
+              }}>
+                <Accordion.Item value="howItWorks">
+                  <Accordion.Control>
+                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>How Materialize Works</Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Grid>
+                      <Grid.Col span={6}>
+                        <Text size="xl" style={{ 
+                          color: '#BCB9C0',
+                          lineHeight: 1.7,
+                          marginRight: '2rem',
+                          fontSize: '1.5rem',
+                          fontWeight: 500,
+                          marginTop: '2rem'
+                        }}>
+                          Materialize is a real-time data integration platform that helps you transform, deliver, and act on fast-changing data, just using SQL.
+                        </Text>
+                      </Grid.Col>
+                      <Grid.Col span={6}>
+                        <Paper p="xl" style={{ backgroundColor: '#E7E0FC', borderRadius: '12px' }}>
+                          <Image
+                            src="/images/materialize-architecture.png"
+                            height={425}
+                            fit="contain"
+                            alt="Materialize Architecture"
+                          />
+                        </Paper>
+                      </Grid.Col>
+                    </Grid>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
+            </Paper>
+
             {(currentScenario === 'materialize' || currentScenario === 'cqrs') && (
                 <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
                     <Accordion defaultValue={null} styles={{
@@ -1725,48 +1768,7 @@ function App() {
               </Accordion>
             </Paper>
             
-            <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <Accordion styles={{
-                control: {
-                  borderBottom: 'none'
-                },
-                item: {
-                  borderBottom: 'none'
-                }
-              }}>
-                <Accordion.Item value="howItWorks">
-                  <Accordion.Control>
-                    <Text size="lg" weight={600} style={{ color: '#BCB9C0' }}>How Materialize Works</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Grid>
-                      <Grid.Col span={6}>
-                        <Text size="xl" style={{ 
-                          color: '#BCB9C0',
-                          lineHeight: 1.7,
-                          marginRight: '2rem',
-                          fontSize: '1.5rem',
-                          fontWeight: 500,
-                          marginTop: '2rem'
-                        }}>
-                          Materialize is a real-time data integration platform that helps you transform, deliver, and act on fast-changing data, just using SQL.
-                        </Text>
-                      </Grid.Col>
-                      <Grid.Col span={6}>
-                        <Paper p="xl" style={{ backgroundColor: '#E7E0FC', borderRadius: '12px' }}>
-                          <Image
-                            src="/images/materialize-architecture.png"
-                            height={425}
-                            fit="contain"
-                            alt="Materialize Architecture"
-                          />
-                        </Paper>
-                      </Grid.Col>
-                    </Grid>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              </Accordion>
-            </Paper>
+            
 
             <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
               <Accordion defaultValue={null} styles={{
