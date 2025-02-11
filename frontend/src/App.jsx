@@ -9,6 +9,7 @@ import RAGPromptResponse from './components/RAGPromptResponse.jsx';
 import ShoppingCart from './components/ShoppingCart.jsx';
 import AddProduct from './components/AddProduct.jsx';
 import TogglePromotion from './components/TogglePromotion.jsx';
+import StatusBanner from "./components/StatusBanner";
 
 const HISTORY_WINDOW_MS = 3 * 60 * 1000; // 3 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
@@ -876,6 +877,7 @@ function App() {
     <MantineProvider theme={theme} styles={globalStyles}>
       <div style={{ backgroundColor: 'rgb(13, 17, 22)', minHeight: '100vh' }}>
       <Container size="xl" py="xl">
+        <StatusBanner/>
         <Stack spacing="lg">
         <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', marginTop: '1rem' }}>
               <Grid>
