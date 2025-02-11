@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 uvicorn_access_logger = logging.getLogger("uvicorn.access")
 uvicorn_access_logger.setLevel(logging.WARNING)
 
-
 app = FastAPI()
 
 # Global variable to store the refresh task
@@ -48,7 +47,8 @@ async def startup_event():
     # Start the inventory update task
     asyncio.create_task(database.update_inventory_levels())
 
-    logger.info("Started background tasks: heartbeat, materialized view auto-refresh, continuous query load, shopping cart, inventory updates, and container stats collection")
+    logger.info(
+        "Started background tasks: heartbeat, materialized view auto-refresh, continuous query load, shopping cart, inventory updates, and container stats collection")
 
 
 @app.post("/configure-refresh-interval/{interval}")
@@ -245,8 +245,8 @@ async def configure_refresh_interval(interval: int):
 
 
 @app.get("/api/shopping-cart")
-async def get_shopping_cart(expanded = Query(None)):
-    async with database.materialize_pool.acquire()as conn:
+async def get_shopping_cart(expanded=Query(None)):
+    async with database.materialize_pool.acquire() as conn:
         try:
             # Start a transaction
             async with conn.transaction():
@@ -255,7 +255,7 @@ async def get_shopping_cart(expanded = Query(None)):
                     SELECT * FROM dynamic_price_shopping_cart
                     ORDER BY price DESC
                 """)
-                
+
                 # Calculate cart total with exact precision
                 cart_total = await conn.fetchval("""
                     WITH raw_total AS (
@@ -265,7 +265,7 @@ async def get_shopping_cart(expanded = Query(None)):
                     SELECT ROUND(total, 2)
                     FROM raw_total
                 """) or 0
-                
+
                 # Get category subtotals with exact precision
                 clause = ""
                 if expanded:
@@ -335,10 +335,23 @@ async def get_category_subtotals():
     )
 
 
+@app.get("/api/mz-status")
+async def get_mz_status():
+    async with database.materialize_pool.acquire() as conn:
+        result = await conn.fetchval("""
+            SELECT count(*) > 0 
+            FROM mz_internal.mz_source_status_history 
+            JOIN mz_sources ON id = source_id
+            WHERE type = 'postgres' AND status IN ('failed', 'stalled');
+        """)
+        return {"restart": result}
+
+
 class ProductCreate(BaseModel):
     product_name: str
     category_id: int
     price: float
+
 
 @app.get("/api/categories")
 async def get_categories():
@@ -352,6 +365,7 @@ async def get_categories():
             status_code=500,
             detail="Failed to get categories"
         )
+
 
 @app.post("/api/products")
 async def add_product(product: ProductCreate):
