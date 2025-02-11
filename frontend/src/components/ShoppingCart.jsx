@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, Grid, Paper, Group, Divider } from '@mantine/core';
+import { Text, Grid, Paper, Group, Divider, Switch } from '@mantine/core';
 
 const ShoppingCart = ({ onLatencyUpdate }) => {
     // Existing state for cart items and error handling.
@@ -9,6 +9,7 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
     const [requestTime, setRequestTime] = useState(null);
     const [cartTotal, setCartTotal] = useState(0);
     const [categoriesTotal, setCategoriesTotal] = useState(0);
+    const [showSummaryView, setShowSummaryView] = useState(false);
 
     // New state: keep track of which category IDs are expanded.
     const [expandedCategories, setExpandedCategories] = useState([]);
@@ -123,12 +124,30 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
     return (
         <div>
             {requestTime !== null && (
-                <Text
-                    size="xs"
-                    style={{ color: '#9d4edd', marginBottom: '8px', fontWeight: 500 }}
-                >
-                    Request time: {requestTime}ms
-                </Text>
+                <Group position="apart" style={{ marginBottom: '8px', width: '100%' }}>
+                    <Switch
+                        label="Show Summary View"
+                        checked={showSummaryView}
+                        onChange={(event) => setShowSummaryView(event.currentTarget.checked)}
+                        size="sm"
+                        color="blue"
+                        styles={{
+                            label: {
+                                color: '#BCB9C0'
+                            }
+                        }}
+                    />
+                    <Text
+                        size="xs"
+                        style={{ 
+                            color: '#9d4edd', 
+                            fontWeight: 500,
+                            marginLeft: 'auto'
+                        }}
+                    >
+                        Request time: {requestTime}ms
+                    </Text>
+                </Group>
             )}
 
             {/* New Data Product Lineage Cards - Always shown */}
@@ -163,24 +182,25 @@ Inventory Item ───────────────────┐
                         </pre>
                     </Paper>
                 </Grid.Col>
-                <Grid.Col span={6}>
-                    <Paper p="md" withBorder style={{ 
-                        backgroundColor: 'rgb(13, 17, 22)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
-                        <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Category Hierarchy Data Product</Text>
-                        <pre style={{ 
-                            fontFamily: 'Inter, monospace',
-                            fontSize: '14px',
-                            lineHeight: '1.5',
-                            whiteSpace: 'pre',
-                            overflow: 'auto',
-                            padding: '12px',
-                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                            borderRadius: '4px',
-                            color: '#BCB9C0',
-                            margin: 0
+                {showSummaryView && (
+                    <Grid.Col span={6}>
+                        <Paper p="md" withBorder style={{ 
+                            backgroundColor: 'rgb(13, 17, 22)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
                         }}>
+                            <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Category Hierarchy Data Product</Text>
+                            <pre style={{ 
+                                fontFamily: 'Inter, monospace',
+                                fontSize: '14px',
+                                lineHeight: '1.5',
+                                whiteSpace: 'pre',
+                                overflow: 'auto',
+                                padding: '12px',
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                borderRadius: '4px',
+                                color: '#BCB9C0',
+                                margin: 0
+                            }}>
 {`
 Shopping Cart ─────┐
                    ├──► Category Totals ───┐
@@ -190,9 +210,10 @@ Parent Categories ─┴───► Category Tree ────┘
 
                                               
 `}
-                        </pre>
-                    </Paper>
-                </Grid.Col>
+                            </pre>
+                        </Paper>
+                    </Grid.Col>
+                )}
             </Grid>
 
             {error ? (
@@ -208,7 +229,7 @@ Parent Categories ─┴───► Category Tree ────┘
                 <>
                     <Grid style={{ marginBottom: '8px' }}>
                         {/* Shopping Cart Column */}
-                        <Grid.Col span={6}>
+                        <Grid.Col span={showSummaryView ? 6 : 12}>
                             <Text size="md" weight={500} mb="sm" style={{ color: '#BCB9C0' }}>
                                 Shopping Cart
                             </Text>
@@ -379,67 +400,69 @@ Parent Categories ─┴───► Category Tree ────┘
                         </Grid.Col>
 
                         {/* Category Subtotals Column */}
-                        <Grid.Col span={6}>
-                            <Text size="md" weight={500} mb="sm" style={{ color: '#BCB9C0' }}>
-                                Category Subtotals
-                            </Text>
-                            <table
-                                style={{
-                                    width: '100%',
-                                    borderCollapse: 'collapse',
-                                    backgroundColor: 'rgb(13, 17, 22)',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    borderRadius: '4px',
-                                }}
-                            >
-                                <thead>
-                                    <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                                        <th
-                                            style={{
-                                                padding: '12px 16px',
-                                                textAlign: 'left',
-                                                color: '#BCB9C0',
-                                                fontSize: '0.875rem',
-                                                fontWeight: 600,
-                                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                            }}
-                                        >
-                                            Category
-                                        </th>
-                                        <th
-                                            style={{
-                                                padding: '12px 16px',
-                                                textAlign: 'right',
-                                                color: '#BCB9C0',
-                                                fontSize: '0.875rem',
-                                                fontWeight: 600,
-                                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                            }}
-                                        >
-                                            Items
-                                        </th>
-                                        <th
-                                            style={{
-                                                padding: '12px 16px',
-                                                textAlign: 'right',
-                                                color: '#BCB9C0',
-                                                fontSize: '0.875rem',
-                                                fontWeight: 600,
-                                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                            }}
-                                        >
-                                            Subtotal
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>{renderCategoryRows(null, 0)}</tbody>
-                            </table>
-                        </Grid.Col>
+                        {showSummaryView && (
+                            <Grid.Col span={6}>
+                                <Text size="md" weight={500} mb="sm" style={{ color: '#BCB9C0' }}>
+                                    Category Subtotals
+                                </Text>
+                                <table
+                                    style={{
+                                        width: '100%',
+                                        borderCollapse: 'collapse',
+                                        backgroundColor: 'rgb(13, 17, 22)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        borderRadius: '4px',
+                                    }}
+                                >
+                                    <thead>
+                                        <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                                            <th
+                                                style={{
+                                                    padding: '12px 16px',
+                                                    textAlign: 'left',
+                                                    color: '#BCB9C0',
+                                                    fontSize: '0.875rem',
+                                                    fontWeight: 600,
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                                }}
+                                            >
+                                                Category
+                                            </th>
+                                            <th
+                                                style={{
+                                                    padding: '12px 16px',
+                                                    textAlign: 'right',
+                                                    color: '#BCB9C0',
+                                                    fontSize: '0.875rem',
+                                                    fontWeight: 600,
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                                }}
+                                            >
+                                                Items
+                                            </th>
+                                            <th
+                                                style={{
+                                                    padding: '12px 16px',
+                                                    textAlign: 'right',
+                                                    color: '#BCB9C0',
+                                                    fontSize: '0.875rem',
+                                                    fontWeight: 600,
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                                }}
+                                            >
+                                                Subtotal
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>{renderCategoryRows(null, 0)}</tbody>
+                                </table>
+                            </Grid.Col>
+                        )}
                     </Grid>
                     
                     {/* Totals Row */}
                     <Grid style={{ marginTop: 0 }}>
-                        <Grid.Col span={6}>
+                        <Grid.Col span={showSummaryView ? 6 : 12}>
                             <Paper p="md" style={{
                                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
                                 border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -453,20 +476,22 @@ Parent Categories ─┴───► Category Tree ────┘
                                 </Group>
                             </Paper>
                         </Grid.Col>
-                        <Grid.Col span={6}>
-                            <Paper p="md" style={{
-                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                borderRadius: '4px'
-                            }}>
-                                <Group position="apart" style={{ paddingRight: '16px' }}>
-                                    <Text weight={600} size="sm" style={{ color: '#BCB9C0', flex: 2 }}>Category Subtotals:</Text>
-                                    <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>
-                                        ${categoriesTotal.toFixed(2)}
-                                    </Text>
-                                </Group>
-                            </Paper>
-                        </Grid.Col>
+                        {showSummaryView && (
+                            <Grid.Col span={6}>
+                                <Paper p="md" style={{
+                                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    borderRadius: '4px'
+                                }}>
+                                    <Group position="apart" style={{ paddingRight: '16px' }}>
+                                        <Text weight={600} size="sm" style={{ color: '#BCB9C0', flex: 2 }}>Category Subtotals:</Text>
+                                        <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>
+                                            ${categoriesTotal.toFixed(2)}
+                                        </Text>
+                                    </Group>
+                                </Paper>
+                            </Grid.Col>
+                        )}
                     </Grid>
                 </>
             )}
