@@ -1984,7 +1984,7 @@ function App() {
                               Customer 360
                             </Text>
                             <Text size="sm" color="gray.3" align="center">
-                              Build a real-time unified view of your customers across all touchpoints
+                              Build a real-time view of your customers across touchpoints
                             </Text>
                           </Stack>
                         </Paper>
@@ -2013,7 +2013,7 @@ function App() {
                               Digital Twin
                             </Text>
                             <Text size="sm" color="gray.3" align="center">
-                              Create live digital representations of physical systems and processes
+                              Create live representations of physical systems and processes
                             </Text>
                           </Stack>
                         </Paper>

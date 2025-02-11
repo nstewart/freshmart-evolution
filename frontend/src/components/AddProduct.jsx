@@ -10,6 +10,7 @@ const AddProduct = () => {
         price: ''
     });
     const [message, setMessage] = useState('');
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         // Fetch categories when component mounts
@@ -19,7 +20,7 @@ const AddProduct = () => {
                 setCategories(response.data);
             } catch (error) {
                 console.error('Error fetching categories:', error);
-                setMessage('Failed to load categories');
+                setError('Failed to load categories');
             }
         };
 
@@ -39,6 +40,7 @@ const AddProduct = () => {
         try {
             const response = await axios.post('http://localhost:8000/api/products', formData);
             setMessage('Product added successfully!');
+            setError(null);
             // Clear form
             setFormData({
                 product_name: '',
@@ -47,25 +49,15 @@ const AddProduct = () => {
             });
         } catch (error) {
             console.error('Error adding product:', error);
-            setMessage('Failed to add product');
+            setError('Failed to add product');
+            setMessage('');
         }
     };
 
     return (
         <div>
             <Text size="lg" weight={600} mb="md" style={{ color: '#BCB9C0' }}>Add New Product</Text>
-            {message && (
-                <div style={{ 
-                    padding: '12px', 
-                    marginBottom: '16px', 
-                    borderRadius: '4px',
-                    backgroundColor: message.includes('Failed') ? 'rgba(255, 0, 0, 0.1)' : 'rgba(0, 255, 0, 0.1)',
-                    color: message.includes('Failed') ? '#ff4d4f' : '#52c41a',
-                    border: `1px solid ${message.includes('Failed') ? '#ff4d4f' : '#52c41a'}`
-                }}>
-                    {message}
-                </div>
-            )}
+            
             <form onSubmit={handleSubmit} style={{ 
                 backgroundColor: 'rgb(13, 17, 22)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -192,9 +184,20 @@ const AddProduct = () => {
                 >
                     Add Product
                 </button>
+
+                {message && (
+                    <Text color="green" size="sm" mt="sm">
+                        {message}
+                    </Text>
+                )}
+                {error && (
+                    <Text color="red" size="sm" mt="sm">
+                        Error: {error}
+                    </Text>
+                )}
             </form>
         </div>
     );
-};
+}
 
 export default AddProduct; 
