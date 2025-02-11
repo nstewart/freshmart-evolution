@@ -202,7 +202,7 @@ const RAGLatencyChart = ({ currentScenario, stats, includeOLTP }) => {
               {data.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
-                  fill={entry.highlight ? '#ff7300' : 'rgba(136, 132, 216, 0.6)'} 
+                  fill={entry.highlight ? '#9333EA' : 'rgba(156, 163, 175, 0.5)'} 
                 />
               ))}
             </Bar>
