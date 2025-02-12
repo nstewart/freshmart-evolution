@@ -188,8 +188,6 @@ JOIN has_subcategories s USING (category_id);
 
 CREATE INDEX IF NOT EXISTS dynamic_pricing_product_id_idx ON dynamic_pricing (product_id);
 
-CREATE INDEX IF NOT EXISTS hierarchical_totals_category_id_idx ON hierarchical_totals (category_id);
-
 CREATE DEFAULT INDEX IF NOT EXISTS dynamic_price_shopping_cart_idx ON dynamic_price_shopping_cart;
 CREATE DEFAULT INDEX IF NOT EXISTS category_totals_category_id_idx ON category_totals;
 
