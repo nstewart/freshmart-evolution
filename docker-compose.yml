@@ -59,7 +59,7 @@ services:
     volumes:
       - .:/app
       - ./data:/data
-      - ./data_files:/data_files
+      - ./freshmart:/freshmart
     working_dir: /app
     environment:
       - PGHOST=postgres

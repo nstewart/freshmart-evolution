@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { Button, Text, NumberInput, Group } from '@mantine/core';
+import {useTranslation} from "react-i18next";
+import i18n from "../i18n";
 
 const TogglePromotion = () => {
+    const { t } = useTranslation();
+
     const [productId, setProductId] = useState('');
     const [status, setStatus] = useState(null);
     const [error, setError] = useState(null);
 
     const handleToggle = async () => {
         if (!productId) {
-            setError('Please enter a product ID');
+            setError(`Please enter a ${ t("primaryEntity.type") } ID`);
             return;
         }
 
@@ -23,7 +27,7 @@ const TogglePromotion = () => {
                 throw new Error(result.message || 'Failed to toggle promotion');
             }
 
-            setStatus(`Successfully ${result.active ? 'enabled' : 'disabled'} promotion for product ${productId}`);
+            setStatus(`Successfully ${result.active ? 'enabled' : 'disabled'} promotion for ${ t("primaryEntity.type") } ${productId}`);
             setError(null);
         } catch (err) {
             setError(err.message);
@@ -31,9 +35,11 @@ const TogglePromotion = () => {
         }
     };
 
+    const placeHolder = `Enter ${ t("primaryEntity.type") } ID`
+    const label = `${ t("primaryEntity.type") } ID`
     return (
         <div>
-            <Text size="lg" weight={600} mb="md" style={{ color: '#BCB9C0' }}>Toggle Promotion</Text>
+            <Text size="lg" weight={600} mb="md" style={{ color: '#BCB9C0' }}>Toggle { t("marketModifier") }</Text>
             
             <div style={{ 
                 padding: '16px',
@@ -45,8 +51,8 @@ const TogglePromotion = () => {
                     <NumberInput
                         value={productId}
                         onChange={(val) => setProductId(val)}
-                        placeholder="Enter Product ID"
-                        label="Product ID"
+                        placeholder={placeHolder}
+                        label={label}
                         required
                         style={{ flex: 1 }}
                         styles={{
@@ -65,7 +71,7 @@ const TogglePromotion = () => {
                         onClick={handleToggle}
                         style={{ marginTop: '25px' }}
                     >
-                        Toggle Promotion
+                        Toggle { t("marketModifier") }
                     </Button>
                 </Group>
 

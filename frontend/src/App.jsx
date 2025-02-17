@@ -4,12 +4,15 @@ import { MantineProvider, Container, TextInput, Button, Paper, Text, Group, Stac
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import ContainersCPUChart from './components/ContainersCPUChart.jsx';
 import ContainersMemoryChart from './components/ContainersMemoryChart.jsx';
+import DataProductGraph from './components/DataProductGraph'
 import RAGLatencyChart from './components/RAGLatencyChart.jsx';
 import RAGPromptResponse from './components/RAGPromptResponse.jsx';
 import ShoppingCart from './components/ShoppingCart.jsx';
 import AddProduct from './components/AddProduct.jsx';
 import TogglePromotion from './components/TogglePromotion.jsx';
 import StatusBanner from "./components/StatusBanner";
+import { useTranslation } from "react-i18next";
+import i18n from './i18n'
 
 const HISTORY_WINDOW_MS = 3 * 60 * 1000; // 3 minutes in milliseconds
 const API_URL = 'http://localhost:8000'; // FastAPI backend URL
@@ -352,6 +355,7 @@ function calculateStats(values) {
 }
 
 function App() {
+  const { t } = useTranslation();
   const [metrics, setMetrics] = useState([]);
   const [error, setError] = useState(null);
   const [indexExists, setIndexExists] = useState(false);
@@ -389,6 +393,18 @@ function App() {
   const lagStatus = getLagStatus(currentMetric.materialize_freshness);
   const [currentScenario, setCurrentScenario] = useState('direct'); // Options: direct, batch, materialize, cqrs
   const initialTrafficStateFetched = useRef(false);
+
+  useEffect(() => {
+    fetch("/api/demo")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.mode) {
+            i18n.changeLanguage(data.mode);
+          }
+        })
+        .catch((error) => console.error("Error fetching demo:", error))
+        .finally(() => setLoading(false));
+  }, []);
 
   // Add refs for previous prices
   const prevPrices = useRef({
@@ -1004,7 +1020,7 @@ function App() {
             <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
               <Stack spacing="xl">
                 <Text size="xl" weight={700} style={{ color: '#BCB9C0' }}>
-                  Freshmart
+                  { t("name") }
                 </Text>
                 
                 <Grid>
@@ -1014,11 +1030,7 @@ function App() {
                       lineHeight: 1.7,
                       marginRight: '2rem'
                     }}>
-                      Freshmart is an online retailer selling produce and other grocery items nationwide. 
-                      Freshmart offers dynamic pricing to its customers. The price of any given item will 
-                      fluctuate based on available inventory, snap promotions, popularity, and a host of 
-                      other factors. As data volumes and query complexity increased, their "inventory" data 
-                      product now can't meet their web and microservice SLAs.
+                      { t("description") }
                     </Text>
                   </Grid.Col>
                   
@@ -1101,7 +1113,7 @@ function App() {
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Text size="sm" color="dimmed" mb="lg" style={{ maxWidth: '800px', lineHeight: '1.6' }}>
-                      The inventory item data product combines data from multiple sources to calculate dynamic prices.
+                      The { t("dataProduct.name").toLowerCase() } item data product combines data from multiple sources to calculate dynamic prices.
                     </Text>
                     
                     <Grid>
@@ -1124,20 +1136,7 @@ function App() {
                             color: '#BCB9C0',
                             margin: 0
                           }}>
-{`
-   Categories ──┐
-                └──► Popularity Score ──┐
-                                        │
-      Sales ────┬──► Recent Prices ─────┤
-                │                       │
-                └──► High Demand ───────┤
-                                        │
-   Products ────┬──► Base Price ────────┼──► Inventory Item
-                │                       │
-   Inventory ───┴──► Stock Level ───────┤
-                                        │
-  Promotions ───────► Discount ─────────┘
-`} 
+                            <DataProductGraph/>
                             <span 
                               onClick={togglePromotion} 
                               style={{ 
@@ -1149,7 +1148,7 @@ function App() {
                                 }
                               }}
                             >
-                              {isPromotionLoading ? '(Toggling promotion...)' : '(Toggle Promotion)'}
+                              {isPromotionLoading ? `(Toggling ${t("marketModifier")}...)` : `(Toggle ${t("marketModifier")})`}
                             </span>
                           </pre>
                         </Paper>
@@ -1160,7 +1159,7 @@ function App() {
                           backgroundColor: 'rgb(13, 17, 22)',
                           border: '1px solid rgba(255, 255, 255, 0.1)'
                         }}>
-                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Inventory Data Product</Text>
+                          <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>{t("dataProduct.name")} Data Product</Text>
                           <pre 
                             style={{ 
                               fontFamily: 'Inter, monospace',
@@ -1179,7 +1178,7 @@ function App() {
                                 const useMaterialize = currentScenario === 'materialize' || currentScenario === 'cqrs';
                                 const data = {
                                   product_id: "1",
-                                  name: "Fresh Red Delicious Apple",                                  
+                                  name: t("primaryEntity.name"),
                                   current_price: (useMaterialize ? currentMetric.materialize_price :
                                                currentScenario === 'batch' ? currentMetric.materialized_view_price :
                                                currentScenario === 'direct' ? currentMetric.view_price :
@@ -1187,17 +1186,13 @@ function App() {
                                   last_update: useMaterialize ? 
                                              new Date(Date.now() - (currentMetric.materialize_end_to_end_latency || 0)).toISOString() :
                                              new Date().toISOString(),
-                                  inventory_status: "IN_STOCK",
+                                  status: t("primaryEntity.status"),
                                   source: useMaterialize ? "Materialize" :
                                          currentScenario === 'batch' ? "Batch (Cache) Table" :
                                          currentScenario === 'direct' ? "PostgreSQL View" :
                                          "Materialize",
                                   
-                                  metadata: {
-                                    organic: true,
-                                    origin: "Washington State",
-                                    unit: "per pound"
-                                  }
+                                  metadata: t("primaryEntity.metadata", { returnObjects: true })
                                 };
                                 
                                 return JSON.stringify(data, null, 2)
@@ -1260,7 +1255,7 @@ function App() {
                                   fit="contain"
                                   alt="Product"
                                 />
-                                <Text weight={500} size="sm" style={{ color: '#BCB9C0' }}>Fresh Red Delicious Apple</Text>
+                                <Text weight={500} size="sm" style={{ color: '#BCB9C0' }}>{t("primaryEntity.name")}</Text>
                               </div>
                             </div>
                             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
@@ -1298,7 +1293,7 @@ function App() {
                                   fit="contain"
                                   alt="Product"
                                 />
-                                <Text weight={500} size="sm" style={{ color: '#BCB9C0' }}>Fresh Red Delicious Apple</Text>
+                                <Text weight={500} size="sm" style={{ color: '#BCB9C0' }}>{ t("primaryEntity.name") }</Text>
                               </div>
                             </div>
                             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>
@@ -1336,7 +1331,7 @@ function App() {
                                   fit="contain"
                                   alt="Product"
                                 />
-                                <Text weight={500} size="sm" style={{ color: '#BCB9C0' }}>Fresh Red Delicious Apple</Text>
+                                <Text weight={500} size="sm" style={{ color: '#BCB9C0' }}>{ t("primaryEntity.name") }</Text>
                               </div>
                             </div>
                             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '20px' }}>

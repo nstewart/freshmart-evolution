@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Paper, Text } from '@mantine/core';
 import axios from 'axios';
+import {useTranslation} from "react-i18next";
+import i18next from '../i18n';
 
 // Custom hook for typewriter effect
 const useTypewriter = (text, speed = 10, shouldTrigger) => {
@@ -41,7 +43,9 @@ const useTypewriter = (text, speed = 10, shouldTrigger) => {
 };
 
 const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
-  const prompt = "When am I eligible for the next membership status?";
+  const { t } = useTranslation();
+
+  const prompt = t("rag.prompt");
   const [totalLatency, setTotalLatency] = useState(185);
   const lastValidLatencyRef = useRef(80);
   const lastScenarioRef = useRef(currentScenario);
@@ -158,17 +162,13 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
   const getResponse = () => {
     if (!includeOLTP) {
       return {
-        parts: [
-          'Based on our membership program guidelines, Gold status is achieved when you spend $1,000 or more within a calendar year. For your specific progress towards Gold status, I recommend checking your account dashboard for the most up-to-date information.'
-        ]
+        parts: [t("rag.responses.static")]
       };
     }
 
     if (currentScenario == 'batch') {
       return {
-        parts: [
-          'Based on your purchase history, you\'ve spent $892 this year and need just $108 more to reach Gold status.'
-        ]
+        parts: [t("rag.responses.batch")]
       }
     }
 
@@ -181,11 +181,17 @@ const RAGPromptResponse = ({ includeOLTP, currentMetric, currentScenario }) => {
     }
 
     return {
-      parts: [
-        'Based on your purchase history, you\'ve spent $995 this year and need just $5 more to reach Gold status. With the',
-        { text: ` current items in your cart (${cartItemCount} items totaling $${cartTotal.toFixed(2)})`, color: '#228be6' },
-        ', you\'re going to reach Gold status at checkout!'
-      ]
+      parts: t("rag.responses.live", { returnObjects: true }).map((line) => {
+        let replaced = line
+            .replace(/\$count\$/g, cartItemCount)
+            .replace(/\$total\$/g, cartTotal.toFixed(2));
+
+        if (replaced === line) {
+          return replaced + " ";
+        } else {
+          return { text: replaced + " ", color: '#228be6' }
+        }
+      })
     };
   };
 

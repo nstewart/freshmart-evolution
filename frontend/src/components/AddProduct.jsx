@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Text } from '@mantine/core';
+import {useTranslation} from "react-i18next";
+import i18n from "../i18n";
 
 const AddProduct = () => {
+    const { t } = useTranslation();
+
     const [categories, setCategories] = useState([]);
     const [formData, setFormData] = useState({
         product_name: '',
@@ -39,7 +43,7 @@ const AddProduct = () => {
         e.preventDefault();
         try {
             const response = await axios.post('http://localhost:8000/api/products', formData);
-            setMessage('Product added successfully!');
+            setMessage(`${t("primaryEntity.type")} added successfully!`);
             setError(null);
             // Clear form
             setFormData({
@@ -48,15 +52,15 @@ const AddProduct = () => {
                 price: ''
             });
         } catch (error) {
-            console.error('Error adding product:', error);
-            setError('Failed to add product');
+            console.error(`Error adding ${t("primaryEntity.type")}:`, error);
+            setError(`Failed to add ${t("primaryEntity.type")}`);
             setMessage('');
         }
     };
 
     return (
         <div>
-            <Text size="lg" weight={600} mb="md" style={{ color: '#BCB9C0' }}>Add New Product</Text>
+            <Text size="lg" weight={600} mb="md" style={{ color: '#BCB9C0' }}>Add New { t("primaryEntity.type") }</Text>
             
             <form onSubmit={handleSubmit} style={{ 
                 backgroundColor: 'rgb(13, 17, 22)',
@@ -72,7 +76,7 @@ const AddProduct = () => {
                         fontSize: '14px',
                         fontWeight: 500
                     }}>
-                        Product Name
+                        { t("primaryEntity.type") } Name
                     </label>
                     <input
                         type="text"
@@ -182,7 +186,7 @@ const AddProduct = () => {
                         }
                     }}
                 >
-                    Add Product
+                    Add { t("primaryEntity.type") }
                 </button>
 
                 {message && (
