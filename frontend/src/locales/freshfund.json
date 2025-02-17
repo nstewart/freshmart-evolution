@@ -1,0 +1,36 @@
+{
+  "title": "FreshFund",
+  "description": "FreshFund is a global financial institution offering real-time dynamic pricing for securities. The price of any given security fluctuates based on trading volume, market sentiment, available supply, and macroeconomic events. As data volumes and query complexity increased, their pricing system struggles to meet real-time trading SLAs.",
+
+  "dataProduct": {
+    "name": "Security Data Product"
+  },
+
+  "primaryEntity": {
+    "name": "Apple Inc.",
+    "type": "Security",
+    "status": "OPEN",
+    "metadata": {
+      "sector": "Technology",
+      "exchange": "NASDAQ",
+      "marketCap": "$2.8T"
+    }
+  },
+
+  "marketModifier": "Volatility",
+  "groupingType": "Sector",
+  "collectionType": "Portfolio",
+
+  "rag": {
+    "prompt": "How efficient is my capital allocation?",
+    "responses": {
+      "static": "Capital allocation efficiency depends on diversification, position sizing, and risk exposure. Ensuring a balanced portfolio can optimize returns while managing downside risk. Consider reviewing your portfolio periodically and consulting with a financial professional.",
+      "batch": "At market close yesterday, your portfolio experienced increased volatility, with several holdings moving more than ±3%. Consider reviewing your largest positions to assess if rebalancing is needed based on recent price swings.",
+      "live": [
+        "Several of your holdings have moved more than ±3% today, impacting your overall portfolio risk.",
+        "Your portfolio currently has $count$ holdings with a total value of $$total$.",
+        "Your portfolio has gained +5% since yesterday's close—consider reviewing your top-performing assets for potential profit-taking."
+      ]
+    }
+  }
+}

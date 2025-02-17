@@ -107,7 +107,7 @@ const AddProduct = () => {
                         fontSize: '14px',
                         fontWeight: 500
                     }}>
-                        Category
+                        { t("groupingType") }
                     </label>
                     <select
                         name="category_id"
@@ -128,7 +128,7 @@ const AddProduct = () => {
                             }
                         }}
                     >
-                        <option value="">Select a category</option>
+                        <option value="">Select a { t("groupingType") }</option>
                         {categories.map(category => (
                             <option key={category.category_id} value={category.category_id}>
                                 {category.category_name}

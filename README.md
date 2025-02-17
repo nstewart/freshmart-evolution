@@ -136,6 +136,36 @@ This will start all required services:
 
 Once all services are running, visit http://localhost:5173 to access the application.
 
+### **Demo Verticals**
+
+This demo supports two industry verticals, each showcasing real-time data integration for a different domain:
+
+### **1. Freshmart (E-commerce & Logistics) (Default)**
+A retailer dynamically adjusts pricing based on inventory, demand, and promotions.
+
+### **2. FreshFund (Financial Services)**
+A financial institution tracks securities pricing, portfolio values, and capital allocation.  
+
+
+### **Switching Between Verticals**
+Set the `DEMO` environment variable before running:
+
+```bash
+DEMO=freshfund docker compose up
+```
+or
+```bash
+DEMO=freshmart docker compose up
+```
+
+You will always need to destroy volumes before switching demos. 
+
+```bash
+docker-compose down --volumes
+```
+
+See [VERTICAL.md](VERTICAL.md) for more details on adding a new vertical.
+
 ## Manual Setup
 
 ### Prerequisites

@@ -19,6 +19,20 @@ const DataProductGraph = () => {
                                         │
   Promotions ───────► Discount ─────────┘
   `,
+        freshfund: `
+   Sectors ──┐
+             └──► Market Sentiment ──┐
+                                     │
+ Trading Volume ────┬──► Recent Prices ──────┐
+                    │                        │
+                    └──► High Demand ────────┤
+                                             │
+   Securities ────┬──► Base Price ───────────┼──► Security Price
+                  │                          │
+   Holdings ──────┴──► Available Supply ─────┤
+                                             │
+   Market Events ────► Volatility Adjustment ┘
+  `,
     };
 
     const currentGraph = graphs[i18n.language] || graphs.freshmart;

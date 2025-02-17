@@ -388,7 +388,7 @@ async def add_product(product: ProductCreate):
 @app.get("/api/demo")
 async def get_demo_mode():
     async with database.postgres_pool.acquire() as conn:
-        mode = conn.fetchval("SELECT mode FROM demo")
+        mode = await conn.fetchval("SELECT mode FROM demo")
         return {'mode': mode}
 
 

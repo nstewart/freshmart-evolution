@@ -10,11 +10,12 @@ set +a
 
 # Function to show usage
 show_usage() {
-    echo "Usage: $0 [postgres|materialize|all] [freshmart] [--reduced]"
+    echo "Usage: $0 [postgres|materialize|all] [freshmart|freshfund] [--reduced]"
     echo "  postgres     - Setup PostgreSQL database only"
     echo "  materialize  - Setup Materialize only"
     echo "  all          - Setup both (default)"
-    echo "  freshmart    - Setup freshmart dataset"
+    echo "  freshmart    - Setup freshmart dataset (default)"
+    echo "  freshfund    - Setup freshfund dataset"
     echo "  --reduced    - Use reduced dataset (optional)"
     exit 1
 }
@@ -28,15 +29,15 @@ while [[ $# -gt 0 ]]; do
         postgres|materialize|all)
             MODE="$1"
             ;;
-        freshmart)
-            DATA_DIR="freshmart"
-            CHUNKS_DIR="freshmart/sales_chunks"
+        freshmart|freshfund)
+            DATASET="$1"
+            DATA_DIR="$DATASET"
+            CHUNKS_DIR="$DATASET/sales_chunks"
             ;;
         --reduced)
-            reduced=true
             if [[ "$DATASET" == "freshmart" ]]; then
-                DATA_DIR="freshmart/reduced"
-                CHUNKS_DIR="freshmart/reduced/sales_chunks"
+                DATA_DIR="$DATASET/reduced"
+                CHUNKS_DIR="$DATASET/reduced/sales_chunks"
             fi
             ;;
         *)
@@ -160,7 +161,14 @@ EOF
     done
 
     echo "Finalizing sales data import..."
-    SET_PRODUCT_ONE="UPDATE products SET product_name = 'Fresh Red Delicious Apple', base_price = 0.75 WHERE product_id = 1;"
+    case "$DATASET" in
+      freshmart)
+        SET_PRODUCT_ONE="UPDATE products SET product_name = 'Fresh Red Delicious Apple', base_price = 0.75 WHERE product_id = 1;"
+        ;;
+      freshfund)
+        SET_PRODUCT_ONE="UPDATE products SET product_name = 'Apple', base_price = 175.25 WHERE product_id = 1;"
+        ;;
+    esac
     PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $DB_NAME << EOF
     -- Drop temporary table
     DROP TABLE IF EXISTS temp_sales;

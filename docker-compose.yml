@@ -60,6 +60,7 @@ services:
       - .:/app
       - ./data:/data
       - ./freshmart:/freshmart
+      - ./freshfund:/freshfund
     working_dir: /app
     environment:
       - PGHOST=postgres
@@ -72,6 +73,7 @@ services:
       - DB_PASSWORD=mysecret
       - LOAD_DATA=${LOAD_DATA:-true}
       - REDUCED_DATA=${REDUCED_DATA:-false}
+      - DEMO=${DEMO:-freshmart}
     depends_on:
       postgres:
         condition: service_healthy
@@ -86,9 +88,9 @@ services:
           sed -i "s/localhost/$${PGHOST}/g" setup_database.sh &&
           sed -i "s/source backend\/.env/true/g" setup_database.sh &&
           if [ "$$REDUCED_DATA" = "true" ]; then
-            bash setup_database.sh postgres --reduced;
+            bash setup_database.sh postgres "$$DEMO" --reduced;
           else
-            bash setup_database.sh postgres;
+            bash setup_database.sh postgres "$$DEMO";
           fi
         else
           echo "Skipping data loading for PostgreSQL...";

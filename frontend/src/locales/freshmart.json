@@ -18,6 +18,7 @@
   },
 
   "marketModifier": "Promotion",
+  "groupingType": "Category",
   "collectionType": "Shopping Cart",
 
   "rag": {

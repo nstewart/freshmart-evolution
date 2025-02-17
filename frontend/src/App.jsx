@@ -395,15 +395,16 @@ function App() {
   const initialTrafficStateFetched = useRef(false);
 
   useEffect(() => {
-    fetch("/api/demo")
+    fetch("http://localhost:8000/api/demo")
         .then((res) => res.json())
         .then((data) => {
+          console.log(`setting demo to ${data.mode}`);
+
           if (data.mode) {
             i18n.changeLanguage(data.mode);
           }
         })
-        .catch((error) => console.error("Error fetching demo:", error))
-        .finally(() => setLoading(false));
+        .catch((error) => console.error("Error fetching demo:", error));
   }, []);
 
   // Add refs for previous prices
@@ -1020,7 +1021,7 @@ function App() {
             <Paper p="xl" withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
               <Stack spacing="xl">
                 <Text size="xl" weight={700} style={{ color: '#BCB9C0' }}>
-                  { t("name") }
+                  { t("title") }
                 </Text>
                 
                 <Grid>
