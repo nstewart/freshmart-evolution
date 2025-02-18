@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Text, Grid, Paper, Group, Divider, Switch } from '@mantine/core';
+import {useTranslation} from "react-i18next";
+import i18n from "../i18n";
+import ComposableDataProductGraph from "./ComposableDataProductGraph";
+import HierarchicalDataProductGraph from "./HierarchicalDataProductGraph";
 
 const ShoppingCart = ({ onLatencyUpdate }) => {
+    const { t } = useTranslation();
+
     // Existing state for cart items and error handling.
     const [cartItems, setCartItems] = useState([]);
     const [categorySubtotals, setCategorySubtotals] = useState([]);
@@ -157,7 +163,7 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                         backgroundColor: 'rgb(13, 17, 22)',
                         border: '1px solid rgba(255, 255, 255, 0.1)'
                     }}>
-                        <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Shopping Cart Data Product</Text>
+                        <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>{ t("collectionType") } Data Product</Text>
                         <pre style={{ 
                             fontFamily: 'Inter, monospace',
                             fontSize: '14px',
@@ -170,15 +176,7 @@ const ShoppingCart = ({ onLatencyUpdate }) => {
                             color: '#BCB9C0',
                             margin: 0
                         }}>
-{`
-Inventory Item ───────────────────┐
-                                  |
-   Products ──────────────────────┤     
-                                  ├──► Shopping Cart     
-   Categories ────────────────────┤     
-                                  │     
-   Inventory ─────────────────────┘
-`}
+                        <ComposableDataProductGraph/>
                         </pre>
                     </Paper>
                 </Grid.Col>
@@ -188,7 +186,7 @@ Inventory Item ───────────────────┐
                             backgroundColor: 'rgb(13, 17, 22)',
                             border: '1px solid rgba(255, 255, 255, 0.1)'
                         }}>
-                            <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>Category Hierarchy Data Product</Text>
+                            <Text size="sm" weight={500} mb="md" style={{ color: '#BCB9C0' }}>{ t("groupingType") } Hierarchy Data Product</Text>
                             <pre style={{ 
                                 fontFamily: 'Inter, monospace',
                                 fontSize: '14px',
@@ -201,15 +199,7 @@ Inventory Item ───────────────────┐
                                 color: '#BCB9C0',
                                 margin: 0
                             }}>
-{`
-Shopping Cart ─────┐
-                   ├──► Category Totals ───┐
-Categories ────────┤                       ├──► Hierarchical Summary
-                   │                       │    
-Parent Categories ─┴───► Category Tree ────┘    
-
-                                              
-`}
+                                <HierarchicalDataProductGraph/>
                             </pre>
                         </Paper>
                     </Grid.Col>
@@ -223,15 +213,15 @@ Parent Categories ─┴───► Category Tree ────┘
                     borderRadius: '4px',
                     marginBottom: '16px'
                 }}>
-                    <Text color="red" size="sm">Error loading shopping cart data: {error}</Text>
+                    <Text color="red" size="sm">Error loading { t("collectionType") } data: {error}</Text>
                 </Paper>
             ) : (
                 <>
                     <Grid style={{ marginBottom: '8px' }}>
-                        {/* Shopping Cart Column */}
+                        {/* Collection Type Column */}
                         <Grid.Col span={showSummaryView ? 6 : 12}>
                             <Text size="md" weight={500} mb="sm" style={{ color: '#BCB9C0' }}>
-                                Shopping Cart
+                                { t("collectionType") }
                             </Text>
                             <div className="overflow-x-auto">
                                 {/* Cart Items Table */}
@@ -291,7 +281,7 @@ Parent Categories ─┴───► Category Tree ────┘
                                                 flex: '1',
                                             }}
                                         >
-                                            Category
+                                            { t("groupingType") }
                                         </th>
                                         <th
                                             style={{
@@ -403,7 +393,7 @@ Parent Categories ─┴───► Category Tree ────┘
                         {showSummaryView && (
                             <Grid.Col span={6}>
                                 <Text size="md" weight={500} mb="sm" style={{ color: '#BCB9C0' }}>
-                                    Category Subtotals
+                                    { t("groupingType") } Subtotals
                                 </Text>
                                 <table
                                     style={{
@@ -426,7 +416,7 @@ Parent Categories ─┴───► Category Tree ────┘
                                                     backgroundColor: 'rgba(255, 255, 255, 0.05)',
                                                 }}
                                             >
-                                                Category
+                                                { t("groupingType") }
                                             </th>
                                             <th
                                                 style={{
@@ -469,7 +459,7 @@ Parent Categories ─┴───► Category Tree ────┘
                                 borderRadius: '4px'
                             }}>
                                 <Group position="apart" style={{ paddingRight: '16px' }}>
-                                    <Text weight={600} size="sm" style={{ color: '#BCB9C0', flex: 3 }}>Shopping Cart Total:</Text>
+                                    <Text weight={600} size="sm" style={{ color: '#BCB9C0', flex: 3 }}>{ t("collectionType" )} Total:</Text>
                                     <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>
                                         ${cartTotal.toFixed(2)}
                                     </Text>
@@ -484,7 +474,7 @@ Parent Categories ─┴───► Category Tree ────┘
                                     borderRadius: '4px'
                                 }}>
                                     <Group position="apart" style={{ paddingRight: '16px' }}>
-                                        <Text weight={600} size="sm" style={{ color: '#BCB9C0', flex: 2 }}>Category Subtotals:</Text>
+                                        <Text weight={600} size="sm" style={{ color: '#BCB9C0', flex: 2 }}>{ t("groupingType") } Subtotals:</Text>
                                         <Text weight={600} size="lg" style={{ color: '#228be6', flex: 1, textAlign: 'right' }}>
                                             ${categoriesTotal.toFixed(2)}
                                         </Text>

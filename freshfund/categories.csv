@@ -1,0 +1,67 @@
+category_id,category_name,parent_id
+1,Capital Markets,
+2,Equities,1
+3,Technology Stocks,2
+4,Energy Stocks,2
+5,Healthcare Stocks,1
+6,Consumer Goods Stocks,1
+7,Agriculture & Commodities,1
+8,Fixed Income,
+9,Government Bonds,8
+10,Municipal Bonds,8
+11,Corporate Bonds,8
+12,Mortgage-Backed Securities,8
+13,Treasury Inflation-Protected Securities (TIPS),8
+14,Alternative Investments,
+15,Hedge Funds,14
+16,Private Equity,14
+17,Venture Capital,14
+18,Real Estate Investment Trusts (REITs),14
+19,Commodities,14
+20,Currency & Forex,
+21,USD Index,20
+22,Emerging Market Currencies,20
+23,Gold & Precious Metals,20
+24,Cryptocurrencies,20
+25,Alternative Commodities,20
+26,Index Funds & ETFs,
+27,S&P 500 ETF (SPY),26
+28,Nasdaq ETF (QQQ),26
+29,Dow Jones ETF (DIA),26
+30,Sector-Specific ETFs,26
+31,International ETFs,26
+32,Fixed Income & Bonds,
+33,Corporate Debt,32
+34,High-Yield Bonds,32
+35,Emerging Market Debt,32
+36,Convertible Bonds,32
+37,Sustainable Bonds,32
+38,Risk Management & Derivatives,
+39,Options Trading,38
+40,Call Options,39
+41,Put Options,39
+42,Futures Contracts,39
+43,Commodities Futures,39
+44,Annuities,38
+45,Fixed Annuities,44
+46,Variable Annuities,44
+47,Indexed Annuities,44
+48,Pension Funds,44
+49,Wealth Management,
+50,Investment Banking,49
+51,Investment Banking,49
+52,Private Wealth Management,49
+53,Family Offices,49
+54,Trust Funds,49
+55,Institutional Investments,
+56,Pension & Endowment Funds,55
+57,University Endowments,56
+58,Sovereign Wealth Funds,56
+59,Fund of Funds (FoF),56
+60,Insurance Investments,55
+61,Life Insurance Portfolios,60
+62,Health Insurance Investments,60
+63,Real Assets,55
+64,Infrastructure Investments,63
+65,Timber & Farmland,63
+66,Green Investments,63

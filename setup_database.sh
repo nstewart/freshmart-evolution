@@ -10,23 +10,44 @@ set +a
 
 # Function to show usage
 show_usage() {
-    echo "Usage: $0 [postgres|materialize|all] [--reduced]"
+    echo "Usage: $0 [postgres|materialize|all] [freshmart|freshfund] [--reduced]"
     echo "  postgres     - Setup PostgreSQL database only"
     echo "  materialize  - Setup Materialize only"
-    echo "  all         - Setup both (default)"
-    echo "  --reduced   - Use reduced dataset (optional)"
+    echo "  all          - Setup both (default)"
+    echo "  freshmart    - Setup freshmart dataset (default)"
+    echo "  freshfund    - Setup freshfund dataset"
+    echo "  --reduced    - Use reduced dataset (optional)"
     exit 1
 }
 
-# Parse command line arguments
-MODE=${1:-all}
-DATA_DIR="data_files"
-CHUNKS_DIR="data_files/sales_chunks"
-if [ "$2" == "--reduced" ]; then
-    DATA_DIR="data_files/reduced"
-    CHUNKS_DIR="data_files/reduced/sales_chunks"
-    echo "Using reduced dataset from $DATA_DIR"
-fi
+MODE=all
+DATASET="freshmart"
+DATA_DIR="freshmart"
+CHUNKS_DIR="freshmart/sales_chunks"
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        postgres|materialize|all)
+            MODE="$1"
+            ;;
+        freshmart|freshfund)
+            DATASET="$1"
+            DATA_DIR="$DATASET"
+            CHUNKS_DIR="$DATASET/sales_chunks"
+            ;;
+        --reduced)
+            if [[ "$DATASET" == "freshmart" ]]; then
+                DATA_DIR="$DATASET/reduced"
+                CHUNKS_DIR="$DATASET/reduced/sales_chunks"
+            fi
+            ;;
+        *)
+            echo "Invalid argument: $1"
+            show_usage
+            ;;
+    esac
+    shift
+done
+
 
 # Function to setup PostgreSQL
 setup_postgres() {
@@ -111,6 +132,8 @@ DROP TABLE temp_products;
 
 \COPY inventory(inventory_id,product_id,stock,warehouse_id,restock_date) FROM 'data/inventory.csv' WITH CSV HEADER;
 \COPY promotions(promotion_id,product_id,promotion_discount,start_date,end_date,active,updated_at) FROM 'data/promotions.csv' WITH CSV HEADER;
+
+CREATE TABLE IF NOT EXISTS demo AS SELECT '$DATASET' AS mode;
 EOF
 
     echo "Preparing for sales data import..."
@@ -138,6 +161,14 @@ EOF
     done
 
     echo "Finalizing sales data import..."
+    case "$DATASET" in
+      freshmart)
+        SET_PRODUCT_ONE="UPDATE products SET product_name = 'Fresh Red Delicious Apple', base_price = 0.75 WHERE product_id = 1;"
+        ;;
+      freshfund)
+        SET_PRODUCT_ONE="UPDATE products SET product_name = 'Apple', base_price = 175.25 WHERE product_id = 1;"
+        ;;
+    esac
     PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $DB_NAME << EOF
     -- Drop temporary table
     DROP TABLE IF EXISTS temp_sales;
@@ -154,7 +185,7 @@ EOF
     ANALYZE sales;
 
     -- Update product name for product_id=1
-    UPDATE products SET product_name = 'Fresh Red Delicious Apple', base_price = 0.75 WHERE product_id = 1;
+    $SET_PRODUCT_ONE
 
 EOF
 
@@ -174,6 +205,7 @@ EOF
     ALTER TABLE shopping_cart REPLICA IDENTITY FULL;
     ALTER TABLE heartbeats REPLICA IDENTITY FULL;
     ALTER TABLE materialized_view_refresh_log REPLICA IDENTITY FULL;
+    ALTER TABLE demo REPLICA IDENTITY FULL;
 EOF
 
     echo "Cleaning up PostgreSQL temporary files..."

@@ -163,7 +163,7 @@ WITH MUTUALLY RECURSIVE
     JOIN rollup r
       ON c.category_id = r.category_id
     GROUP BY c.category_id
-    HAVING SUM(r.item_count) > 0  -- only include categories with items
+    HAVING SUM(r.item_count) > 0
   ),
 
   has_subcategories(category_id int, has_subcategory boolean) AS (
@@ -173,8 +173,21 @@ WITH MUTUALLY RECURSIVE
     FROM categories a
     LEFT JOIN categories b ON a.category_id = b.parent_id
     GROUP BY a.category_id
+  ),
+
+  others(category_id int, total numeric(20, 10), item_count int) AS (
+    SELECT
+      c.category_id,
+      COALESCE(SUM(d.price), 0)::numeric(20,10) AS total,
+      COUNT(d.price) AS item_count
+    FROM categories c
+    JOIN has_subcategories hs ON c.category_id = hs.category_id AND hs.has_subcategory
+    LEFT JOIN dynamic_price_shopping_cart d
+      ON c.category_id = d.category_id
+    GROUP BY c.category_id
+    HAVING COUNT(d.price) > 0
   )
-  
+
 SELECT
   t.category_id,
   c.parent_id,
@@ -184,7 +197,18 @@ SELECT
   t.item_count
 FROM totals t
 JOIN categories c USING (category_id)
-JOIN has_subcategories s USING (category_id);
+JOIN has_subcategories s USING (category_id)
+
+UNION ALL
+
+SELECT
+  1000 + category_id,
+  category_id,
+  false,
+  'Other',
+  total,
+  item_count
+FROM others;
 
 CREATE INDEX IF NOT EXISTS dynamic_pricing_product_id_idx ON dynamic_pricing (product_id);
 

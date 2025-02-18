@@ -1,0 +1,36 @@
+{
+  "title": "Freshmart",
+  "description": "Freshmart is an online retailer selling produce and other grocery items nationwide. Freshmart offers dynamic pricing to its customers. The price of any given item will fluctuate based on available inventory, snap promotions, popularity, and a host of other factors. As data volumes and query complexity increased, their \"inventory\" data product now can't meet their web and microservice SLAs.",
+
+  "dataProduct": {
+    "name": "Inventory"
+  },
+
+  "primaryEntity": {
+    "name": "Fresh Red Delicious Apple",
+    "type": "Product",
+    "status": "IN_STOCK",
+    "metadata": {
+      "organic": true,
+      "origin": "Washington State",
+      "unit": "per pound"
+    }
+  },
+
+  "marketModifier": "Promotion",
+  "groupingType": "Category",
+  "collectionType": "Shopping Cart",
+
+  "rag": {
+    "prompt": "When am I eligible for the next membership status?",
+    "responses": {
+      "static": "Based on our membership program guidelines, Gold status is achieved when you spend $1,000 or more within a calendar year. For your specific progress towards Gold status, I recommend checking your account dashboard for the most up-to-date information.",
+      "batch": "Based on your purchase history, you've spent $892 this year and need just $108 more to reach Gold status.",
+      "live": [
+        "Based on your purchase history, you've spent $995 this year and need just $5 more to reach Gold status.",
+        "With the current items in your cart ($count$ items totaling $$total$),",
+        "you're going to reach Gold status at checkout!"
+      ]
+    }
+  }
+}
